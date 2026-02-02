@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - EduRobotics</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+    <div class="dashboard-container">
+        <div class="dashboard-header">
+            <div class="dashboard-nav">
+                <div>
+                    <h2>🤖 EduRobotics</h2>
+                    <p>Panel de Control</p>
+                </div>
+                <div>
+                    <span id="userName">Cargando...</span>
+                    <button onclick="auth.logout()" style="margin-left: 15px; padding: 8px 15px; background: rgba(255,255,255,0.2); color: white; border: none; border-radius: 5px; cursor: pointer;">
+                        Cerrar Sesión
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <div class="dashboard-content">
+            <div class="welcome-section">
+                <h3> Bienvenido a EduRobotics</h3>
+                <p>Tu plataforma educativa para aprender robótica</p>
+            </div>
+            
+            <div class="features-grid">
+                <div class="feature-card">
+                    <h4> Cursos</h4>
+                    <p>Explora nuestros cursos de robótica educativa</p>
+                    <button class="btn-primary" style="margin-top: 15px; width: auto; padding: 10px 20px;">
+                        Ver Cursos
+                    </button>
+                </div>
+                
+                <div class="feature-card">
+                    <h4> Proyectos</h4>
+                    <p>Trabaja en proyectos prácticos de robótica</p>
+                    <button class="btn-primary" style="margin-top: 15px; width: auto; padding: 10px 20px;">
+                        Mis Proyectos
+                    </button>
+                </div>
+                
+                <div class="feature-card">
+                    <h4> Comunidad </h4>
+                    <p>Conecta con otros estudiantes y profesores</p>
+                    <button class="btn-primary" style="margin-top: 15px; width: auto; padding: 10px 20px;">
+                        Unirse
+                    </button>
+                </div>
+                
+                <div class="feature-card">
+                    <h4> Progreso</h4>
+                    <p>Revisa tu progreso y logros obtenidos</p>
+                    <button class="btn-primary" style="margin-top: 15px; width: auto; padding: 10px 20px;">
+                        Ver Estadísticas
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="/js/auth.js"></script>
+    <script>
+        // Verificar autenticación
+        document.addEventListener('DOMContentLoaded', function() {
+            if (!auth.isAuthenticated()) {
+                window.location.href = '/login';
+                return;
+            }
+            
+            const user = auth.getCurrentUser();
+            document.getElementById('userName').textContent = `${user.first_name} ${user.last_name}`;
+        });
+    </script>
+</body>
+</html>
