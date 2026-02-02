@@ -43,6 +43,7 @@ edurobotics.db
 
 # Virtual environments
 venv/
+venv_edurobotics/
 env/
 ENV/
 

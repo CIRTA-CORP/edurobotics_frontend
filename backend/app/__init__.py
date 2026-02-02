@@ -1,0 +1,1 @@
+# Aplicación principal FastAPI para plataforma educativa de robótica
