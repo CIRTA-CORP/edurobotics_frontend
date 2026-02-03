@@ -7,20 +7,40 @@ Plataforma educativa de robótica para CIRTA CORP
 import os
 import sys
 from pathlib import Path
+from contextlib import asynccontextmanager
 from fastapi import FastAPI, HTTPException, status, Header, Depends
-from fastapi.staticfiles import StaticFiles
-from fastapi.responses import HTMLResponse, JSONResponse
+from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing import Optional
 
 # Configuración
 BASE_DIR = Path(__file__).parent.parent
-FRONTEND_DIR = BASE_DIR / "frontend"
 
 # Importar funciones de database
 sys.path.append(os.path.dirname(__file__))
-from database import init_database, register_user, login_user, set_user_role
+from database import (
+    init_database,
+    register_user,
+    login_user,
+    set_user_role,
+    create_course,
+    update_course,
+    delete_course,
+    list_courses,
+    set_course_prerequisites,
+    get_course_detail,
+    create_module,
+    delete_module,
+    add_module_content,
+    list_module_contents,
+    delete_module_content,
+    create_quiz,
+    list_module_quizzes,
+    delete_quiz,
+    add_quiz_question,
+    add_quiz_answer,
+)
 
 # Modelos Pydantic
 class UserRegister(BaseModel):
@@ -39,11 +59,50 @@ class AdminRoleUpdate(BaseModel):
     username: str
     role: str = "admin"
 
+class CoursePayload(BaseModel):
+    title: str
+    description: Optional[str] = ""
+    level: Optional[str] = "beginner"
+    version: Optional[int] = 1
+
+class PrerequisitesPayload(BaseModel):
+    prereq_ids: list[int]
+
+class ModulePayload(BaseModel):
+    title: str
+    position: Optional[int] = 1
+
+class ModuleContentPayload(BaseModel):
+    content_type: str
+    content_value: str
+
+class QuizPayload(BaseModel):
+    title: str
+    passing_type: Optional[str] = "score"
+    passing_score: Optional[int] = 80
+
+class QuizQuestionPayload(BaseModel):
+    question_text: str
+
+class QuizAnswerPayload(BaseModel):
+    answer_text: str
+    is_correct: Optional[bool] = False
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Inicializar base de datos al iniciar"""
+    print("🚀 Iniciando EduRobotics FastAPI...")
+    print("📊 Inicializando base de datos...")
+    init_database()
+    print("✅ Base de datos lista")
+    yield
+
 # Crear aplicación FastAPI
 app = FastAPI(
     title="EduRobotics API",
     description="Plataforma educativa de robótica para CIRTA CORP",
-    version="1.0.0"
+    version="1.0.0",
+    lifespan=lifespan,
 )
 
 # Configurar CORS
@@ -55,48 +114,11 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Montar archivos estáticos
-app.mount("/css", StaticFiles(directory=str(FRONTEND_DIR / "css")), name="css")
-app.mount("/js", StaticFiles(directory=str(FRONTEND_DIR / "js")), name="js")
-
 def require_admin_token(x_admin_token: str = Header(default="")):
     expected = os.getenv("ADMIN_TOKEN", "change-me")
     if not x_admin_token or x_admin_token != expected:
         raise HTTPException(status_code=403, detail="Acceso restringido a administradores")
     return True
-
-@app.on_event("startup")
-async def startup_event():
-    """Inicializar base de datos al iniciar"""
-    print("🚀 Iniciando EduRobotics FastAPI...")
-    print("📊 Inicializando base de datos...")
-    init_database()
-    print("✅ Base de datos lista")
-
-def load_html_page(page_path: str) -> str:
-    """Cargar página HTML"""
-    try:
-        file_path = FRONTEND_DIR / "pages" / page_path
-        with open(file_path, 'r', encoding='utf-8') as f:
-            return f.read()
-    except FileNotFoundError:
-        raise HTTPException(status_code=404, detail="Página no encontrada")
-
-@app.get("/", response_class=HTMLResponse)
-@app.get("/register", response_class=HTMLResponse)
-async def get_register_page():
-    """Página de registro"""
-    return load_html_page("register.html")
-
-@app.get("/login", response_class=HTMLResponse)
-async def get_login_page():
-    """Página de login"""
-    return load_html_page("login.html")
-
-@app.get("/dashboard", response_class=HTMLResponse)
-async def get_dashboard_page():
-    """Página del dashboard"""
-    return load_html_page("dashboard.html")
 
 @app.post("/register")
 async def register_endpoint(user_data: UserRegister):
@@ -173,15 +195,116 @@ async def promote_user(payload: AdminRoleUpdate):
 
     return {"success": True, "username": payload.username, "role": payload.role}
 
+# Cursos (admin)
+@app.post("/api/courses", dependencies=[Depends(require_admin_token)])
+async def create_course_endpoint(payload: CoursePayload):
+    course_id = create_course(payload.dict())
+    if not course_id:
+        raise HTTPException(status_code=500, detail="No se pudo crear el curso")
+    return {"success": True, "course_id": course_id}
+
+@app.put("/api/courses/{course_id}", dependencies=[Depends(require_admin_token)])
+async def update_course_endpoint(course_id: int, payload: CoursePayload):
+    updated = update_course(course_id, payload.dict())
+    if not updated:
+        raise HTTPException(status_code=404, detail="Curso no encontrado")
+    return {"success": True, "course_id": course_id}
+
+@app.delete("/api/courses/{course_id}", dependencies=[Depends(require_admin_token)])
+async def delete_course_endpoint(course_id: int):
+    deleted = delete_course(course_id)
+    if not deleted:
+        raise HTTPException(status_code=404, detail="Curso no encontrado")
+    return {"success": True}
+
+@app.post("/api/courses/{course_id}/prerequisites", dependencies=[Depends(require_admin_token)])
+async def set_prerequisites_endpoint(course_id: int, payload: PrerequisitesPayload):
+    saved = set_course_prerequisites(course_id, payload.prereq_ids)
+    if not saved:
+        raise HTTPException(status_code=500, detail="No se pudieron guardar prerequisitos")
+    return {"success": True, "course_id": course_id, "prereq_ids": payload.prereq_ids}
+
+@app.post("/api/courses/{course_id}/modules", dependencies=[Depends(require_admin_token)])
+async def create_module_endpoint(course_id: int, payload: ModulePayload):
+    module_id = create_module(course_id, payload.dict())
+    if not module_id:
+        raise HTTPException(status_code=500, detail="No se pudo crear el módulo")
+    return {"success": True, "module_id": module_id}
+
+@app.post("/api/modules/{module_id}/contents", dependencies=[Depends(require_admin_token)])
+async def add_module_content_endpoint(module_id: int, payload: ModuleContentPayload):
+    content_id = add_module_content(module_id, payload.dict())
+    if not content_id:
+        raise HTTPException(status_code=500, detail="No se pudo agregar contenido")
+    return {"success": True, "content_id": content_id}
+
+@app.delete("/api/modules/{module_id}", dependencies=[Depends(require_admin_token)])
+async def delete_module_endpoint(module_id: int):
+    deleted = delete_module(module_id)
+    if not deleted:
+        raise HTTPException(status_code=404, detail="Módulo no encontrado")
+    return {"success": True}
+
+@app.delete("/api/contents/{content_id}", dependencies=[Depends(require_admin_token)])
+async def delete_module_content_endpoint(content_id: int):
+    deleted = delete_module_content(content_id)
+    if not deleted:
+        raise HTTPException(status_code=404, detail="Contenido no encontrado")
+    return {"success": True}
+
+@app.get("/api/modules/{module_id}/contents")
+async def list_module_contents_endpoint(module_id: int):
+    return {"contents": list_module_contents(module_id)}
+
+@app.post("/api/modules/{module_id}/quizzes", dependencies=[Depends(require_admin_token)])
+async def create_quiz_endpoint(module_id: int, payload: QuizPayload):
+    quiz_id = create_quiz(module_id, payload.dict())
+    if not quiz_id:
+        raise HTTPException(status_code=500, detail="No se pudo crear el quiz")
+    return {"success": True, "quiz_id": quiz_id}
+
+@app.delete("/api/quizzes/{quiz_id}", dependencies=[Depends(require_admin_token)])
+async def delete_quiz_endpoint(quiz_id: int):
+    deleted = delete_quiz(quiz_id)
+    if not deleted:
+        raise HTTPException(status_code=404, detail="Quiz no encontrado")
+    return {"success": True}
+
+@app.get("/api/modules/{module_id}/quizzes")
+async def list_module_quizzes_endpoint(module_id: int):
+    return {"quizzes": list_module_quizzes(module_id)}
+
+@app.post("/api/quizzes/{quiz_id}/questions", dependencies=[Depends(require_admin_token)])
+async def add_quiz_question_endpoint(quiz_id: int, payload: QuizQuestionPayload):
+    question_id = add_quiz_question(quiz_id, payload.dict())
+    if not question_id:
+        raise HTTPException(status_code=500, detail="No se pudo crear la pregunta")
+    return {"success": True, "question_id": question_id}
+
+@app.post("/api/questions/{question_id}/answers", dependencies=[Depends(require_admin_token)])
+async def add_quiz_answer_endpoint(question_id: int, payload: QuizAnswerPayload):
+    answer_id = add_quiz_answer(question_id, payload.dict())
+    if not answer_id:
+        raise HTTPException(status_code=500, detail="No se pudo crear la respuesta")
+    return {"success": True, "answer_id": answer_id}
+
+# Cursos (público)
+@app.get("/api/courses")
+async def list_courses_endpoint():
+    return {"courses": list_courses()}
+
+@app.get("/api/courses/{course_id}")
+async def get_course_detail_endpoint(course_id: int):
+    course = get_course_detail(course_id)
+    if not course:
+        raise HTTPException(status_code=404, detail="Curso no encontrado")
+    return course
+
 if __name__ == "__main__":
     import uvicorn
     
     print("🎯 Servidor FastAPI iniciado")
-    print("📝 Páginas disponibles:")
-    print("   - http://localhost:8001/register")
-    print("   - http://localhost:8001/login")  
-    print("   - http://localhost:8001/dashboard")
-    print("   - http://localhost:8001/docs (Documentación API)")
+    print("🧭 API disponible en: http://localhost:8001/docs")
     print("\n✅ Listo! Presiona Ctrl+C para detener\n")
     
     uvicorn.run(

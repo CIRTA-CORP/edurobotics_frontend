@@ -11,6 +11,11 @@ from pathlib import Path
 # Configuración de la base de datos
 DB_PATH = Path(__file__).parent / "edurobotics.db"
 
+def get_connection():
+    conn = sqlite3.connect(DB_PATH)
+    conn.execute("PRAGMA foreign_keys = ON")
+    return conn
+
 def init_database():
     """Inicializar la base de datos con las tablas necesarias"""
     conn = sqlite3.connect(DB_PATH)
@@ -146,7 +151,7 @@ def register_user(data):
         dict: Resultado de la operación
     """
     try:
-        conn = sqlite3.connect(DB_PATH)
+        conn = get_connection()
         cursor = conn.cursor()
         
         # Verificar si el usuario ya existe
@@ -198,7 +203,7 @@ def login_user(username, password):
         dict: Resultado de autenticación
     """
     try:
-        conn = sqlite3.connect(DB_PATH)
+        conn = get_connection()
         cursor = conn.cursor()
         
         # Buscar usuario
@@ -246,7 +251,7 @@ def login_user(username, password):
 def get_user_stats():
     """Obtener estadísticas de usuarios"""
     try:
-        conn = sqlite3.connect(DB_PATH)
+        conn = get_connection()
         cursor = conn.cursor()
         
         cursor.execute('SELECT COUNT(*) FROM users')
@@ -268,7 +273,7 @@ def get_user_stats():
 def get_user_role(username):
     """Obtener el rol de un usuario"""
     try:
-        conn = sqlite3.connect(DB_PATH)
+        conn = get_connection()
         cursor = conn.cursor()
         cursor.execute('SELECT role FROM users WHERE username = ?', (username,))
         row = cursor.fetchone()
@@ -281,7 +286,7 @@ def get_user_role(username):
 def set_user_role(username, role):
     """Actualizar el rol de un usuario"""
     try:
-        conn = sqlite3.connect(DB_PATH)
+        conn = get_connection()
         cursor = conn.cursor()
         cursor.execute('UPDATE users SET role = ? WHERE username = ?', (role, username))
         conn.commit()
@@ -291,3 +296,400 @@ def set_user_role(username, role):
     except Exception as e:
         print(f"❌ Error actualizando rol: {str(e)}")
         return False
+
+def create_course(payload):
+    try:
+        conn = get_connection()
+        cursor = conn.cursor()
+        cursor.execute(
+            'INSERT INTO courses (title, description, level, version) VALUES (?, ?, ?, ?)',
+            (
+                payload['title'],
+                payload.get('description', ''),
+                payload.get('level', 'beginner'),
+                payload.get('version', 1),
+            )
+        )
+        conn.commit()
+        course_id = cursor.lastrowid
+        conn.close()
+        return course_id
+    except Exception as e:
+        print(f"❌ Error creando curso: {str(e)}")
+        return None
+
+def update_course(course_id, payload):
+    try:
+        conn = get_connection()
+        cursor = conn.cursor()
+        cursor.execute(
+            'UPDATE courses SET title = ?, description = ?, level = ?, version = ? WHERE id = ?',
+            (
+                payload['title'],
+                payload.get('description', ''),
+                payload.get('level', 'beginner'),
+                payload.get('version', 1),
+                course_id,
+            )
+        )
+        conn.commit()
+        updated = cursor.rowcount
+        conn.close()
+        return updated > 0
+    except Exception as e:
+        print(f"❌ Error actualizando curso: {str(e)}")
+        return False
+
+def delete_course(course_id):
+    try:
+        conn = get_connection()
+        cursor = conn.cursor()
+        cursor.execute('DELETE FROM courses WHERE id = ?', (course_id,))
+        conn.commit()
+        deleted = cursor.rowcount
+        conn.close()
+        return deleted > 0
+    except Exception as e:
+        print(f"❌ Error eliminando curso: {str(e)}")
+        return False
+
+def list_courses():
+    try:
+        conn = get_connection()
+        cursor = conn.cursor()
+        cursor.execute('SELECT id, title, description, level, version FROM courses')
+        rows = cursor.fetchall()
+        conn.close()
+        return [
+            {
+                "id": row[0],
+                "title": row[1],
+                "description": row[2],
+                "level": row[3],
+                "version": row[4],
+            }
+            for row in rows
+        ]
+    except Exception as e:
+        print(f"❌ Error listando cursos: {str(e)}")
+        return []
+
+def set_course_prerequisites(course_id, prereq_ids):
+    try:
+        conn = get_connection()
+        cursor = conn.cursor()
+        cursor.execute('DELETE FROM course_prerequisites WHERE course_id = ?', (course_id,))
+        for prereq_id in prereq_ids:
+            cursor.execute(
+                'INSERT OR IGNORE INTO course_prerequisites (course_id, prereq_course_id) VALUES (?, ?)',
+                (course_id, prereq_id)
+            )
+        conn.commit()
+        conn.close()
+        return True
+    except Exception as e:
+        print(f"❌ Error guardando prerequisitos: {str(e)}")
+        return False
+
+def get_course_detail(course_id):
+    try:
+        conn = get_connection()
+        cursor = conn.cursor()
+        cursor.execute('SELECT id, title, description, level, version FROM courses WHERE id = ?', (course_id,))
+        course = cursor.fetchone()
+        if not course:
+            conn.close()
+            return None
+
+        cursor.execute(
+            'SELECT prereq_course_id FROM course_prerequisites WHERE course_id = ?',
+            (course_id,)
+        )
+        prereqs = [row[0] for row in cursor.fetchall()]
+
+        cursor.execute(
+            'SELECT id, title, position FROM modules WHERE course_id = ? ORDER BY position',
+            (course_id,)
+        )
+        module_rows = cursor.fetchall()
+
+        modules = []
+        for module_row in module_rows:
+            module_id = module_row[0]
+
+            cursor.execute(
+                'SELECT id, content_type, content_value, created_at FROM module_contents WHERE module_id = ? ORDER BY id',
+                (module_id,)
+            )
+            contents = [
+                {
+                    "id": row[0],
+                    "content_type": row[1],
+                    "content_value": row[2],
+                    "created_at": row[3],
+                }
+                for row in cursor.fetchall()
+            ]
+
+            cursor.execute(
+                'SELECT id, title, passing_type, passing_score FROM quizzes WHERE module_id = ? ORDER BY id',
+                (module_id,)
+            )
+            quiz_rows = cursor.fetchall()
+            quizzes = []
+            for quiz_row in quiz_rows:
+                quiz_id = quiz_row[0]
+                cursor.execute(
+                    'SELECT id, question_text FROM quiz_questions WHERE quiz_id = ? ORDER BY id',
+                    (quiz_id,)
+                )
+                question_rows = cursor.fetchall()
+                questions = []
+                for question_row in question_rows:
+                    question_id = question_row[0]
+                    cursor.execute(
+                        'SELECT id, answer_text, is_correct FROM quiz_answers WHERE question_id = ? ORDER BY id',
+                        (question_id,)
+                    )
+                    answers = [
+                        {
+                            "id": row[0],
+                            "answer_text": row[1],
+                            "is_correct": bool(row[2]),
+                        }
+                        for row in cursor.fetchall()
+                    ]
+                    questions.append({
+                        "id": question_id,
+                        "question_text": question_row[1],
+                        "answers": answers,
+                    })
+
+                quizzes.append({
+                    "id": quiz_id,
+                    "title": quiz_row[1],
+                    "passing_type": quiz_row[2],
+                    "passing_score": quiz_row[3],
+                    "questions": questions,
+                })
+
+            modules.append({
+                "id": module_id,
+                "title": module_row[1],
+                "position": module_row[2],
+                "contents": contents,
+                "quizzes": quizzes,
+            })
+
+        conn.close()
+        return {
+            "id": course[0],
+            "title": course[1],
+            "description": course[2],
+            "level": course[3],
+            "version": course[4],
+            "prerequisites": prereqs,
+            "modules": modules,
+        }
+    except Exception as e:
+        print(f"❌ Error obteniendo curso: {str(e)}")
+        return None
+
+def create_module(course_id, payload):
+    try:
+        conn = get_connection()
+        cursor = conn.cursor()
+        cursor.execute(
+            'INSERT INTO modules (course_id, title, position) VALUES (?, ?, ?)',
+            (course_id, payload['title'], payload.get('position', 1))
+        )
+        conn.commit()
+        module_id = cursor.lastrowid
+        conn.close()
+        return module_id
+    except Exception as e:
+        print(f"❌ Error creando módulo: {str(e)}")
+        return None
+
+def delete_module(module_id):
+    try:
+        conn = get_connection()
+        cursor = conn.cursor()
+        cursor.execute('DELETE FROM modules WHERE id = ?', (module_id,))
+        conn.commit()
+        deleted = cursor.rowcount
+        conn.close()
+        return deleted > 0
+    except Exception as e:
+        print(f"❌ Error eliminando módulo: {str(e)}")
+        return False
+
+def add_module_content(module_id, payload):
+    try:
+        conn = get_connection()
+        cursor = conn.cursor()
+        cursor.execute(
+            'INSERT INTO module_contents (module_id, content_type, content_value) VALUES (?, ?, ?)',
+            (module_id, payload['content_type'], payload['content_value'])
+        )
+        conn.commit()
+        content_id = cursor.lastrowid
+        conn.close()
+        return content_id
+    except Exception as e:
+        print(f"❌ Error agregando contenido: {str(e)}")
+        return None
+
+def delete_module_content(content_id):
+    try:
+        conn = get_connection()
+        cursor = conn.cursor()
+        cursor.execute('DELETE FROM module_contents WHERE id = ?', (content_id,))
+        conn.commit()
+        deleted = cursor.rowcount
+        conn.close()
+        return deleted > 0
+    except Exception as e:
+        print(f"❌ Error eliminando contenido: {str(e)}")
+        return False
+
+def create_quiz(module_id, payload):
+    try:
+        conn = get_connection()
+        cursor = conn.cursor()
+        cursor.execute(
+            'INSERT INTO quizzes (module_id, title, passing_type, passing_score) VALUES (?, ?, ?, ?)',
+            (
+                module_id,
+                payload['title'],
+                payload.get('passing_type', 'score'),
+                payload.get('passing_score', 80)
+            )
+        )
+        conn.commit()
+        quiz_id = cursor.lastrowid
+        conn.close()
+        return quiz_id
+    except Exception as e:
+        print(f"❌ Error creando quiz: {str(e)}")
+        return None
+
+def delete_quiz(quiz_id):
+    try:
+        conn = get_connection()
+        cursor = conn.cursor()
+        cursor.execute('DELETE FROM quizzes WHERE id = ?', (quiz_id,))
+        conn.commit()
+        deleted = cursor.rowcount
+        conn.close()
+        return deleted > 0
+    except Exception as e:
+        print(f"❌ Error eliminando quiz: {str(e)}")
+        return False
+
+def add_quiz_question(quiz_id, payload):
+    try:
+        conn = get_connection()
+        cursor = conn.cursor()
+        cursor.execute(
+            'INSERT INTO quiz_questions (quiz_id, question_text) VALUES (?, ?)',
+            (quiz_id, payload['question_text'])
+        )
+        conn.commit()
+        question_id = cursor.lastrowid
+        conn.close()
+        return question_id
+    except Exception as e:
+        print(f"❌ Error creando pregunta: {str(e)}")
+        return None
+
+def add_quiz_answer(question_id, payload):
+    try:
+        conn = get_connection()
+        cursor = conn.cursor()
+        cursor.execute(
+            'INSERT INTO quiz_answers (question_id, answer_text, is_correct) VALUES (?, ?, ?)',
+            (question_id, payload['answer_text'], 1 if payload.get('is_correct') else 0)
+        )
+        conn.commit()
+        answer_id = cursor.lastrowid
+        conn.close()
+        return answer_id
+    except Exception as e:
+        print(f"❌ Error creando respuesta: {str(e)}")
+        return None
+
+def list_module_contents(module_id):
+    try:
+        conn = get_connection()
+        cursor = conn.cursor()
+        cursor.execute(
+            'SELECT id, content_type, content_value, created_at FROM module_contents WHERE module_id = ? ORDER BY id',
+            (module_id,)
+        )
+        rows = cursor.fetchall()
+        conn.close()
+        return [
+            {
+                "id": row[0],
+                "content_type": row[1],
+                "content_value": row[2],
+                "created_at": row[3],
+            }
+            for row in rows
+        ]
+    except Exception as e:
+        print(f"❌ Error listando contenidos: {str(e)}")
+        return []
+
+def list_module_quizzes(module_id):
+    try:
+        conn = get_connection()
+        cursor = conn.cursor()
+        cursor.execute(
+            'SELECT id, title, passing_type, passing_score FROM quizzes WHERE module_id = ? ORDER BY id',
+            (module_id,)
+        )
+        quiz_rows = cursor.fetchall()
+        quizzes = []
+        for quiz_row in quiz_rows:
+            quiz_id = quiz_row[0]
+            cursor.execute(
+                'SELECT id, question_text FROM quiz_questions WHERE quiz_id = ? ORDER BY id',
+                (quiz_id,)
+            )
+            question_rows = cursor.fetchall()
+            questions = []
+            for question_row in question_rows:
+                question_id = question_row[0]
+                cursor.execute(
+                    'SELECT id, answer_text, is_correct FROM quiz_answers WHERE question_id = ? ORDER BY id',
+                    (question_id,)
+                )
+                answers = [
+                    {
+                        "id": row[0],
+                        "answer_text": row[1],
+                        "is_correct": bool(row[2]),
+                    }
+                    for row in cursor.fetchall()
+                ]
+                questions.append({
+                    "id": question_id,
+                    "question_text": question_row[1],
+                    "answers": answers,
+                })
+
+            quizzes.append({
+                "id": quiz_id,
+                "title": quiz_row[1],
+                "passing_type": quiz_row[2],
+                "passing_score": quiz_row[3],
+                "questions": questions,
+            })
+
+        conn.close()
+        return quizzes
+    except Exception as e:
+        print(f"❌ Error listando quizzes: {str(e)}")
+        return []
