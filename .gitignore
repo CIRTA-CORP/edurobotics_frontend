@@ -46,6 +46,7 @@ venv/
 venv_edurobotics/
 env/
 ENV/
+.venv/
 
 # Node.js/React
 node_modules/
