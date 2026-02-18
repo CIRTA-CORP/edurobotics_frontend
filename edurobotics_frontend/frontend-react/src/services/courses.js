@@ -46,6 +46,19 @@ export const setPrerequisites = async (_, courseId, prereqIds) => {
   return apiPost(`/api/courses/${courseId}/prerequisites`, { prereq_ids: prereqIds })
 }
 
+/**
+ * Check if a user meets the prerequisites for a course.
+ * Returns: { allowed: bool, details: [{ prereq_id, title, state, percentage }], missing: [] }
+ */
+export const checkPrerequisites = async (courseId, userId) => {
+  const response = await fetch(`${API_BASE}/api/courses/${courseId}/prerequisites/check?user_id=${userId}`)
+  if (!response.ok) {
+    throw new Error(await parseError(response))
+  }
+  return response.json()
+}
+
+
 // === MODULES (Admin - JWT Protected) ===
 
 export const createModule = async (_, courseId, payload) => {
