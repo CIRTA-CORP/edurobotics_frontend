@@ -148,13 +148,15 @@ export function ContentViewer({
 
                     {currentContent.content_type === 'video' && isVideoUrl(currentContent.content_value) ? (
                       <div className="mt-4">
-                        <div className="aspect-video rounded-lg overflow-hidden bg-black">
-                          <iframe
-                            src={getYoutubeEmbedUrl(currentContent.content_value)}
-                            className="w-full h-full"
-                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                            allowFullScreen
-                          />
+                        <div className="rounded-lg overflow-hidden bg-black" style={{ maxWidth: '640px' }}>
+                          <div className="aspect-video">
+                            <iframe
+                              src={getYoutubeEmbedUrl(currentContent.content_value)}
+                              className="w-full h-full"
+                              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                              allowFullScreen
+                            />
+                          </div>
                         </div>
                       </div>
                     ) : currentContent.content_type === 'text' ? (

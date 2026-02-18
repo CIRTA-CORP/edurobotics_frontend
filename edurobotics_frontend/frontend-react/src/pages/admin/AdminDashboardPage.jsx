@@ -158,11 +158,11 @@ function AdminDashboardPage() {
         level: detail.level || 'beginner'
       })
 
-      // Set prerequisite IDs if they exist
+      // Set prerequisite IDs if they exist (prerequisites is already number[])
       if (detail.prerequisites && detail.prerequisites.length > 0) {
-        courseHooks.setPrereqIds(detail.prerequisites.map(p => p.id).join(','))
+        courseHooks.setPrereqIds(detail.prerequisites)
       } else {
-        courseHooks.setPrereqIds('')
+        courseHooks.setPrereqIds([])
       }
 
       // Auto-select first module and unit if available for smoother navigation
@@ -394,6 +394,7 @@ function AdminDashboardPage() {
                         }}
                         onPrereqSave={() => courseHooks.handlePrereqSave(selectedCourse)}
                         selectedCourse={selectedCourse}
+                        allCourses={courses}
                         expanded={expandedSections.editar}
                         onToggle={() => toggleSection('editar')}
                       />
