@@ -1,31 +1,16 @@
-# EduRobotics Platform
 
-Educational robotics platform with course management, modules, units, and progress tracking. Includes admin and student roles.
+# EduRobotics Frontend
+
+Frontend for the EduRobotics platform, built with React 18 + Vite.
 
 ## Tech Stack
 
-**Backend:**
-- FastAPI with SQLAlchemy ORM
-- Structlog for logging
-- SQLite database
-- Modular API in `/api`
-
-**Frontend:**
 - React 18 + Vite
 - TailwindCSS + shadcn/ui
 - React Router v6
 
 ## Installation
 
-### Backend
-```bash
-python -m venv .venv
-.venv\Scripts\Activate.ps1
-cd backend
-pip install -r requirements.txt
-```
-
-### Frontend
 ```bash
 cd frontend-react
 npm install
@@ -33,34 +18,26 @@ npm install
 
 ## Running
 
-You need 2 terminals:
-
-**Terminal 1 - Backend (port 8001):**
-```bash
-cd backend
-python -m uvicorn main:app --reload --host 127.0.0.1 --port 8001
-```
-
-**Terminal 2 - Frontend (port 5173):**
 ```bash
 cd frontend-react
 npm run dev
 ```
 
-Open http://localhost:5173
+Open your browser at http://localhost:5173
 
 ## Structure
 
-- `backend/models/` - SQLAlchemy models (User, Course, Module, Unit, Content, Quiz, Progress)
-- `backend/schemas/` - Pydantic validation
-- `backend/services/` - Business logic
-- `backend/api/` - REST endpoints
-- `frontend-react/src/pages/` - Pages (Login, Admin/Student dashboards)
-- `tests/` - Unit tests (coming soon)
+- `src/` - Frontend source code
+- `public/` - Static files
+- `package.json` - Dependencies and scripts
 
-## API Docs
+## Backend Connection
 
-Once backend is running: http://localhost:8001/docs
+The backend URL is configured in `src/config.js`. By default, it points to `http://localhost:8001`.
+
+## Contribution
+
+You can create branches from `dev` for new features or bug fixes.
 
 ---
 *Developed by CIRTA CORP*
