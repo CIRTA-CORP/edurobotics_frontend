@@ -5,6 +5,7 @@ import RegisterPage from './pages/RegisterPage.jsx'
 import DashboardPage from './pages/DashboardPage.jsx'
 import CoursePreviewPage from './pages/CoursePreviewPage.jsx'
 import CoursePage from './pages/CoursePage.jsx'
+import RoadmapPage from './pages/RoadmapPage.jsx'
 import AdminDashboardPage from './pages/admin/AdminDashboardPage.jsx'
 import StudentDashboardPage from './pages/student/StudentDashboardPage.jsx'
 
@@ -57,6 +58,16 @@ function App() {
         element={
           <ProtectedRoute>
             <CoursePage />
+          </ProtectedRoute>
+        }
+      />
+
+      {/* Visual roadmap (dependency graph) */}
+      <Route
+        path="/roadmap"
+        element={
+          <ProtectedRoute>
+            <RoadmapPage />
           </ProtectedRoute>
         }
       />

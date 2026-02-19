@@ -58,6 +58,18 @@ export const checkPrerequisites = async (courseId, userId) => {
   return response.json()
 }
 
+/**
+ * Get all courses with prerequisite IDs for the roadmap graph.
+ * Returns: { courses: [{ id, title, description, level, version, prerequisites: [ids] }] }
+ */
+export const getCoursesRoadmap = async () => {
+  const response = await fetch(`${API_BASE}/api/courses/roadmap`)
+  if (!response.ok) {
+    throw new Error(await parseError(response))
+  }
+  return response.json()
+}
+
 
 // === MODULES (Admin - JWT Protected) ===
 

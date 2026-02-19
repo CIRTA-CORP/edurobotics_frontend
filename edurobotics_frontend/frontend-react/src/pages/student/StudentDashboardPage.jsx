@@ -45,7 +45,7 @@ function StudentDashboardPage({ userOverride = null, hideLogout = false, hideHea
     }
     loadCourses()
   }, [])
-  
+
   // Fetch roadmap summary once we have the user and courses loaded
   const [roadmapFetched, setRoadmapFetched] = useState(false)
   useEffect(() => {
@@ -92,7 +92,7 @@ function StudentDashboardPage({ userOverride = null, hideLogout = false, hideHea
             adminView={adminView}
             setAdminView={setAdminView}
           />
-          <HeroSection user={user} />
+          <HeroSection user={user} courses={courses} />
         </>
       )}
 

@@ -1,25 +1,20 @@
 /**
  * ProgressPanel Component (formerly CourseRoadmap)
  *
- * Compact progress panel shown at the bottom of the course sidebar.
+ * Compact progress panel shown in the course sidebar.
  * Displays overall course progress: percentage, state, progress bar,
  * and a button to jump to the next pending unit.
+ * Redesigned with modern card-style and visual indicators.
  */
 
 import { useEffect, useState } from 'react'
-import { Loader2, ChevronRight } from 'lucide-react'
+import { Loader2, ChevronRight, CheckCircle, Clock, Circle } from 'lucide-react'
 import { getRoadmap } from '../../../services/progress'
 
-const STATE_LABELS = {
-  completed: 'Completado',
-  in_progress: 'En progreso',
-  not_started: 'No iniciado',
-}
-
-const STATE_COLORS = {
-  completed: 'bg-green-100 text-green-700',
-  in_progress: 'bg-blue-100 text-blue-700',
-  not_started: 'bg-gray-100 text-gray-600',
+const STATE_CONFIG = {
+  completed: { label: 'Completado', icon: CheckCircle, color: 'bg-emerald-100 text-emerald-700', barColor: 'bg-emerald-500' },
+  in_progress: { label: 'En progreso', icon: Clock, color: 'bg-blue-100 text-blue-700', barColor: 'bg-blue-500' },
+  not_started: { label: 'No iniciado', icon: Circle, color: 'bg-gray-100 text-gray-600', barColor: 'bg-gray-300' },
 }
 
 export default function CourseRoadmap({ userId, courseId, onNavigateUnit }) {
@@ -48,15 +43,17 @@ export default function CourseRoadmap({ userId, courseId, onNavigateUnit }) {
   if (!userId) return null
 
   if (loading) return (
-    <div className="flex items-center gap-2 text-sm text-gray-500 py-2">
-      <Loader2 className="w-4 h-4 animate-spin" />
-      Cargando progreso...
+    <div className="flex items-center gap-2 text-sm text-gray-400 py-3">
+      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+      <span className="text-xs">Cargando progreso...</span>
     </div>
   )
 
   if (error || !roadmap) return null
 
   const { percentage = 0, state = 'not_started', modules } = roadmap
+  const config = STATE_CONFIG[state] || STATE_CONFIG.not_started
+  const StateIcon = config.icon
 
   const goToNextPending = () => {
     if (!modules) return
@@ -70,40 +67,32 @@ export default function CourseRoadmap({ userId, courseId, onNavigateUnit }) {
     }
   }
 
-  const stateLabel = STATE_LABELS[state] || state
-  const stateColor = STATE_COLORS[state] || STATE_COLORS.not_started
-
   return (
-    <div className="py-1">
-      {/* State badge */}
-      <div className="flex items-center justify-end mb-3">
-        <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${stateColor}`}>
-          {stateLabel}
+    <div className="space-y-3">
+      {/* State + percentage */}
+      <div className="flex items-center justify-between">
+        <span className={`inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full ${config.color}`}>
+          <StateIcon className="w-3 h-3" />
+          {config.label}
         </span>
+        <span className="text-sm font-bold text-gray-800">{percentage}%</span>
       </div>
 
       {/* Progress bar */}
-      <div className="mb-1">
-        <div className="flex items-center justify-between text-xs text-gray-500 mb-1">
-          <span>Completado</span>
-          <span className="font-semibold text-gray-700">{percentage}%</span>
-        </div>
-        <div className="w-full bg-gray-200 rounded-full h-2">
-          <div
-            className={`h-2 rounded-full transition-all duration-500 ${percentage === 100 ? 'bg-green-500' : 'bg-blue-500'
-              }`}
-            style={{ width: `${percentage}%` }}
-          />
-        </div>
+      <div className="w-full bg-gray-100 rounded-full h-2 overflow-hidden">
+        <div
+          className={`h-2 rounded-full transition-all duration-500 ${config.barColor}`}
+          style={{ width: `${percentage}%` }}
+        />
       </div>
 
       {/* Next pending button */}
       {state !== 'completed' && (
         <button
           onClick={goToNextPending}
-          className="mt-3 w-full flex items-center justify-between text-xs text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded-md px-2 py-1.5 transition-colors"
+          className="w-full flex items-center justify-between text-xs text-blue-600 hover:text-blue-700 bg-blue-50 hover:bg-blue-100 rounded-lg px-3 py-2 transition-colors"
         >
-          <span>Ir a la siguiente unidad pendiente</span>
+          <span className="font-medium">Ir a la siguiente unidad pendiente</span>
           <ChevronRight className="w-3.5 h-3.5 flex-shrink-0" />
         </button>
       )}

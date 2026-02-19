@@ -5,6 +5,10 @@ import { getCourseDetail, getCourses } from '../../services/courses'
 import StudentDashboardPage from '../student/StudentDashboardPage'
 import { Button } from '../../components/ui/button'
 import { Modal } from '../../components/ui/Modal'
+import {
+  BookOpen, Layers, FileText, Package,
+  CheckCircle, AlertCircle, X, Plus
+} from 'lucide-react'
 
 // Components
 import { AdminHeader } from './components/AdminHeader'
@@ -284,10 +288,18 @@ function AdminDashboardPage() {
       />
 
       {message && (
-        <div className={`px-6 py-3 ${messageType === 'error' ? 'bg-red-50 text-red-800' : 'bg-green-50 text-green-800'}`}>
+        <div className={`px-6 py-3 border-b ${messageType === 'error' ? 'bg-red-50 text-red-800 border-red-100' : 'bg-emerald-50 text-emerald-800 border-emerald-100'}`}>
           <div className="flex items-center justify-between max-w-7xl mx-auto">
-            <span>{message}</span>
-            <button onClick={() => setMessage('')} className="text-sm underline">Cerrar</button>
+            <div className="flex items-center gap-2">
+              {messageType === 'error'
+                ? <AlertCircle className="w-4 h-4 flex-shrink-0" />
+                : <CheckCircle className="w-4 h-4 flex-shrink-0" />
+              }
+              <span className="text-sm">{message}</span>
+            </div>
+            <button onClick={() => setMessage('')} className="p-1 rounded-md hover:bg-black/5 transition-colors">
+              <X className="w-4 h-4" />
+            </button>
           </div>
         </div>
       )}
@@ -317,49 +329,33 @@ function AdminDashboardPage() {
             {/* Main Content */}
             <main className="col-span-9">
               {/* Tabs */}
-              <div className="bg-white rounded-lg shadow-sm mb-6">
-                <div className="border-b border-gray-200">
-                  <nav className="flex -mb-px">
-                    <button
-                      onClick={() => setActiveTab('cursos')}
-                      className={`px-6 py-3 text-sm font-medium ${activeTab === 'cursos'
-                        ? 'border-b-2 border-black text-black'
-                        : 'text-gray-600 hover:text-black'
-                        }`}
-                    >
-                      Cursos
-                    </button>
-                    <button
-                      onClick={() => setActiveTab('modulos')}
-                      className={`px-6 py-3 text-sm font-medium ${activeTab === 'modulos'
-                        ? 'border-b-2 border-black text-black'
-                        : 'text-gray-600 hover:text-black'
-                        }`}
-                      disabled={!selectedCourse}
-                    >
-                      Módulos
-                    </button>
-                    <button
-                      onClick={() => setActiveTab('unidades')}
-                      className={`px-6 py-3 text-sm font-medium ${activeTab === 'unidades'
-                        ? 'border-b-2 border-black text-black'
-                        : 'text-gray-600 hover:text-black'
-                        }`}
-                      disabled={!selectedModule}
-                    >
-                      Unidades
-                    </button>
-                    <button
-                      onClick={() => setActiveTab('contenido')}
-                      className={`px-6 py-3 text-sm font-medium ${activeTab === 'contenido'
-                        ? 'border-b-2 border-black text-black'
-                        : 'text-gray-600 hover:text-black'
-                        }`}
-                      disabled={!selectedUnit}
-                    >
-                      Contenido
-                    </button>
-                  </nav>
+              <div className="mb-6">
+                <div className="flex items-center gap-1 bg-gray-100 rounded-xl p-1">
+                  {[
+                    { id: 'cursos', label: 'Cursos', icon: BookOpen, enabled: true },
+                    { id: 'modulos', label: 'Módulos', icon: Layers, enabled: !!selectedCourse },
+                    { id: 'unidades', label: 'Unidades', icon: FileText, enabled: !!selectedModule },
+                    { id: 'contenido', label: 'Contenido', icon: Package, enabled: !!selectedUnit },
+                  ].map(tab => {
+                    const TabIcon = tab.icon
+                    const isActive = activeTab === tab.id
+                    return (
+                      <button
+                        key={tab.id}
+                        onClick={() => setActiveTab(tab.id)}
+                        disabled={!tab.enabled}
+                        className={`flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 ${isActive
+                            ? 'bg-white text-gray-900 shadow-sm'
+                            : tab.enabled
+                              ? 'text-gray-500 hover:text-gray-700'
+                              : 'text-gray-300 cursor-not-allowed'
+                          }`}
+                      >
+                        <TabIcon className="w-4 h-4" />
+                        {tab.label}
+                      </button>
+                    )
+                  })}
                 </div>
               </div>
 
@@ -369,9 +365,10 @@ function AdminDashboardPage() {
                 {activeTab === 'cursos' && (
                   <div className="space-y-6">
                     <div className="flex justify-between items-center">
-                      <h3 className="text-lg font-medium">Gestión de Cursos</h3>
-                      <Button onClick={() => setIsCourseModalOpen(true)}>
-                        + Crear Nuevo Curso
+                      <h3 className="text-lg font-semibold text-gray-900">Gestión de Cursos</h3>
+                      <Button onClick={() => setIsCourseModalOpen(true)} className="gap-1.5">
+                        <Plus className="w-4 h-4" />
+                        Crear Curso
                       </Button>
                     </div>
 
@@ -425,9 +422,10 @@ function AdminDashboardPage() {
                 {activeTab === 'modulos' && selectedCourse && (
                   <div className="space-y-6">
                     <div className="flex justify-between items-center">
-                      <h3 className="text-lg font-medium">Módulos del Curso</h3>
-                      <Button onClick={() => setIsModuleModalOpen(true)}>
-                        + Crear Módulo
+                      <h3 className="text-lg font-semibold text-gray-900">Módulos del Curso</h3>
+                      <Button onClick={() => setIsModuleModalOpen(true)} className="gap-1.5">
+                        <Plus className="w-4 h-4" />
+                        Crear Módulo
                       </Button>
                     </div>
 
@@ -484,9 +482,10 @@ function AdminDashboardPage() {
                 {activeTab === 'unidades' && selectedModule && (
                   <div className="space-y-6">
                     <div className="flex justify-between items-center">
-                      <h3 className="text-lg font-medium">Unidades del Módulo</h3>
-                      <Button onClick={() => setIsUnitModalOpen(true)}>
-                        + Crear Unidad
+                      <h3 className="text-lg font-semibold text-gray-900">Unidades del Módulo</h3>
+                      <Button onClick={() => setIsUnitModalOpen(true)} className="gap-1.5">
+                        <Plus className="w-4 h-4" />
+                        Crear Unidad
                       </Button>
                     </div>
 
