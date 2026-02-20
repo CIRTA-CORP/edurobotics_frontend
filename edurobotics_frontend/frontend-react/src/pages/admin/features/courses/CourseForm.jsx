@@ -11,7 +11,7 @@ import { Button } from '../../../../components/ui/button'
 import { Input } from '../../../../components/ui/input'
 import {
   Plus, Settings, Save, Trash2, ChevronDown, ChevronUp,
-  GitBranch, GraduationCap, Zap, Trophy, BookOpen
+  GitBranch, GraduationCap, Zap, Trophy, BookOpen, Eye, EyeOff
 } from 'lucide-react'
 
 const LEVEL_OPTIONS = [
@@ -124,8 +124,8 @@ export function CourseForm({
                       type="button"
                       onClick={() => setCourseForm({ ...courseForm, level: level.value })}
                       className={`flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-lg border text-sm font-medium transition-all ${isActive
-                          ? 'border-blue-300 bg-blue-50 text-blue-700 shadow-sm'
-                          : 'border-gray-200 bg-white text-gray-600 hover:bg-gray-50 hover:border-gray-300'
+                        ? 'border-blue-300 bg-blue-50 text-blue-700 shadow-sm'
+                        : 'border-gray-200 bg-white text-gray-600 hover:bg-gray-50 hover:border-gray-300'
                         }`}
                     >
                       <LevelIcon className={`w-3.5 h-3.5 ${isActive ? 'text-blue-600' : level.color}`} />
@@ -134,6 +134,31 @@ export function CourseForm({
                   )
                 })}
               </div>
+            </div>
+
+            {/* Published toggle */}
+            <div className="flex items-center justify-between p-3 rounded-lg border border-gray-200 bg-gray-50/50">
+              <div className="flex items-center gap-2">
+                {courseForm.is_published !== false
+                  ? <Eye className="w-4 h-4 text-emerald-600" />
+                  : <EyeOff className="w-4 h-4 text-gray-400" />
+                }
+                <div>
+                  <span className="text-sm font-medium text-gray-700">Publicado</span>
+                  <p className="text-[10px] text-gray-400">
+                    {courseForm.is_published !== false ? 'Visible para estudiantes' : 'Oculto — sólo visible para admin'}
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setCourseForm({ ...courseForm, is_published: !courseForm.is_published })}
+                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${courseForm.is_published !== false ? 'bg-emerald-500' : 'bg-gray-300'
+                  }`}
+              >
+                <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform shadow-sm ${courseForm.is_published !== false ? 'translate-x-6' : 'translate-x-1'
+                  }`} />
+              </button>
             </div>
 
             {/* Action buttons */}
@@ -187,8 +212,8 @@ export function CourseForm({
                       <label
                         key={course.id}
                         className={`flex items-center gap-3 px-3 py-2.5 rounded-lg border cursor-pointer transition-all ${isChecked
-                            ? 'border-blue-200 bg-blue-50/80 shadow-sm'
-                            : 'border-gray-100 hover:bg-gray-50 hover:border-gray-200'
+                          ? 'border-blue-200 bg-blue-50/80 shadow-sm'
+                          : 'border-gray-100 hover:bg-gray-50 hover:border-gray-200'
                           }`}
                       >
                         <input

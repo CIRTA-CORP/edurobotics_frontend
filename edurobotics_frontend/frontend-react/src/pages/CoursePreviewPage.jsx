@@ -367,19 +367,22 @@ function CoursePreviewPage() {
             .catch(() => { })
     }, [user, courseId])
 
-    // Check prerequisites
+    // Check prerequisites (always fetch, even for admins, so the panel shows)
     useEffect(() => {
         if (!user?.id || !course) return
-        if (user.role === 'admin') {
-            setPrereqCheck({ allowed: true, details: [], missing: [] })
-            return
-        }
         if (!course.prerequisites || course.prerequisites.length === 0) {
             setPrereqCheck({ allowed: true, details: [], missing: [] })
             return
         }
         checkPrerequisites(parseInt(courseId), user.id)
-            .then(data => setPrereqCheck(data))
+            .then(data => {
+                // Admins can always access but still see prereq info
+                if (user.role === 'admin') {
+                    setPrereqCheck({ ...data, allowed: true })
+                } else {
+                    setPrereqCheck(data)
+                }
+            })
             .catch(() => {
                 setPrereqCheck({ allowed: true, details: [], missing: [] })
             })
@@ -521,10 +524,10 @@ function CoursePreviewPage() {
                         </div>
                     )}
 
-                    {/* Prerequisite panel (shown when blocked) */}
-                    {isBlocked && hasPrereqs && (
+                    {/* Prerequisite panel (only shown if there are incomplete prereqs) */}
+                    {hasPrereqs && prereqCheck.details.some(p => p.state !== 'completed') && (
                         <PrerequisitePanel
-                            details={prereqCheck.details}
+                            details={prereqCheck.details.filter(p => p.state !== 'completed')}
                             onCourseClick={(id) => navigate(`/courses/${id}`)}
                         />
                     )}

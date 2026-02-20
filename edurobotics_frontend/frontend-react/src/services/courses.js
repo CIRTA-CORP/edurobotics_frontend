@@ -30,6 +30,20 @@ export const getCourseDetail = async (courseId) => {
 
 // === COURSES (Admin - JWT Protected) ===
 
+/**
+ * Get all courses including unpublished (admin only).
+ * Uses apiGet pattern with auth header.
+ */
+export const getAllCourses = async () => {
+  const response = await fetch(`${API_BASE}/api/courses/admin/all`, {
+    headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+  })
+  if (!response.ok) {
+    throw new Error(await parseError(response))
+  }
+  return response.json()
+}
+
 export const createCourse = async (_, payload) => {
   return apiPost('/api/courses', payload)
 }

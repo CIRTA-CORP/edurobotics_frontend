@@ -1,14 +1,14 @@
 /**
  * Roadmap Graph Component
  *
- * Visual course dependency tree organized by level (beginner → intermediate → advanced).
- * Uses CSS grid + SVG arrows for connections. No external dependencies.
+ * Visual course dependency graph organized by DEPTH (topological sort),
+ * NOT by difficulty level. Similar to a university curriculum grid.
  *
- * Each node shows:
- * - Course title and level badge
- * - State: completed ✅, in progress ⏳, unlocked 🔓, locked 🔒
- * - Progress bar (if in progress)
- * - Click navigates to /courses/:id
+ * - Row 0: courses with no prerequisites (entry points)
+ * - Row N: courses whose deepest prerequisite is at depth N-1
+ *
+ * Each course node still shows its level badge (beginner/intermediate/advanced)
+ * but the layout is purely based on prerequisite chains.
  *
  * SVG arrows connect prerequisite courses to the courses they unlock.
  */
@@ -20,37 +20,63 @@ import {
     BookOpen
 } from 'lucide-react'
 
-// ── Level config ──────────────────────────────────────────────────────────────
+// ── Level config (for badge only) ─────────────────────────────────────────────
 const LEVEL_CONFIG = {
-    beginner: { label: 'Principiante', icon: GraduationCap, order: 0, gradient: 'from-emerald-500 to-teal-600', border: 'border-emerald-300', bg: 'bg-emerald-50' },
-    intermediate: { label: 'Intermedio', icon: Zap, order: 1, gradient: 'from-amber-500 to-orange-600', border: 'border-amber-300', bg: 'bg-amber-50' },
-    advanced: { label: 'Avanzado', icon: Trophy, order: 2, gradient: 'from-rose-500 to-red-600', border: 'border-rose-300', bg: 'bg-rose-50' },
-}
-
-const LEVEL_LABELS = {
-    beginner: 'Principiante',
-    intermediate: 'Intermedio',
-    advanced: 'Avanzado',
+    beginner: { label: 'Principiante', icon: GraduationCap, color: 'bg-emerald-100 text-emerald-700 border-emerald-200' },
+    intermediate: { label: 'Intermedio', icon: Zap, color: 'bg-amber-100 text-amber-700 border-amber-200' },
+    advanced: { label: 'Avanzado', icon: Trophy, color: 'bg-rose-100 text-rose-700 border-rose-200' },
 }
 
 // ── State config ──────────────────────────────────────────────────────────────
 const STATE_CONFIG = {
-    completed: { icon: CheckCircle, label: 'Completado', nodeClass: 'ring-2 ring-emerald-400 bg-white', iconColor: 'text-emerald-500' },
-    in_progress: { icon: Clock, label: 'En progreso', nodeClass: 'ring-2 ring-blue-400 bg-white', iconColor: 'text-blue-500' },
-    unlocked: { icon: Unlock, label: 'Desbloqueado', nodeClass: 'ring-1 ring-gray-200 bg-white', iconColor: 'text-gray-400' },
-    locked: { icon: Lock, label: 'Bloqueado', nodeClass: 'ring-1 ring-gray-200 bg-gray-50', iconColor: 'text-gray-300' },
+    completed: { icon: CheckCircle, label: 'Completado', nodeClass: 'ring-2 ring-emerald-400 bg-white', iconColor: 'text-emerald-500', dotColor: 'bg-emerald-400' },
+    in_progress: { icon: Clock, label: 'En progreso', nodeClass: 'ring-2 ring-blue-400 bg-white', iconColor: 'text-blue-500', dotColor: 'bg-blue-400' },
+    unlocked: { icon: Unlock, label: 'Disponible', nodeClass: 'ring-1 ring-gray-200 bg-white', iconColor: 'text-gray-400', dotColor: 'bg-gray-300' },
+    locked: { icon: Lock, label: 'Bloqueado', nodeClass: 'ring-1 ring-gray-200 bg-gray-50/80', iconColor: 'text-gray-300', dotColor: 'bg-gray-200' },
+}
+
+// ── Compute topological depth ─────────────────────────────────────────────────
+function computeDepths(courses) {
+    const courseMap = {}
+    courses.forEach(c => { courseMap[c.id] = c })
+
+    const depths = {}
+    const visited = new Set()
+
+    function getDepth(courseId) {
+        if (depths[courseId] !== undefined) return depths[courseId]
+        if (visited.has(courseId)) return 0 // cycle guard
+        visited.add(courseId)
+
+        const course = courseMap[courseId]
+        if (!course || !course.prerequisites || course.prerequisites.length === 0) {
+            depths[courseId] = 0
+            return 0
+        }
+
+        let maxPrereqDepth = 0
+        for (const prereqId of course.prerequisites) {
+            if (courseMap[prereqId]) {
+                maxPrereqDepth = Math.max(maxPrereqDepth, getDepth(prereqId))
+            }
+        }
+
+        depths[courseId] = maxPrereqDepth + 1
+        return depths[courseId]
+    }
+
+    courses.forEach(c => getDepth(c.id))
+    return depths
 }
 
 // ── Compute course state ──────────────────────────────────────────────────────
-function getCourseState(course, roadmapData, allCourses) {
-    // Check roadmap data for progress
+function getCourseState(course, roadmapData) {
     const progress = roadmapData?.[course.id]
     if (progress) {
         if (progress.state === 'completed') return 'completed'
         if (progress.state === 'in_progress') return 'in_progress'
     }
 
-    // Check if prerequisites are met
     if (!course.prerequisites || course.prerequisites.length === 0) {
         return 'unlocked'
     }
@@ -70,33 +96,32 @@ function CourseNode({ course, state, progress, onClick }) {
     const StateIcon = stateConf.icon
     const LevelIcon = levelConf.icon
     const percentage = progress?.percentage ?? 0
-    const isClickable = state !== 'locked'
 
     return (
         <button
             data-course-id={course.id}
-            onClick={() => isClickable && onClick(course.id)}
+            onClick={() => onClick(course.id)}
             className={`
-        relative w-52 rounded-xl p-4 transition-all duration-200 text-left
-        ${stateConf.nodeClass}
-        ${isClickable ? 'cursor-pointer hover:shadow-lg hover:-translate-y-0.5 active:scale-[0.98]' : 'cursor-not-allowed opacity-60'}
-      `}
+                relative w-48 rounded-xl p-3.5 transition-all duration-200 text-left cursor-pointer
+                ${stateConf.nodeClass}
+                hover:shadow-lg hover:-translate-y-0.5 active:scale-[0.98]
+            `}
         >
-            {/* State icon */}
-            <div className="flex items-center justify-between mb-2">
-                <span className={`inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full ${levelConf.bg} ${levelConf.border} border`}>
-                    <LevelIcon className="w-3 h-3" />
+            {/* Level badge + state icon */}
+            <div className="flex items-center justify-between mb-1.5">
+                <span className={`inline-flex items-center gap-1 text-[9px] font-semibold px-1.5 py-0.5 rounded-full border ${levelConf.color}`}>
+                    <LevelIcon className="w-2.5 h-2.5" />
                     {levelConf.label}
                 </span>
                 <StateIcon className={`w-4 h-4 ${stateConf.iconColor}`} />
             </div>
 
             {/* Title */}
-            <h3 className={`text-sm font-semibold leading-snug mb-1 ${state === 'locked' ? 'text-gray-400' : 'text-gray-800'}`}>
+            <h3 className={`text-[13px] font-semibold leading-snug mb-1 line-clamp-2 ${state === 'locked' ? 'text-gray-500' : 'text-gray-800'}`}>
                 {course.title}
             </h3>
 
-            {/* State label */}
+            {/* State */}
             <div className={`text-[10px] ${stateConf.iconColor} font-medium`}>
                 {stateConf.label}
                 {state === 'in_progress' && percentage > 0 && ` · ${percentage}%`}
@@ -148,8 +173,7 @@ function ArrowLayer({ courses, containerRef }) {
     }, [courses, containerRef])
 
     useEffect(() => {
-        // Compute on mount and resize
-        const timer = setTimeout(computeArrows, 100)
+        const timer = setTimeout(computeArrows, 150)
         window.addEventListener('resize', computeArrows)
         return () => {
             clearTimeout(timer)
@@ -189,12 +213,14 @@ export default function RoadmapGraph({ courses, roadmapData }) {
     const navigate = useNavigate()
     const containerRef = useRef(null)
 
-    // Group courses by level
-    const levels = ['beginner', 'intermediate', 'advanced']
-    const grouped = {}
-    levels.forEach(level => {
-        grouped[level] = courses.filter(c => c.level === level)
-    })
+    // Compute topological depths and group by depth
+    const depths = computeDepths(courses)
+    const maxDepth = Math.max(0, ...Object.values(depths))
+
+    const rows = []
+    for (let d = 0; d <= maxDepth; d++) {
+        rows.push(courses.filter(c => depths[c.id] === d))
+    }
 
     const handleCourseClick = (courseId) => {
         navigate(`/courses/${courseId}`)
@@ -210,31 +236,29 @@ export default function RoadmapGraph({ courses, roadmapData }) {
     }
 
     return (
-        <div ref={containerRef} className="relative py-6">
+        <div ref={containerRef} className="relative py-4">
             {/* SVG arrows */}
             <ArrowLayer courses={courses} containerRef={containerRef} />
 
-            {/* Level rows */}
-            <div className="relative space-y-12" style={{ zIndex: 1 }}>
-                {levels.map(level => {
-                    const levelCourses = grouped[level]
-                    if (levelCourses.length === 0) return null
+            {/* Depth rows */}
+            <div className="relative space-y-10" style={{ zIndex: 1 }}>
+                {rows.map((rowCourses, depth) => {
+                    if (rowCourses.length === 0) return null
 
                     return (
-                        <div key={level}>
-                            {/* Level header */}
-                            <div className="flex items-center gap-2 mb-4">
-                                <div className={`w-1 h-6 rounded-full bg-gradient-to-b ${LEVEL_CONFIG[level].gradient}`} />
-                                <span className="text-xs font-bold uppercase tracking-wider text-gray-500">
-                                    {LEVEL_LABELS[level]}
+                        <div key={depth}>
+                            {/* Row header — subtle depth indicator */}
+                            <div className="flex items-center gap-2 mb-3">
+                                <span className="flex items-center justify-center w-6 h-6 rounded-full bg-slate-100 text-[10px] font-bold text-slate-500">
+                                    {depth + 1}
                                 </span>
                                 <div className="flex-1 h-px bg-gray-100" />
                             </div>
 
                             {/* Course cards */}
-                            <div className="flex flex-wrap gap-6 justify-center sm:justify-start pl-3">
-                                {levelCourses.map(course => {
-                                    const state = getCourseState(course, roadmapData, courses)
+                            <div className="flex flex-wrap gap-5 justify-center sm:justify-start pl-8">
+                                {rowCourses.map(course => {
+                                    const state = getCourseState(course, roadmapData)
                                     const progress = roadmapData?.[course.id]
                                     return (
                                         <CourseNode
