@@ -10,8 +10,8 @@ import { useState } from 'react'
 import { createCourse, updateCourse, deleteCourse, setPrerequisites } from '../../../../services/courses'
 
 export function useCourses(adminToken, refreshCourses, refreshSelectedCourse) {
-  const [courseForm, setCourseForm] = useState({ title: '', description: '', level: 'beginner', version: 1 })
-  const [prereqIds, setPrereqIds] = useState('')
+  const [courseForm, setCourseForm] = useState({ title: '', description: '', level: 'beginner', version: 1, is_published: true })
+  const [prereqIds, setPrereqIds] = useState([]) // number[]
   const [message, setMessage] = useState(null)
   const [messageType, setMessageType] = useState('success')
 
@@ -23,7 +23,7 @@ export function useCourses(adminToken, refreshCourses, refreshSelectedCourse) {
       await refreshCourses()
       setMessageType('success')
       setMessage('Curso creado')
-      setCourseForm({ title: '', description: '', level: 'beginner', version: 1 })
+      setCourseForm({ title: '', description: '', level: 'beginner', version: 1, is_published: true })
     } catch (error) {
       setMessageType('error')
       setMessage(error.message)
@@ -72,11 +72,7 @@ export function useCourses(adminToken, refreshCourses, refreshSelectedCourse) {
     if (!selectedCourse) return
     setMessage(null)
     try {
-      const ids = prereqIds
-        .split(',')
-        .map((id) => parseInt(id.trim(), 10))
-        .filter((id) => Number.isInteger(id))
-      await setPrerequisites(adminToken, selectedCourse.id, ids)
+      await setPrerequisites(adminToken, selectedCourse.id, prereqIds)
       await refreshSelectedCourse(selectedCourse.id)
       setMessageType('success')
       setMessage('Prerequisitos guardados')

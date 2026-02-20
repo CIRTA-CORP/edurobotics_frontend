@@ -1,151 +1,168 @@
 /**
- * Module Sidebar Component
- * 
- * Sidebar navigation displaying collapsible modules with their units.
- * Modules can be expanded/collapsed, units can be selected to view content.
+ * ModuleSidebar Component
+ *
+ * Coursera-style sidebar navigation with collapsible modules and their units.
+ * Shows mini progress bar per module and completion indicators per unit.
+ * Redesigned with modern visual hierarchy, better spacing, and subtle animations.
  */
 
 import { useState } from 'react'
-import { Card, CardHeader, CardTitle, CardContent } from '../../../components/ui/card'
-import { BookOpen, CheckCircle, ChevronRight, ChevronDown } from 'lucide-react'
+import { CheckCircle, ChevronDown, ChevronRight, PlayCircle, FileText, Link2, BookOpen } from 'lucide-react'
+
+const getUnitIcon = (unit) => {
+  const type = unit.contents?.[0]?.content_type
+  switch (type) {
+    case 'video': return <PlayCircle className="w-3.5 h-3.5 flex-shrink-0" />
+    case 'text': return <FileText className="w-3.5 h-3.5 flex-shrink-0" />
+    case 'resource': return <Link2 className="w-3.5 h-3.5 flex-shrink-0" />
+    default: return <BookOpen className="w-3.5 h-3.5 flex-shrink-0" />
+  }
+}
 
 export function ModuleSidebar({ modules, selectedUnitId, onUnitClick, getModuleProgress, getUnitProgress, progressData }) {
   const [expandedModules, setExpandedModules] = useState(
-    // Expandir el primer módulo por defecto
     modules.length > 0 ? { [modules[0].id]: true } : {}
   )
 
   const toggleModule = (moduleId) => {
-    setExpandedModules(prev => ({
-      ...prev,
-      [moduleId]: !prev[moduleId]
-    }))
+    setExpandedModules(prev => ({ ...prev, [moduleId]: !prev[moduleId] }))
+  }
+
+  // Compute progress for a module
+  const computeModuleProgress = (module) => {
+    if (Array.isArray(progressData)) {
+      const completedSet = new Set(
+        progressData.filter(p => p.completed || p.is_completed).map(p => p.content_id)
+      )
+      const allContents = (module.units || []).flatMap(u => u.contents?.map(c => c.id) || [])
+      const total = allContents.length
+      const completed = allContents.filter(cid => completedSet.has(cid)).length
+      const percentage = total > 0 ? Math.round((completed / total) * 100) : 0
+      return { total, completed, percentage }
+    }
+    return getModuleProgress ? getModuleProgress(module.id) : null
+  }
+
+  // Compute progress for a unit
+  const computeUnitProgress = (unit) => {
+    if (Array.isArray(progressData)) {
+      const completedSet = new Set(
+        progressData.filter(p => p.completed || p.is_completed).map(p => p.content_id)
+      )
+      const unitContents = unit.contents?.map(c => c.id) || []
+      const total = unitContents.length
+      const completed = unitContents.filter(cid => completedSet.has(cid)).length
+      const percentage = total > 0 ? Math.round((completed / total) * 100) : 0
+      return { total, completed, percentage }
+    }
+    return getUnitProgress ? getUnitProgress(unit.id) : null
+  }
+
+  if (modules.length === 0) {
+    return (
+      <div className="py-8 text-center">
+        <BookOpen className="w-8 h-8 text-gray-200 mx-auto mb-2" />
+        <p className="text-sm text-gray-400">Sin módulos aún</p>
+      </div>
+    )
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <BookOpen className="w-5 h-5" />
-          Módulos del curso
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
-        <div className="space-y-2">
-          {modules.length === 0 ? (
-            <p className="text-sm text-gray-500 text-center py-4">Sin módulos aún</p>
-          ) : (
-            modules.map((module, moduleIndex) => {
-              // Compute progress info, supporting two shapes:
-              // - progressData as array of { content_id, completed }
-              // - progress provided by getModuleProgress/getUnitProgress (nested)
-              let moduleProgress = null
-              let isModuleCompleted = false
-              if (Array.isArray(progressData)) {
-                const completedSet = new Set(progressData.filter(p => p.completed || p.is_completed).map(p => p.content_id))
-                const moduleContents = (module.units || []).flatMap(u => u.contents?.map(c => c.id) || [])
-                const total = moduleContents.length
-                const completed = moduleContents.filter(cid => completedSet.has(cid)).length
-                const percentage = total > 0 ? Math.round((completed / total) * 100) : 0
-                moduleProgress = { total, completed, percentage }
-                isModuleCompleted = percentage === 100 && total > 0
-              } else {
-                moduleProgress = getModuleProgress ? getModuleProgress(module.id) : null
-                isModuleCompleted = moduleProgress && moduleProgress.percentage === 100
-              }
-              const isExpanded = expandedModules[module.id]
+    <div>
+      {/* Modules list */}
+      {modules.map((module, moduleIndex) => {
+        const progress = computeModuleProgress(module)
+        const isCompleted = progress && progress.percentage === 100 && progress.total > 0
+        const isExpanded = expandedModules[module.id]
+        const percentage = progress?.percentage ?? 0
 
-              return (
-                <div key={module.id} className="border rounded-lg overflow-hidden">
-                  {/* Módulo Header - Colapsable */}
-                  <button
-                    className={`w-full text-left p-3 transition-all flex items-center justify-between ${
-                      isModuleCompleted 
-                        ? 'bg-green-50 hover:bg-green-100 border-green-200'
-                        : 'bg-gray-50 hover:bg-gray-100'
-                    }`}
-                    onClick={() => toggleModule(module.id)}
-                  >
-                    <div className="flex items-center gap-2 flex-1">
-                      {isExpanded ? (
-                        <ChevronDown className="w-4 h-4 text-gray-600" />
-                      ) : (
-                        <ChevronRight className="w-4 h-4 text-gray-600" />
-                      )}
-                      <div className="flex-1">
-                        <div className="font-medium text-sm">{module.title}</div>
-                        <div className={`text-xs ${isModuleCompleted ? 'text-green-700' : 'text-gray-500'}`}>
-                          Módulo {moduleIndex + 1} · {module.units?.length || 0} unidades
-                          {moduleProgress && moduleProgress.total > 0 && (
-                              <span className="ml-1">({moduleProgress.completed}/{moduleProgress.total})</span>
-                            )}
-                        </div>
-                      </div>
-                      {isModuleCompleted && (
-                        <CheckCircle className="w-5 h-5 text-green-600" />
-                      )}
-                    </div>
-                  </button>
-
-                  {/* Unidades - Solo visible cuando el módulo está expandido */}
-                  {isExpanded && module.units && module.units.length > 0 && (
-                    <div className="bg-white">
-                      {module.units.map((unit, unitIndex) => {
-                        let unitProgress = null
-                        let isUnitCompleted = false
-                        if (Array.isArray(progressData)) {
-                          const completedSet = new Set(progressData.filter(p => p.completed || p.is_completed).map(p => p.content_id))
-                          const unitContents = unit.contents?.map(c => c.id) || []
-                          const totalU = unitContents.length
-                          const completedU = unitContents.filter(cid => completedSet.has(cid)).length
-                          const percentageU = totalU > 0 ? Math.round((completedU / totalU) * 100) : 0
-                          unitProgress = { total: totalU, completed: completedU, percentage: percentageU }
-                          isUnitCompleted = percentageU === 100 && totalU > 0
-                        } else {
-                          unitProgress = getUnitProgress ? getUnitProgress(unit.id) : null
-                          isUnitCompleted = unitProgress && unitProgress.percentage === 100
-                        }
-                        const isSelected = selectedUnitId === unit.id
-
-                        return (
-                          <button
-                            key={unit.id}
-                            className={`w-full text-left p-3 pl-8 border-t transition-all flex items-center justify-between ${
-                              isSelected
-                                ? 'bg-black text-white'
-                                : isUnitCompleted
-                                  ? 'bg-green-50/50 hover:bg-green-100'
-                                  : 'hover:bg-gray-50'
-                            }`}
-                            onClick={() => onUnitClick(unit.id)}
-                          >
-                            <div className="flex-1">
-                              <div className="font-medium text-sm">{unit.title}</div>
-                              <div className={`text-xs ${
-                                isSelected ? 'text-gray-300' : isUnitCompleted ? 'text-green-700' : 'text-gray-500'
-                              }`}>
-                                Unidad {moduleIndex + 1}.{unitIndex + 1} · {unit.contents?.length || 0} contenidos
-                                {unitProgress && unitProgress.total > 0 && (
-                                  <span className="ml-1">({unitProgress.completed}/{unitProgress.total})</span>
-                                )}
-                              </div>
-                            </div>
-                            {isUnitCompleted && (
-                              <CheckCircle className={`w-4 h-4 ${
-                                isSelected ? 'text-white' : 'text-green-600'
-                              }`} />
-                            )}
-                          </button>
-                        )
-                      })}
-                    </div>
+        return (
+          <div key={module.id} className="border-b border-gray-100 last:border-b-0">
+            {/* Module header */}
+            <button
+              className="w-full text-left px-4 py-3 flex items-start gap-2.5 hover:bg-gray-50/80 transition-colors group"
+              onClick={() => toggleModule(module.id)}
+            >
+              <div className="mt-0.5 flex-shrink-0">
+                {isExpanded
+                  ? <ChevronDown className="w-3.5 h-3.5 text-gray-400 group-hover:text-gray-600 transition-colors" />
+                  : <ChevronRight className="w-3.5 h-3.5 text-gray-400 group-hover:text-gray-600 transition-colors" />
+                }
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-sm font-medium text-gray-800 leading-snug">
+                    {module.title}
+                  </span>
+                  {isCompleted && (
+                    <CheckCircle className="w-4 h-4 text-emerald-500 flex-shrink-0" />
                   )}
                 </div>
-              )
-            })
-          )}
-        </div>
-      </CardContent>
-    </Card>
+                <div className="text-[11px] text-gray-400 mt-0.5">
+                  Módulo {moduleIndex + 1} · {module.units?.length || 0} unidades
+                  {progress && progress.total > 0 && (
+                    <span className="ml-1">· {progress.completed}/{progress.total}</span>
+                  )}
+                </div>
+                {/* Mini progress bar */}
+                {progress && progress.total > 0 && (
+                  <div className="mt-1.5 w-full bg-gray-100 rounded-full h-1 overflow-hidden">
+                    <div
+                      className={`h-1 rounded-full transition-all duration-500 ${isCompleted ? 'bg-emerald-500' : 'bg-blue-400'}`}
+                      style={{ width: `${percentage}%` }}
+                    />
+                  </div>
+                )}
+              </div>
+            </button>
+
+            {/* Units list */}
+            {isExpanded && module.units && module.units.length > 0 && (
+              <div className="pb-1">
+                {module.units.map((unit, unitIndex) => {
+                  const unitProgress = computeUnitProgress(unit)
+                  const isUnitCompleted = unitProgress && unitProgress.percentage === 100 && unitProgress.total > 0
+                  const isSelected = selectedUnitId === unit.id
+
+                  return (
+                    <button
+                      key={unit.id}
+                      className={`w-full text-left px-4 py-2 pl-9 flex items-center gap-2.5 transition-all border-l-[3px] ${isSelected
+                          ? 'bg-blue-50 border-l-blue-500'
+                          : 'border-l-transparent hover:bg-gray-50'
+                        }`}
+                      onClick={() => onUnitClick(unit.id)}
+                    >
+                      {/* Icon */}
+                      <div className={`${isSelected ? 'text-blue-600' : isUnitCompleted ? 'text-emerald-500' : 'text-gray-400'
+                        }`}>
+                        {isUnitCompleted
+                          ? <CheckCircle className="w-3.5 h-3.5 flex-shrink-0" />
+                          : getUnitIcon(unit)
+                        }
+                      </div>
+
+                      {/* Text */}
+                      <div className="flex-1 min-w-0">
+                        <div className={`text-[13px] leading-snug truncate ${isSelected ? 'text-blue-700 font-medium' : 'text-gray-700'
+                          }`}>
+                          {unit.title}
+                        </div>
+                        <div className={`text-[10px] mt-0.5 ${isSelected ? 'text-blue-400' : 'text-gray-400'}`}>
+                          {moduleIndex + 1}.{unitIndex + 1}
+                          {unit.contents?.length > 0 && (
+                            <span> · {unit.contents.length} contenido{unit.contents.length !== 1 ? 's' : ''}</span>
+                          )}
+                        </div>
+                      </div>
+                    </button>
+                  )
+                })}
+              </div>
+            )}
+          </div>
+        )
+      })}
+    </div>
   )
 }

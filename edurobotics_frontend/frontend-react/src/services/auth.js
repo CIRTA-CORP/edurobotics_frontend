@@ -115,7 +115,9 @@ export const getStoredUser = () => {
   return {
     id: payload.user_id,
     username: payload.username,
-    role: payload.role
+    role: payload.role,
+    first_name: payload.first_name || '',
+    last_name: payload.last_name || ''
   }
 }
 

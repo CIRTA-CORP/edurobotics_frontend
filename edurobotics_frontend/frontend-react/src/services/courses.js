@@ -30,6 +30,20 @@ export const getCourseDetail = async (courseId) => {
 
 // === COURSES (Admin - JWT Protected) ===
 
+/**
+ * Get all courses including unpublished (admin only).
+ * Uses apiGet pattern with auth header.
+ */
+export const getAllCourses = async () => {
+  const response = await fetch(`${API_BASE}/api/courses/admin/all`, {
+    headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+  })
+  if (!response.ok) {
+    throw new Error(await parseError(response))
+  }
+  return response.json()
+}
+
 export const createCourse = async (_, payload) => {
   return apiPost('/api/courses', payload)
 }
@@ -45,6 +59,31 @@ export const deleteCourse = async (_, courseId) => {
 export const setPrerequisites = async (_, courseId, prereqIds) => {
   return apiPost(`/api/courses/${courseId}/prerequisites`, { prereq_ids: prereqIds })
 }
+
+/**
+ * Check if a user meets the prerequisites for a course.
+ * Returns: { allowed: bool, details: [{ prereq_id, title, state, percentage }], missing: [] }
+ */
+export const checkPrerequisites = async (courseId, userId) => {
+  const response = await fetch(`${API_BASE}/api/courses/${courseId}/prerequisites/check?user_id=${userId}`)
+  if (!response.ok) {
+    throw new Error(await parseError(response))
+  }
+  return response.json()
+}
+
+/**
+ * Get all courses with prerequisite IDs for the roadmap graph.
+ * Returns: { courses: [{ id, title, description, level, version, prerequisites: [ids] }] }
+ */
+export const getCoursesRoadmap = async () => {
+  const response = await fetch(`${API_BASE}/api/courses/roadmap`)
+  if (!response.ok) {
+    throw new Error(await parseError(response))
+  }
+  return response.json()
+}
+
 
 // === MODULES (Admin - JWT Protected) ===
 

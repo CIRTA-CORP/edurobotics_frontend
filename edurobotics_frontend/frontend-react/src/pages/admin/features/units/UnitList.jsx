@@ -1,13 +1,12 @@
 /**
  * Unit List Component
- * 
- * Displays all units within a selected module.
+ *
+ * Displays all units within a selected module with improved visuals.
  * Provides actions to manage (select) or delete units.
  */
 
-import { Card, CardHeader, CardTitle, CardContent } from '../../../../components/ui/card'
 import { Button } from '../../../../components/ui/button'
-import { FileText, Settings, Trash2, Edit } from 'lucide-react'
+import { FileText, Settings, Trash2, Edit, Package } from 'lucide-react'
 
 export function UnitList({
   units,
@@ -17,60 +16,79 @@ export function UnitList({
   onUnitDelete
 }) {
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <FileText className="w-5 h-5" />
-          Unidades del Módulo
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
+    <div>
+      {units && units.length > 0 ? (
         <div className="space-y-3">
-          {units && units.length > 0 ? (
-            units.map((unit) => (
+          {units.map((unit, index) => {
+            const isSelected = selectedUnitId === unit.id
+            const contentCount = unit.contents?.length || 0
+
+            return (
               <div
                 key={unit.id}
-                className="flex items-center justify-between p-4 border border-gray-200 rounded-lg bg-white hover:shadow-sm transition-shadow"
+                className={`p-4 rounded-xl border transition-all duration-200 ${isSelected
+                    ? 'border-indigo-200 bg-indigo-50/50 shadow-sm'
+                    : 'border-gray-200 bg-white hover:border-gray-300 hover:shadow-sm'
+                  }`}
               >
-                <div className="flex-1">
-                  <h4 className="font-medium text-gray-900">{unit.title}</h4>
-                  <div className="flex items-center gap-4 mt-1">
-                    <p className="text-sm text-gray-500">Orden: {unit.order_index}</p>
-                    <p className="text-sm text-gray-500">Contenidos: {unit.contents?.length || 0}</p>
+                <div className="flex items-start justify-between gap-3">
+                  {/* Left: Info */}
+                  <div className="flex items-start gap-3 flex-1 min-w-0">
+                    <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 text-xs font-bold ${isSelected ? 'bg-indigo-500 text-white' : 'bg-gray-100 text-gray-500'
+                      }`}>
+                      {unit.order_index || index + 1}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <h4 className="font-semibold text-gray-900 text-sm truncate">{unit.title}</h4>
+                      <div className="flex items-center gap-3 mt-1">
+                        <span className="inline-flex items-center gap-1 text-xs text-gray-500">
+                          <Package className="w-3 h-3" />
+                          {contentCount} contenido{contentCount !== 1 ? 's' : ''}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Right: Actions */}
+                  <div className="flex items-center gap-1.5 flex-shrink-0">
+                    <Button
+                      onClick={() => onUnitSelect(unit)}
+                      variant={isSelected ? 'default' : 'outline'}
+                      size="sm"
+                      className="text-xs"
+                    >
+                      <Settings className="w-3.5 h-3.5 mr-1" />
+                      Gestionar
+                    </Button>
+                    <Button
+                      onClick={() => onUnitEdit(unit)}
+                      variant="ghost"
+                      size="sm"
+                      className="text-gray-500 hover:text-indigo-600"
+                    >
+                      <Edit className="w-3.5 h-3.5" />
+                    </Button>
+                    <Button
+                      onClick={() => onUnitDelete(unit.id, unit.title)}
+                      variant="ghost"
+                      size="sm"
+                      className="text-gray-400 hover:text-red-600 hover:bg-red-50"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </Button>
                   </div>
                 </div>
-                <div className="flex gap-2">
-                  <Button
-                    onClick={() => onUnitSelect(unit)}
-                    variant={selectedUnitId === unit.id ? 'default' : 'outline'}
-                    size="sm"
-                  >
-                    <Settings className="w-4 h-4 mr-2" />
-                    Gestionar
-                  </Button>
-                  <Button
-                    onClick={() => onUnitEdit(unit)}
-                    variant="outline"
-                    size="sm"
-                  >
-                    <Edit className="w-4 h-4 mr-2" />
-                    Editar
-                  </Button>
-                  <Button
-                    onClick={() => onUnitDelete(unit.id, unit.title)}
-                    variant="destructive"
-                    size="sm"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </Button>
-                </div>
               </div>
-            ))
-          ) : (
-            <p className="text-sm text-gray-500 text-center py-8">Sin unidades aún</p>
-          )}
+            )
+          })}
         </div>
-      </CardContent>
-    </Card>
+      ) : (
+        <div className="text-center py-12 rounded-xl border-2 border-dashed border-gray-200">
+          <FileText className="w-10 h-10 text-gray-300 mx-auto mb-3" />
+          <p className="text-sm text-gray-400 font-medium">Sin unidades aún</p>
+          <p className="text-xs text-gray-400 mt-1">Crea una unidad para comenzar</p>
+        </div>
+      )}
+    </div>
   )
 }
