@@ -8,6 +8,7 @@ import CoursePage from './pages/CoursePage.jsx'
 import RoadmapPage from './pages/RoadmapPage.jsx'
 import AdminDashboardPage from './pages/admin/AdminDashboardPage.jsx'
 import StudentDashboardPage from './pages/student/StudentDashboardPage.jsx'
+import QuizPage from './pages/QuizPage.jsx'
 
 function App() {
   return (
@@ -68,6 +69,16 @@ function App() {
         element={
           <ProtectedRoute>
             <RoadmapPage />
+          </ProtectedRoute>
+        }
+      />
+
+      {/* Dedicated Quiz Page */}
+      <Route
+        path="/courses/:courseId/quiz/:quizId"
+        element={
+          <ProtectedRoute>
+            <QuizPage />
           </ProtectedRoute>
         }
       />

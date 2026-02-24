@@ -19,6 +19,7 @@ import { ModuleList } from './features/modules/ModuleList'
 import { UnitForm } from './features/units/UnitForm'
 import { UnitList } from './features/units/UnitList'
 import { ContentForm } from './features/content/ContentForm'
+import { QuizEditor } from './features/quizzes/QuizEditor'
 
 // Custom hooks
 import { useCourses } from './features/courses/useCourses'
@@ -51,6 +52,9 @@ function AdminDashboardPage() {
   // Edit modal states
   const [isModuleEditModalOpen, setIsModuleEditModalOpen] = useState(false)
   const [isUnitEditModalOpen, setIsUnitEditModalOpen] = useState(false)
+  const [isQuizModalOpen, setIsQuizModalOpen] = useState(false)
+  const [quizUnit, setQuizUnit] = useState(null)
+  const [quizModule, setQuizModule] = useState(null)
   const [editingModule, setEditingModule] = useState(null)
   const [editingUnit, setEditingUnit] = useState(null)
 
@@ -280,6 +284,18 @@ function AdminDashboardPage() {
     setIsUnitEditModalOpen(true)
   }
 
+  const handleUnitQuiz = (unit) => {
+    setQuizUnit(unit)
+    setQuizModule(null)
+    setIsQuizModalOpen(true)
+  }
+
+  const handleModuleQuiz = (module) => {
+    setQuizModule(module)
+    setQuizUnit(null)
+    setIsQuizModalOpen(true)
+  }
+
   return (
     <div className="min-h-screen bg-gray-50">
       <AdminHeader
@@ -453,6 +469,7 @@ function AdminDashboardPage() {
                       onModuleSelect={handleModuleSelect}
                       onModuleEdit={handleModuleEdit}
                       onModuleDelete={handleModuleDelete}
+                      onModuleQuiz={handleModuleQuiz}
                     />
 
                     {/* Edit Module Modal */}
@@ -513,6 +530,7 @@ function AdminDashboardPage() {
                       onUnitSelect={handleUnitSelect}
                       onUnitEdit={handleUnitEdit}
                       onUnitDelete={handleUnitDelete}
+                      onUnitQuiz={handleUnitQuiz}
                     />
 
                     {/* Edit Unit Modal */}
@@ -535,6 +553,31 @@ function AdminDashboardPage() {
                         expanded={true}
                         onToggle={() => { }}
                       />
+                    </Modal>
+
+                    {/* Quiz Editor Modal */}
+                    <Modal
+                      isOpen={isQuizModalOpen}
+                      onClose={() => {
+                        setIsQuizModalOpen(false)
+                        setQuizUnit(null)
+                        setQuizModule(null)
+                        refreshSelectedCourse()
+                      }}
+                      title={`Evaluación: ${quizUnit?.title || quizModule?.title}`}
+                      size="lg"
+                    >
+                      {(quizUnit || quizModule) && (
+                        <QuizEditor
+                          unitId={quizUnit?.id}
+                          moduleId={quizModule?.id}
+                          onBack={() => {
+                            setIsQuizModalOpen(false)
+                            setQuizUnit(null)
+                            setQuizModule(null)
+                          }}
+                        />
+                      )}
                     </Modal>
                   </div>
                 )}

@@ -12,8 +12,11 @@ import { Badge } from '../../../components/ui/badge'
 import { Button } from '../../../components/ui/button'
 import {
   BookOpen, PlayCircle, FileText, Link2,
-  CheckCircle, ChevronLeft, ChevronRight, ExternalLink
+  CheckCircle, ChevronLeft, ChevronRight, ExternalLink,
+  ClipboardCheck, Sparkles, Target
 } from 'lucide-react'
+import { useNavigate, useParams } from 'react-router-dom'
+import { QuizView } from './QuizView'
 
 const CONTENT_TYPES = {
   video: { label: 'Video', icon: PlayCircle, color: 'bg-purple-100 text-purple-700' },
@@ -36,26 +39,43 @@ export function ContentViewer({
   allUnits,
   userId,
   isContentCompleted,
+  isQuizCompleted,
   markComplete,
+  refreshProgress,
   getUnitProgress,
   onUnitChange
 }) {
+  const { courseId } = useParams()
+  const navigate = useNavigate()
   const [currentContentIndex, setCurrentContentIndex] = useState(0)
   const [navigating, setNavigating] = useState(false)
 
-  const currentContent = unit?.contents?.[currentContentIndex]
+  const hasQuiz = unit?.quizzes && unit.quizzes.length > 0
+  const quiz = hasQuiz ? unit.quizzes[0] : null
+
+  const totalSteps = (unit?.contents?.length || 0) + (hasQuiz ? 1 : 0)
+  const isQuizStep = hasQuiz && currentContentIndex === (unit?.contents?.length || 0)
+
+  const currentContent = !isQuizStep ? unit?.contents?.[currentContentIndex] : null
   const hasPrevious = currentContentIndex > 0
-  const hasNext = currentContentIndex < (unit?.contents?.length - 1 || 0)
+  const hasNext = currentContentIndex < totalSteps - 1
 
   const currentUnitIndex = allUnits?.findIndex(u => u.id === unit?.id) ?? -1
   const isLastUnit = currentUnitIndex === (allUnits?.length - 1)
   const isLastContent = !hasNext
-  const isCompleted = isContentCompleted?.(currentContent?.id)
+
+  const isQuizPassed = isQuizStep && isQuizCompleted?.(quiz?.id)
+  const isCompleted = isQuizStep ? isQuizPassed : isContentCompleted?.(currentContent?.id)
 
   const handleNext = async () => {
-    if (!currentContent || !userId) return
-    setNavigating(true)
-    await markComplete(currentContent.id)
+    if (navigating) return
+
+    // Si estamos en contenido normal, marcamos como completo antes de avanzar
+    if (!isQuizStep && currentContent) {
+      setNavigating(true)
+      await markComplete(currentContent.id)
+      setNavigating(false)
+    }
 
     if (hasNext) {
       setCurrentContentIndex(prev => prev + 1)
@@ -88,6 +108,10 @@ export function ContentViewer({
   }
 
   const handleComplete = async () => {
+    if (isQuizStep) {
+      handleNext()
+      return
+    }
     if (!currentContent || !userId) return
     setNavigating(true)
     await markComplete(currentContent.id)
@@ -96,13 +120,20 @@ export function ContentViewer({
 
   // Reset index cuando cambia la unidad
   useEffect(() => {
-    if (unit && currentContentIndex >= (unit.contents?.length || 0)) {
-      setCurrentContentIndex(0)
+    setCurrentContentIndex(0)
+  }, [unit?.id])
+
+  // Refrescar progreso al ganar foco (útil al volver del quiz)
+  useEffect(() => {
+    const handleFocus = () => {
+      if (refreshProgress) refreshProgress()
     }
-  }, [unit?.id, currentContentIndex, unit?.contents?.length])
+    window.addEventListener('focus', handleFocus)
+    return () => window.removeEventListener('focus', handleFocus)
+  }, [refreshProgress])
 
   // ── Empty state ──
-  if (!unit || !unit.contents || unit.contents.length === 0) {
+  if (!unit || (!unit.contents?.length && !hasQuiz)) {
     return (
       <div className="h-full flex items-center justify-center">
         <div className="text-center">
@@ -116,9 +147,11 @@ export function ContentViewer({
     )
   }
 
-  if (!currentContent) return null
+  if (!currentContent && !isQuizStep) return null
 
-  const typeConfig = CONTENT_TYPES[currentContent.content_type] || CONTENT_TYPES.text
+  const typeConfig = isQuizStep
+    ? { label: 'Evaluación', icon: ClipboardCheck, color: 'bg-indigo-100 text-indigo-700' }
+    : (CONTENT_TYPES[currentContent?.content_type] || CONTENT_TYPES.text)
   const TypeIcon = typeConfig.icon
 
   return (
@@ -133,11 +166,11 @@ export function ContentViewer({
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${typeConfig.color}`}>
-                {typeConfig.label}
+              <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${isQuizStep ? 'bg-indigo-100 text-indigo-700' : typeConfig.color}`}>
+                {isQuizStep ? 'Evaluación' : typeConfig.label}
               </span>
               <span className="text-xs text-gray-400">
-                Contenido {currentContentIndex + 1} de {unit.contents.length}
+                Paso {currentContentIndex + 1} de {totalSteps}
               </span>
             </div>
             {isCompleted && (
@@ -150,40 +183,92 @@ export function ContentViewer({
         </div>
       </div>
 
-      {/* ── Content body ── */}
-      <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-        {currentContent.content_type === 'video' && isVideoUrl(currentContent.content_value) ? (
-          <div className="aspect-video bg-black">
-            <iframe
-              src={getYoutubeEmbedUrl(currentContent.content_value)}
-              className="w-full h-full"
-              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-              allowFullScreen
-            />
+      {/* ── Quiz View Landing ── */}
+      {isQuizStep && (
+        <div className="bg-white rounded-3xl border border-blue-100 p-8 md:p-12 shadow-sm shadow-blue-50 text-center">
+          <div className="w-16 h-16 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center mx-auto mb-6">
+            <Sparkles className="w-8 h-8" />
           </div>
-        ) : currentContent.content_type === 'text' ? (
-          <div className="p-6 md:p-8">
-            <div className="prose prose-sm max-w-none text-gray-700 leading-relaxed whitespace-pre-wrap">
-              {currentContent.content_value}
+
+          <h2 className="text-2xl font-bold text-gray-900 mb-3">Evaluación Final de Unidad</h2>
+          <p className="text-gray-500 max-w-sm mx-auto mb-8">
+            Has completado todos los contenidos. Es momento de poner a prueba tus conocimientos en:
+            <span className="block font-semibold text-gray-800 mt-1 italic">"{quiz?.title}"</span>
+          </p>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-lg mx-auto mb-8 text-left">
+            <div className="p-4 rounded-2xl bg-gray-50 border border-gray-100 flex items-start gap-3">
+              <div className="w-8 h-8 rounded-lg bg-white flex items-center justify-center border border-gray-100 flex-shrink-0">
+                <Target className="w-4 h-4 text-emerald-500" />
+              </div>
+              <div>
+                <div className="text-xs font-bold text-gray-900">Objetivo</div>
+                <div className="text-[10px] text-gray-500 line-clamp-1">Aprobar el cuestionario</div>
+              </div>
+            </div>
+            <div className="p-4 rounded-2xl bg-gray-50 border border-gray-100 flex items-start gap-3">
+              <div className={`w-8 h-8 rounded-lg bg-white flex items-center justify-center border border-gray-100 flex-shrink-0`}>
+                <ClipboardCheck className={`w-4 h-4 ${isQuizPassed ? 'text-emerald-500' : 'text-blue-500'}`} />
+              </div>
+              <div>
+                <div className="text-xs font-bold text-gray-900">Estado</div>
+                <div className={`text-[10px] ${isQuizPassed ? 'text-emerald-600 font-bold' : 'text-gray-500'}`}>
+                  {isQuizPassed ? '¡Aprobado!' : 'Pendiente de realizar'}
+                </div>
+              </div>
             </div>
           </div>
-        ) : (
-          <div className="p-6">
-            <a
-              href={currentContent.content_value}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 px-4 py-3 bg-blue-50 hover:bg-blue-100 text-blue-700 rounded-xl transition-colors group"
-            >
-              <ExternalLink className="w-5 h-5 group-hover:translate-x-0.5 transition-transform" />
-              <div>
-                <div className="text-sm font-medium">Abrir recurso</div>
-                <div className="text-xs text-blue-500 truncate max-w-md">{currentContent.content_value}</div>
+
+          <Button
+            onClick={() => navigate(`/courses/${courseId}/quiz/${quiz.id}`)}
+            className={`${isQuizPassed ? 'bg-emerald-600 hover:bg-emerald-700' : 'bg-blue-600 hover:bg-blue-700'} h-12 px-8 rounded-xl shadow-lg gap-2`}
+          >
+            {isQuizPassed ? 'Repetir evaluación (opcional)' : 'Comenzar evaluación ahora'}
+            <ChevronRight className="w-4 h-4" />
+          </Button>
+
+          <p className="mt-6 text-[11px] text-gray-400">
+            Al iniciar, se abrirá una nueva ventana dedicada para la evaluación.
+          </p>
+        </div>
+      )}
+
+      {/* ── Content body ── */}
+      {!isQuizStep && (
+        <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+          {currentContent.content_type === 'video' && isVideoUrl(currentContent.content_value) ? (
+            <div className="aspect-video bg-black">
+              <iframe
+                src={getYoutubeEmbedUrl(currentContent.content_value)}
+                className="w-full h-full"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowFullScreen
+              />
+            </div>
+          ) : currentContent.content_type === 'text' ? (
+            <div className="p-6 md:p-8">
+              <div className="prose prose-sm max-w-none text-gray-700 leading-relaxed whitespace-pre-wrap">
+                {currentContent.content_value}
               </div>
-            </a>
-          </div>
-        )}
-      </div>
+            </div>
+          ) : (
+            <div className="p-6">
+              <a
+                href={currentContent.content_value}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 px-4 py-3 bg-blue-50 hover:bg-blue-100 text-blue-700 rounded-xl transition-colors group"
+              >
+                <ExternalLink className="w-5 h-5 group-hover:translate-x-0.5 transition-transform" />
+                <div>
+                  <div className="text-sm font-medium">Abrir recurso</div>
+                  <div className="text-xs text-blue-500 truncate max-w-md">{currentContent.content_value}</div>
+                </div>
+              </a>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* ── Navigation bar ── */}
       <div className="flex items-center justify-between px-4 py-3 bg-white rounded-xl border border-gray-200">
@@ -200,17 +285,19 @@ export function ContentViewer({
 
         {/* Progress dots */}
         <div className="flex items-center gap-1.5">
-          {unit.contents.map((_, i) => (
+          {Array.from({ length: totalSteps }).map((_, i) => (
             <button
               key={i}
               onClick={() => setCurrentContentIndex(i)}
               className={`w-2 h-2 rounded-full transition-all ${i === currentContentIndex
-                  ? 'bg-blue-500 w-5'
-                  : isContentCompleted?.(unit.contents[i]?.id)
+                ? 'bg-blue-500 w-5'
+                : i < unit.contents.length && isContentCompleted?.(unit.contents[i]?.id)
+                  ? 'bg-emerald-400'
+                  : i === unit.contents.length && isQuizCompleted?.(quiz?.id)
                     ? 'bg-emerald-400'
                     : 'bg-gray-200 hover:bg-gray-300'
                 }`}
-              title={`Contenido ${i + 1}`}
+              title={i === unit.contents.length ? 'Evaluación' : `Contenido ${i + 1}`}
             />
           ))}
         </div>
@@ -218,14 +305,17 @@ export function ContentViewer({
         {isLastContent ? (
           <Button
             onClick={handleComplete}
-            disabled={navigating || isCompleted}
+            disabled={navigating}
             size="sm"
             className={`gap-1.5 ${isCompleted ? 'bg-emerald-600 hover:bg-emerald-700' : 'bg-blue-600 hover:bg-blue-700'}`}
           >
             {navigating ? 'Guardando...' : (
               <>
-                <CheckCircle className="w-4 h-4" />
-                {isCompleted ? 'Completado' : isLastUnit ? 'Completar curso' : 'Completado'}
+                {isCompleted ? <ChevronRight className="w-4 h-4" /> : <CheckCircle className="w-4 h-4" />}
+                {isCompleted
+                  ? (isLastUnit ? 'Finalizar curso' : 'Siguiente unidad')
+                  : (isLastUnit ? 'Completar curso' : 'Completado')
+                }
               </>
             )}
           </Button>
