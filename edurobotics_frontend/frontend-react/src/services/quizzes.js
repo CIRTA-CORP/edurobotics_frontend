@@ -89,7 +89,11 @@ const quizService = {
      * Add an answer to a question
      */
     addAnswer: async (questionId, answerData) => {
-        return apiPost(`/api/questions/${questionId}/answers`, answerData);
+        return apiPost(`/api/questions/${questionId}/answers`, {
+            answer_text: answerData.answer_text,
+            is_correct: answerData.is_correct || false,
+            explanation: answerData.explanation || null
+        });
     },
 
     /**
@@ -98,7 +102,11 @@ const quizService = {
     updateAnswer: async (answerId, answerData) => {
         return apiRequest(`/api/answers/${answerId}`, {
             method: 'PATCH',
-            body: JSON.stringify(answerData)
+            body: JSON.stringify({
+                answer_text: answerData.answer_text,
+                is_correct: answerData.is_correct,
+                explanation: answerData.explanation !== undefined ? answerData.explanation : undefined
+            })
         });
     },
 

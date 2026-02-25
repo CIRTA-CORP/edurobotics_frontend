@@ -6,7 +6,7 @@ import StudentDashboardPage from '../student/StudentDashboardPage'
 import { Button } from '../../components/ui/button'
 import { Modal } from '../../components/ui/Modal'
 import {
-  BookOpen, Layers, FileText, Package,
+  BookOpen, Layers, FileText, Package, ClipboardCheck,
   CheckCircle, AlertCircle, X, Plus
 } from 'lucide-react'
 
@@ -52,9 +52,6 @@ function AdminDashboardPage() {
   // Edit modal states
   const [isModuleEditModalOpen, setIsModuleEditModalOpen] = useState(false)
   const [isUnitEditModalOpen, setIsUnitEditModalOpen] = useState(false)
-  const [isQuizModalOpen, setIsQuizModalOpen] = useState(false)
-  const [quizUnit, setQuizUnit] = useState(null)
-  const [quizModule, setQuizModule] = useState(null)
   const [editingModule, setEditingModule] = useState(null)
   const [editingUnit, setEditingUnit] = useState(null)
 
@@ -285,15 +282,13 @@ function AdminDashboardPage() {
   }
 
   const handleUnitQuiz = (unit) => {
-    setQuizUnit(unit)
-    setQuizModule(null)
-    setIsQuizModalOpen(true)
+    setSelectedUnit(unit)
+    setActiveTab('evaluaciones')
   }
 
   const handleModuleQuiz = (module) => {
-    setQuizModule(module)
-    setQuizUnit(null)
-    setIsQuizModalOpen(true)
+    setSelectedModule(module)
+    setActiveTab('evaluaciones')
   }
 
   return (
@@ -353,6 +348,7 @@ function AdminDashboardPage() {
                     { id: 'modulos', label: 'Módulos', icon: Layers, enabled: !!selectedCourse },
                     { id: 'unidades', label: 'Unidades', icon: FileText, enabled: !!selectedModule },
                     { id: 'contenido', label: 'Contenido', icon: Package, enabled: !!selectedUnit },
+                    { id: 'evaluaciones', label: 'Evaluaciones', icon: ClipboardCheck, enabled: !!selectedUnit },
                   ].map(tab => {
                     const TabIcon = tab.icon
                     const isActive = activeTab === tab.id
@@ -554,31 +550,15 @@ function AdminDashboardPage() {
                         onToggle={() => { }}
                       />
                     </Modal>
+                  </div>
+                )}
 
-                    {/* Quiz Editor Modal */}
-                    <Modal
-                      isOpen={isQuizModalOpen}
-                      onClose={() => {
-                        setIsQuizModalOpen(false)
-                        setQuizUnit(null)
-                        setQuizModule(null)
-                        refreshSelectedCourse()
-                      }}
-                      title={`Evaluación: ${quizUnit?.title || quizModule?.title}`}
-                      size="lg"
-                    >
-                      {(quizUnit || quizModule) && (
-                        <QuizEditor
-                          unitId={quizUnit?.id}
-                          moduleId={quizModule?.id}
-                          onBack={() => {
-                            setIsQuizModalOpen(false)
-                            setQuizUnit(null)
-                            setQuizModule(null)
-                          }}
-                        />
-                      )}
-                    </Modal>
+                {/* Tab Evaluaciones */}
+                {activeTab === 'evaluaciones' && selectedUnit && (
+                  <div className="space-y-6">
+                    <QuizEditor
+                      unitId={selectedUnit.id}
+                    />
                   </div>
                 )}
 

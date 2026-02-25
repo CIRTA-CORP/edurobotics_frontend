@@ -13,7 +13,7 @@ import { Button } from '../../../components/ui/button'
 import {
   BookOpen, PlayCircle, FileText, Link2,
   CheckCircle, ChevronLeft, ChevronRight, ExternalLink,
-  ClipboardCheck, Sparkles, Target
+  ClipboardCheck, Target
 } from 'lucide-react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { QuizView } from './QuizView'
@@ -108,14 +108,52 @@ export function ContentViewer({
   }
 
   const handleComplete = async () => {
+    if (navigating) return
+
+    // Si es quiz step y ya está aprobado, navegar
     if (isQuizStep) {
-      handleNext()
+      if (isQuizPassed) {
+        if (isLastUnit) {
+          // Último quiz del curso — ir al preview del curso
+          navigate(`/courses/${courseId}`)
+          return
+        }
+        // Ir a la siguiente unidad
+        const idx = allUnits?.findIndex(u => u.id === unit.id)
+        if (idx !== -1 && idx < (allUnits?.length - 1)) {
+          const nextUnit = allUnits[idx + 1]
+          if (nextUnit && onUnitChange) {
+            onUnitChange(nextUnit.id)
+            setCurrentContentIndex(0)
+          }
+        }
+      }
       return
     }
+
+    // Si es contenido normal
     if (!currentContent || !userId) return
     setNavigating(true)
     await markComplete(currentContent.id)
     setNavigating(false)
+
+    // Si es el último contenido
+    if (isLastContent) {
+      if (isLastUnit) {
+        // Último contenido del curso — ir al preview del curso
+        navigate(`/courses/${courseId}`)
+      } else {
+        // Ir a la siguiente unidad
+        const idx = allUnits?.findIndex(u => u.id === unit.id)
+        if (idx !== -1 && idx < (allUnits?.length - 1)) {
+          const nextUnit = allUnits[idx + 1]
+          if (nextUnit && onUnitChange) {
+            onUnitChange(nextUnit.id)
+            setCurrentContentIndex(0)
+          }
+        }
+      }
+    }
   }
 
   // Reset index cuando cambia la unidad
@@ -186,8 +224,8 @@ export function ContentViewer({
       {/* ── Quiz View Landing ── */}
       {isQuizStep && (
         <div className="bg-white rounded-3xl border border-blue-100 p-8 md:p-12 shadow-sm shadow-blue-50 text-center">
-          <div className="w-16 h-16 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center mx-auto mb-6">
-            <Sparkles className="w-8 h-8" />
+          <div className="w-14 h-14 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center mx-auto mb-6">
+            <ClipboardCheck className="w-7 h-7" />
           </div>
 
           <h2 className="text-2xl font-bold text-gray-900 mb-3">Evaluación Final de Unidad</h2>

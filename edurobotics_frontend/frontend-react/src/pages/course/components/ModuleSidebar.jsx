@@ -7,9 +7,13 @@
  */
 
 import { useState } from 'react'
-import { CheckCircle, ChevronDown, ChevronRight, PlayCircle, FileText, Link2, BookOpen } from 'lucide-react'
+import { CheckCircle, ChevronDown, ChevronRight, PlayCircle, FileText, Link2, BookOpen, ClipboardCheck } from 'lucide-react'
 
 const getUnitIcon = (unit) => {
+  // If unit has a quiz, show quiz icon
+  if (unit.quizzes?.length > 0 && (!unit.contents || unit.contents.length === 0)) {
+    return <ClipboardCheck className="w-3.5 h-3.5 flex-shrink-0" />
+  }
   const type = unit.contents?.[0]?.content_type
   switch (type) {
     case 'video': return <PlayCircle className="w-3.5 h-3.5 flex-shrink-0" />
@@ -128,8 +132,8 @@ export function ModuleSidebar({ modules, selectedUnitId, onUnitClick, getModuleP
                     <button
                       key={unit.id}
                       className={`w-full text-left px-4 py-2 pl-9 flex items-center gap-2.5 transition-all border-l-[3px] ${isSelected
-                          ? 'bg-blue-50 border-l-blue-500'
-                          : 'border-l-transparent hover:bg-gray-50'
+                        ? 'bg-blue-50 border-l-blue-500'
+                        : 'border-l-transparent hover:bg-gray-50'
                         }`}
                       onClick={() => onUnitClick(unit.id)}
                     >
@@ -152,6 +156,9 @@ export function ModuleSidebar({ modules, selectedUnitId, onUnitClick, getModuleP
                           {moduleIndex + 1}.{unitIndex + 1}
                           {unit.contents?.length > 0 && (
                             <span> · {unit.contents.length} contenido{unit.contents.length !== 1 ? 's' : ''}</span>
+                          )}
+                          {unit.quizzes?.length > 0 && (
+                            <span> · {unit.quizzes.length} eval.</span>
                           )}
                         </div>
                       </div>

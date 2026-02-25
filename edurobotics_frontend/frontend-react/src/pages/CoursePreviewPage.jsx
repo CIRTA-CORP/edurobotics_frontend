@@ -23,7 +23,8 @@ import {
     ArrowLeft, BookOpen, ChevronDown, ChevronRight,
     PlayCircle, FileText, Link2, Loader2, CheckCircle,
     Lock, AlertTriangle, XCircle, GraduationCap, Zap,
-    Trophy, Layers, Package, Shield, Map, ExternalLink
+    Trophy, Layers, Package, Shield, Map, ExternalLink,
+    ClipboardCheck
 } from 'lucide-react'
 
 // ── Level config ──────────────────────────────────────────────────────────────
@@ -54,6 +55,7 @@ function ModuleRow({ module, index, defaultOpen = false }) {
     const [open, setOpen] = useState(defaultOpen)
     const unitCount = module.units?.length || 0
     const contentCount = (module.units || []).reduce((acc, u) => acc + (u.contents?.length || 0), 0)
+    const quizCount = (module.units || []).reduce((acc, u) => acc + (u.quizzes?.length || 0), 0)
 
     return (
         <div className={`rounded-xl border transition-all ${open ? 'border-gray-200 shadow-sm' : 'border-gray-100 hover:border-gray-200'}`}>
@@ -79,6 +81,12 @@ function ModuleRow({ module, index, defaultOpen = false }) {
                                     {contentCount} contenido{contentCount !== 1 ? 's' : ''}
                                 </span>
                             )}
+                            {quizCount > 0 && (
+                                <span className="inline-flex items-center gap-1">
+                                    <ClipboardCheck className="w-3 h-3" />
+                                    {quizCount} evaluación{quizCount !== 1 ? 'es' : ''}
+                                </span>
+                            )}
                         </div>
                     </div>
                 </div>
@@ -90,17 +98,39 @@ function ModuleRow({ module, index, defaultOpen = false }) {
                     {module.units.map((unit, ui) => {
                         const firstContentType = unit.contents?.[0]?.content_type
                         return (
-                            <div key={unit.id} className="flex items-center gap-3 px-5 py-2.5 pl-16 border-b border-gray-100 last:border-b-0">
-                                <div className={CONTENT_TYPE_COLORS[firstContentType] || 'text-gray-400'}>
-                                    <ContentIcon type={firstContentType} />
-                                </div>
-                                <div className="flex-1 min-w-0">
-                                    <div className="text-sm text-gray-700 truncate">{unit.title}</div>
-                                    <div className="text-[10px] text-gray-400 mt-0.5">
-                                        {index + 1}.{ui + 1}
-                                        {unit.contents?.length > 0 && ` · ${unit.contents.length} contenido${unit.contents.length !== 1 ? 's' : ''}`}
+                            <div key={unit.id} className="px-5 py-2.5 pl-16 border-b border-gray-100 last:border-b-0">
+                                <div className="flex items-center gap-3">
+                                    <div className={CONTENT_TYPE_COLORS[firstContentType] || 'text-gray-400'}>
+                                        <ContentIcon type={firstContentType} />
+                                    </div>
+                                    <div className="flex-1 min-w-0">
+                                        <div className="text-sm text-gray-700 truncate">{unit.title}</div>
+                                        <div className="text-[10px] text-gray-400 mt-0.5">
+                                            {index + 1}.{ui + 1}
+                                            {unit.contents?.length > 0 && ` · ${unit.contents.length} contenido${unit.contents.length !== 1 ? 's' : ''}`}
+                                            {unit.quizzes?.length > 0 && ` · ${unit.quizzes.length} evaluación${unit.quizzes.length !== 1 ? 'es' : ''}`}
+                                        </div>
                                     </div>
                                 </div>
+                                {/* Content + Quiz details */}
+                                {(unit.contents?.length > 0 || unit.quizzes?.length > 0) && (
+                                    <div className="mt-1.5 ml-7 space-y-0.5">
+                                        {unit.contents?.map(c => (
+                                            <div key={c.id} className="flex items-center gap-2 text-[10px] text-gray-400">
+                                                <div className={`${CONTENT_TYPE_COLORS[c.content_type] || 'text-gray-300'}`}>
+                                                    <ContentIcon type={c.content_type} />
+                                                </div>
+                                                <span className="truncate">{c.content_type === 'video' ? 'Video' : c.content_type === 'text' ? 'Texto' : 'Recurso'}</span>
+                                            </div>
+                                        ))}
+                                        {unit.quizzes?.map(q => (
+                                            <div key={q.id} className="flex items-center gap-2 text-[10px] text-indigo-400">
+                                                <ClipboardCheck className="w-3 h-3" />
+                                                <span className="truncate">{q.title}</span>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
                             </div>
                         )
                     })}
@@ -422,6 +452,9 @@ function CoursePreviewPage() {
     const totalContents = (course.modules || []).reduce(
         (acc, m) => acc + (m.units || []).reduce((a, u) => a + (u.contents?.length || 0), 0), 0
     )
+    const totalQuizzes = (course.modules || []).reduce(
+        (acc, m) => acc + (m.units || []).reduce((a, u) => a + (u.quizzes?.length || 0), 0), 0
+    )
     const percentage = progress?.percentage ?? null
     const state = progress?.state ?? null
     const levelConf = LEVEL_CONFIG[course.level] || LEVEL_CONFIG.beginner
@@ -506,6 +539,12 @@ function CoursePreviewPage() {
                             <Package className="w-4 h-4" />
                             <span><strong className="text-white">{totalContents}</strong> contenido{totalContents !== 1 ? 's' : ''}</span>
                         </div>
+                        {totalQuizzes > 0 && (
+                            <div className="flex items-center gap-1.5">
+                                <ClipboardCheck className="w-4 h-4" />
+                                <span><strong className="text-white">{totalQuizzes}</strong> evaluación{totalQuizzes !== 1 ? 'es' : ''}</span>
+                            </div>
+                        )}
                     </div>
 
                     {/* Progress bar (if started) */}
