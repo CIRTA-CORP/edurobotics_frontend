@@ -6,14 +6,15 @@
  */
 
 import { Button } from '../../../../components/ui/button'
-import { FileText, Settings, Trash2, Edit, Package } from 'lucide-react'
+import { FileText, Settings, Trash2, Edit, Package, ClipboardCheck } from 'lucide-react'
 
 export function UnitList({
   units,
   selectedUnitId,
   onUnitSelect,
   onUnitEdit,
-  onUnitDelete
+  onUnitDelete,
+  onUnitQuiz
 }) {
   return (
     <div>
@@ -27,8 +28,8 @@ export function UnitList({
               <div
                 key={unit.id}
                 className={`p-4 rounded-xl border transition-all duration-200 ${isSelected
-                    ? 'border-indigo-200 bg-indigo-50/50 shadow-sm'
-                    : 'border-gray-200 bg-white hover:border-gray-300 hover:shadow-sm'
+                  ? 'border-indigo-200 bg-indigo-50/50 shadow-sm'
+                  : 'border-gray-200 bg-white hover:border-gray-300 hover:shadow-sm'
                   }`}
               >
                 <div className="flex items-start justify-between gap-3">
@@ -59,6 +60,15 @@ export function UnitList({
                     >
                       <Settings className="w-3.5 h-3.5 mr-1" />
                       Gestionar
+                    </Button>
+                    <Button
+                      onClick={() => onUnitQuiz(unit)}
+                      variant="outline"
+                      size="sm"
+                      className="text-xs border-indigo-100 text-indigo-600 hover:bg-indigo-50"
+                    >
+                      <ClipboardCheck className="w-3.5 h-3.5 mr-1" />
+                      Examen
                     </Button>
                     <Button
                       onClick={() => onUnitEdit(unit)}

@@ -148,7 +148,9 @@ function CoursePage() {
             allUnits={allUnits}
             userId={user?.id}
             isContentCompleted={progressHook.isContentCompleted}
+            isQuizCompleted={progressHook.isQuizCompleted}
             markComplete={progressHook.markComplete}
+            refreshProgress={progressHook.refreshProgress}
             getUnitProgress={progressHook.getUnitProgress}
             onUnitChange={setSelectedUnitId}
           />

@@ -2,11 +2,12 @@ import { useEffect, useState, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { clearStoredUser, getStoredUser } from '../../services/auth'
 import { getCourseDetail, getAllCourses } from '../../services/courses'
+import { CourseFeedbackSummary } from './features/courses/CourseFeedbackSummary'
 import StudentDashboardPage from '../student/StudentDashboardPage'
 import { Button } from '../../components/ui/button'
 import { Modal } from '../../components/ui/Modal'
 import {
-  BookOpen, Layers, FileText, Package,
+  BookOpen, Layers, FileText, Package, ClipboardCheck,
   CheckCircle, AlertCircle, X, Plus
 } from 'lucide-react'
 
@@ -19,6 +20,7 @@ import { ModuleList } from './features/modules/ModuleList'
 import { UnitForm } from './features/units/UnitForm'
 import { UnitList } from './features/units/UnitList'
 import { ContentForm } from './features/content/ContentForm'
+import { QuizEditor } from './features/quizzes/QuizEditor'
 
 // Custom hooks
 import { useCourses } from './features/courses/useCourses'
@@ -280,6 +282,16 @@ function AdminDashboardPage() {
     setIsUnitEditModalOpen(true)
   }
 
+  const handleUnitQuiz = (unit) => {
+    setSelectedUnit(unit)
+    setActiveTab('evaluaciones')
+  }
+
+  const handleModuleQuiz = (module) => {
+    setSelectedModule(module)
+    setActiveTab('evaluaciones')
+  }
+
   return (
     <div className="min-h-screen bg-gray-50">
       <AdminHeader
@@ -337,6 +349,7 @@ function AdminDashboardPage() {
                     { id: 'modulos', label: 'Módulos', icon: Layers, enabled: !!selectedCourse },
                     { id: 'unidades', label: 'Unidades', icon: FileText, enabled: !!selectedModule },
                     { id: 'contenido', label: 'Contenido', icon: Package, enabled: !!selectedUnit },
+                    { id: 'evaluaciones', label: 'Evaluaciones', icon: ClipboardCheck, enabled: !!selectedUnit },
                   ].map(tab => {
                     const TabIcon = tab.icon
                     const isActive = activeTab === tab.id
@@ -398,6 +411,11 @@ function AdminDashboardPage() {
                       />
                     )}
 
+                    {/* Feedback Summary */}
+                    {selectedCourse && (
+                      <CourseFeedbackSummary courseId={selectedCourse.id} />
+                    )}
+
                     {/* Create Course Modal */}
                     <Modal
                       isOpen={isCourseModalOpen}
@@ -453,6 +471,7 @@ function AdminDashboardPage() {
                       onModuleSelect={handleModuleSelect}
                       onModuleEdit={handleModuleEdit}
                       onModuleDelete={handleModuleDelete}
+                      onModuleQuiz={handleModuleQuiz}
                     />
 
                     {/* Edit Module Modal */}
@@ -513,6 +532,7 @@ function AdminDashboardPage() {
                       onUnitSelect={handleUnitSelect}
                       onUnitEdit={handleUnitEdit}
                       onUnitDelete={handleUnitDelete}
+                      onUnitQuiz={handleUnitQuiz}
                     />
 
                     {/* Edit Unit Modal */}
@@ -536,6 +556,15 @@ function AdminDashboardPage() {
                         onToggle={() => { }}
                       />
                     </Modal>
+                  </div>
+                )}
+
+                {/* Tab Evaluaciones */}
+                {activeTab === 'evaluaciones' && selectedUnit && (
+                  <div className="space-y-6">
+                    <QuizEditor
+                      unitId={selectedUnit.id}
+                    />
                   </div>
                 )}
 

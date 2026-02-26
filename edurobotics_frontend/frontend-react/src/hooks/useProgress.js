@@ -10,32 +10,34 @@ import { markContentComplete, updateLastAccessed, getUserProgress } from '../ser
 
 export function useProgress(userId, courseId = null) {
   const [progress, setProgress] = useState({})
+  const [passedQuizIds, setPassedQuizIds] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
 
-  // Fetch progress on mount
-  useEffect(() => {
+  const fetchProgress = useCallback(async () => {
     if (!userId) {
       setLoading(false)
       return
     }
-
-    const fetchProgress = async () => {
-      try {
-        setLoading(true)
-        const result = await getUserProgress(userId, courseId)
-        if (result.success) {
-          setProgress(result.progress)
-        }
-      } catch (err) {
-        setError(err.message)
-      } finally {
-        setLoading(false)
+    try {
+      setLoading(true)
+      const result = await getUserProgress(userId, courseId)
+      if (result.success) {
+        setProgress(result.progress)
+        setPassedQuizIds(result.passed_quiz_ids || [])
       }
+    } catch (err) {
+      setError(err.message)
+    } finally {
+      setLoading(false)
     }
-
-    fetchProgress()
   }, [userId, courseId])
+
+  const refreshProgress = useCallback(() => fetchProgress(), [fetchProgress])
+
+  useEffect(() => {
+    fetchProgress()
+  }, [fetchProgress])
 
   // Mark content as complete
   const markComplete = useCallback(async (contentId) => {
@@ -45,17 +47,14 @@ export function useProgress(userId, courseId = null) {
       const result = await markContentComplete(userId, contentId)
       if (result.success) {
         // Refresh progress
-        const updatedProgress = await getUserProgress(userId, courseId)
-        if (updatedProgress.success) {
-          setProgress(updatedProgress.progress)
-        }
+        fetchProgress()
       }
       return result
     } catch (err) {
       setError(err.message)
       return { success: false, error: err.message }
     }
-  }, [userId, courseId])
+  }, [userId, fetchProgress])
 
   // Update last accessed
   const updateAccess = useCallback(async (contentId) => {
@@ -71,11 +70,7 @@ export function useProgress(userId, courseId = null) {
 
   // Check if content is completed
   const isContentCompleted = useCallback((contentId) => {
-    // Support two possible progress shapes:
-    // 1) Nested object structure: { courseId: { modules: { moduleId: { units: { unitId: { contents: [...] }}}}}}
-    // 2) Flat array of records: [ { content_id, completed, ... }, ... ]
     try {
-      // If progress is an array (flat list), search directly
       if (Array.isArray(progress)) {
         const found = progress.find(p => p.content_id === contentId)
         return !!(found && (found.completed || found.is_completed))
@@ -94,9 +89,13 @@ export function useProgress(userId, courseId = null) {
     } catch (e) {
       return false
     }
-
     return false
   }, [progress])
+
+  // Check if quiz is completed
+  const isQuizCompleted = useCallback((quizId) => {
+    return passedQuizIds.includes(quizId)
+  }, [passedQuizIds])
 
   // Get module progress
   const getModuleProgress = useCallback((moduleId) => {
@@ -153,8 +152,10 @@ export function useProgress(userId, courseId = null) {
     markComplete,
     updateAccess,
     isContentCompleted,
+    isQuizCompleted,
     getModuleProgress,
     getUnitProgress,
     getCourseProgress,
+    refreshProgress,
   }
 }

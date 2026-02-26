@@ -1,5 +1,5 @@
 import { API_BASE } from '../config'
-import { apiPost, apiPut, apiDelete } from './api'
+import { apiPost, apiPut, apiDelete, apiGet } from './api'
 
 const parseError = async (response) => {
   try {
@@ -178,3 +178,19 @@ export const addQuizAnswer = async (_, questionId, payload) => {
 // Aliases for consistency
 export const createContent = addUnitContent
 export const deleteContent = deleteUnitContent
+
+// === COURSE FEEDBACK ===
+
+export const submitCourseFeedback = async (courseId, userId, data) => {
+  return apiPost(`/api/courses/${courseId}/feedback?user_id=${userId}`, data)
+}
+
+export const getCourseFeedback = async (courseId, userId) => {
+  const response = await fetch(`${API_BASE}/api/courses/${courseId}/feedback?user_id=${userId}`)
+  if (!response.ok) throw new Error(await parseError(response))
+  return response.json()
+}
+
+export const getCourseFeedbackSummary = async (courseId) => {
+  return apiGet(`/api/courses/${courseId}/feedback/summary`)
+}
