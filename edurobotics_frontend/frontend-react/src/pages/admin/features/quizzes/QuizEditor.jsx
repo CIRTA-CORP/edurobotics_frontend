@@ -254,6 +254,68 @@ export function QuizEditor({ unitId, moduleId }) {
                     </div>
                 </div>
 
+                {/* Settings Panel */}
+                <div className="p-4 bg-gray-50 border border-gray-200 rounded-xl space-y-3">
+                    <div className="flex items-center gap-2 text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                        <Settings className="w-3.5 h-3.5" />
+                        Configuración de aprobación
+                    </div>
+                    <div className="flex flex-wrap items-end gap-4">
+                        <div className="flex-1 min-w-[180px]">
+                            <label className="block text-xs font-medium text-gray-600 mb-1">Tipo de aprobación</label>
+                            <select
+                                value={selectedQuiz.passing_type || 'score'}
+                                onChange={async (e) => {
+                                    const newType = e.target.value;
+                                    setSelectedQuiz(prev => ({ ...prev, passing_type: newType }));
+                                    try {
+                                        await quizService.updateQuiz(selectedQuiz.id, { passing_type: newType });
+                                        showMessage('Configuración actualizada');
+                                    } catch { showMessage('Error al actualizar', 'error'); }
+                                }}
+                                className="w-full px-3 py-2 text-sm bg-white border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+                            >
+                                <option value="score">Puntaje mínimo (%)</option>
+                                <option value="all_correct">Todas las respuestas correctas</option>
+                            </select>
+                        </div>
+                        {(selectedQuiz.passing_type || 'score') === 'score' && (
+                            <div className="flex-1 min-w-[180px]">
+                                <label className="block text-xs font-medium text-gray-600 mb-1">
+                                    Puntaje mínimo: <span className="font-bold text-blue-600">{selectedQuiz.passing_score ?? 80}%</span>
+                                </label>
+                                <input
+                                    type="range"
+                                    min="10"
+                                    max="100"
+                                    step="5"
+                                    value={selectedQuiz.passing_score ?? 80}
+                                    onChange={(e) => {
+                                        setSelectedQuiz(prev => ({ ...prev, passing_score: parseInt(e.target.value) }));
+                                    }}
+                                    onMouseUp={async (e) => {
+                                        try {
+                                            await quizService.updateQuiz(selectedQuiz.id, { passing_score: parseInt(e.target.value) });
+                                            showMessage('Puntaje actualizado');
+                                        } catch { showMessage('Error al actualizar', 'error'); }
+                                    }}
+                                    onTouchEnd={async (e) => {
+                                        try {
+                                            await quizService.updateQuiz(selectedQuiz.id, { passing_score: parseInt(e.target.value) });
+                                            showMessage('Puntaje actualizado');
+                                        } catch { showMessage('Error al actualizar', 'error'); }
+                                    }}
+                                    className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-blue-600"
+                                />
+                                <div className="flex justify-between text-[10px] text-gray-400 mt-0.5">
+                                    <span>10%</span>
+                                    <span>100%</span>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                </div>
+
                 {Toast}
 
                 {/* Confirm Delete Dialog */}

@@ -60,6 +60,16 @@ const quizService = {
     },
 
     /**
+     * Update quiz settings (title, passing criteria)
+     */
+    updateQuiz: async (quizId, data) => {
+        return apiRequest(`/api/quizzes/${quizId}`, {
+            method: 'PATCH',
+            body: JSON.stringify(data)
+        });
+    },
+
+    /**
    * Add a question to a quiz
    */
     addQuestion: async (quizId, questionData) => {

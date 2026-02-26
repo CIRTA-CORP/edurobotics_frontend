@@ -2,6 +2,7 @@ import { useEffect, useState, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { clearStoredUser, getStoredUser } from '../../services/auth'
 import { getCourseDetail, getAllCourses } from '../../services/courses'
+import { CourseFeedbackSummary } from './features/courses/CourseFeedbackSummary'
 import StudentDashboardPage from '../student/StudentDashboardPage'
 import { Button } from '../../components/ui/button'
 import { Modal } from '../../components/ui/Modal'
@@ -408,6 +409,11 @@ function AdminDashboardPage() {
                         expanded={expandedSections.editar}
                         onToggle={() => toggleSection('editar')}
                       />
+                    )}
+
+                    {/* Feedback Summary */}
+                    {selectedCourse && (
+                      <CourseFeedbackSummary courseId={selectedCourse.id} />
                     )}
 
                     {/* Create Course Modal */}
