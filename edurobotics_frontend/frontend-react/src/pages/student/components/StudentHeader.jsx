@@ -142,8 +142,14 @@ export function StudentHeader({ user, hideLogout, onLogout, adminView, setAdminV
               </Button>
             )}
 
-            {/* User avatar */}
-            <UserAvatar user={user} />
+            {/* User avatar — click to open profile */}
+            <div
+              onClick={() => handleNav('/profile')}
+              className="cursor-pointer hover:opacity-80 transition-opacity"
+              title="Mi Perfil"
+            >
+              <UserAvatar user={user} />
+            </div>
 
             {/* Logout (desktop) */}
             {!hideLogout && (

@@ -61,15 +61,6 @@ export function ModuleList({
                       <Settings className="w-3.5 h-3.5 mr-1" />
                       Gestionar
                     </Button>
-                    <Button
-                      onClick={() => onModuleQuiz(module)}
-                      variant="outline"
-                      size="sm"
-                      className="text-xs font-bold rounded-xl border-slate-200 text-slate-700 hover:bg-slate-50"
-                    >
-                      <ClipboardCheck className="w-3.5 h-3.5 mr-1" />
-                      Examen
-                    </Button>
                     <div className="flex items-center ml-1 border-l border-gray-100 pl-1.5">
                       <Button
                         onClick={() => onModuleEdit(module)}

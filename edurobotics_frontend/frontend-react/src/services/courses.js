@@ -194,3 +194,15 @@ export const getCourseFeedback = async (courseId, userId) => {
 export const getCourseFeedbackSummary = async (courseId) => {
   return apiGet(`/api/courses/${courseId}/feedback/summary`)
 }
+
+// === ADMIN METRICS ===
+
+export const getAdminMetrics = async () => {
+  return apiGet('/api/admin/metrics')
+}
+
+// === USER PROFILE ===
+
+export const getUserProfile = async (userId) => {
+  return apiGet(`/api/profile?user_id=${userId}`)
+}
