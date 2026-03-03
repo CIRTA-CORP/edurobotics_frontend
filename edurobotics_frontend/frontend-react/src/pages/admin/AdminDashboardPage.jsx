@@ -585,6 +585,8 @@ function AdminDashboardPage() {
                       onSubmit={(e) => contentHooks.handleContentCreate(e, selectedUnit.id, selectedCourse)}
                       selectedUnit={selectedUnit}
                       onContentDelete={handleContentDelete}
+                      onContentReorder={(contentId, direction) => contentHooks.handleContentReorder(contentId, direction, selectedCourse)}
+                      onContentUpdate={(contentId, payload) => contentHooks.handleContentUpdate(contentId, payload, selectedCourse)}
                       expanded={expandedSections.contenido}
                       onToggle={() => toggleSection('contenido')}
                     />

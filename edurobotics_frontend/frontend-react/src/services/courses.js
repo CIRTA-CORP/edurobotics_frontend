@@ -1,5 +1,5 @@
 import { API_BASE } from '../config'
-import { apiPost, apiPut, apiDelete, apiGet } from './api'
+import { apiRequest, apiPost, apiPut, apiDelete, apiGet } from './api'
 
 const parseError = async (response) => {
   try {
@@ -147,6 +147,9 @@ export const deleteUnitContent = async (_, contentId) => {
   return apiDelete(`/api/contents/${contentId}`)
 }
 
+export const reorderContent = async (contentId, direction) => {
+  return apiRequest(`/api/contents/${contentId}/reorder?direction=${direction}`, { method: 'PATCH' })
+}
 // === LEGACY MODULE CONTENT (for compatibility) ===
 
 export const addModuleContent = async (_, moduleId, payload) => {
