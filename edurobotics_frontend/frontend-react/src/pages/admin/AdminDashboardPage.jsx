@@ -3,12 +3,13 @@ import { useNavigate } from 'react-router-dom'
 import { clearStoredUser, getStoredUser } from '../../services/auth'
 import { getCourseDetail, getAllCourses } from '../../services/courses'
 import { CourseFeedbackSummary } from './features/courses/CourseFeedbackSummary'
+import { GlobalMetrics } from './features/courses/GlobalMetrics'
 import StudentDashboardPage from '../student/StudentDashboardPage'
 import { Button } from '../../components/ui/button'
 import { Modal } from '../../components/ui/Modal'
 import {
   BookOpen, Layers, FileText, Package, ClipboardCheck,
-  CheckCircle, AlertCircle, X, Plus
+  CheckCircle, AlertCircle, X, Plus, BarChart3
 } from 'lucide-react'
 
 // Components
@@ -345,6 +346,7 @@ function AdminDashboardPage() {
               <div className="mb-6">
                 <div className="flex items-center gap-1 bg-gray-100 rounded-xl p-1">
                   {[
+                    { id: 'dashboard', label: 'Dashboard', icon: BarChart3, enabled: true },
                     { id: 'cursos', label: 'Cursos', icon: BookOpen, enabled: true },
                     { id: 'modulos', label: 'Módulos', icon: Layers, enabled: !!selectedCourse },
                     { id: 'unidades', label: 'Unidades', icon: FileText, enabled: !!selectedModule },
@@ -375,9 +377,15 @@ function AdminDashboardPage() {
 
               {/* Tab Content */}
               <div className="space-y-6">
+                {/* Tab Dashboard */}
+                {activeTab === 'dashboard' && (
+                  <GlobalMetrics />
+                )}
+
                 {/* Tab Cursos */}
                 {activeTab === 'cursos' && (
                   <div className="space-y-6">
+
                     <div className="flex justify-between items-center">
                       <h3 className="text-lg font-semibold text-gray-900">Gestión de Cursos</h3>
                       <Button onClick={() => setIsCourseModalOpen(true)} className="gap-1.5">
@@ -577,6 +585,8 @@ function AdminDashboardPage() {
                       onSubmit={(e) => contentHooks.handleContentCreate(e, selectedUnit.id, selectedCourse)}
                       selectedUnit={selectedUnit}
                       onContentDelete={handleContentDelete}
+                      onContentReorder={(contentId, direction) => contentHooks.handleContentReorder(contentId, direction, selectedCourse)}
+                      onContentUpdate={(contentId, payload) => contentHooks.handleContentUpdate(contentId, payload, selectedCourse)}
                       expanded={expandedSections.contenido}
                       onToggle={() => toggleSection('contenido')}
                     />

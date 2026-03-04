@@ -81,3 +81,31 @@ export const apiPut = (endpoint, data) => {
 export const apiDelete = (endpoint) => {
     return apiRequest(endpoint, { method: 'DELETE' })
 }
+
+/**
+ * Upload a file (multipart/form-data)
+ */
+export const apiUploadFile = async (endpoint, file) => {
+    const token = getToken()
+    const formData = new FormData()
+    formData.append('file', file)
+
+    const response = await fetch(`${API_BASE}${endpoint}`, {
+        method: 'POST',
+        headers: token ? { 'Authorization': `Bearer ${token}` } : {},
+        body: formData,
+    })
+
+    if (response.status === 401) {
+        localStorage.removeItem('token')
+        window.location.href = '/login'
+        throw new Error('Sesión expirada.')
+    }
+
+    if (!response.ok) {
+        const error = await response.json().catch(() => ({ detail: 'Error al subir archivo' }))
+        throw new Error(error.detail || 'Error al subir archivo')
+    }
+
+    return response.json()
+}

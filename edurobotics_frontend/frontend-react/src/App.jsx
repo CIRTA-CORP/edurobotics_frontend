@@ -9,6 +9,7 @@ import RoadmapPage from './pages/RoadmapPage.jsx'
 import AdminDashboardPage from './pages/admin/AdminDashboardPage.jsx'
 import StudentDashboardPage from './pages/student/StudentDashboardPage.jsx'
 import QuizPage from './pages/QuizPage.jsx'
+import UserProfilePage from './pages/UserProfilePage.jsx'
 
 function App() {
   return (
@@ -79,6 +80,16 @@ function App() {
         element={
           <ProtectedRoute>
             <QuizPage />
+          </ProtectedRoute>
+        }
+      />
+
+      {/* User Profile */}
+      <Route
+        path="/profile"
+        element={
+          <ProtectedRoute>
+            <UserProfilePage />
           </ProtectedRoute>
         }
       />

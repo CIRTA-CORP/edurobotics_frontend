@@ -112,25 +112,6 @@ function ModuleRow({ module, index, defaultOpen = false }) {
                                         </div>
                                     </div>
                                 </div>
-                                {/* Content + Quiz details */}
-                                {(unit.contents?.length > 0 || unit.quizzes?.length > 0) && (
-                                    <div className="mt-1.5 ml-7 space-y-0.5">
-                                        {unit.contents?.map(c => (
-                                            <div key={c.id} className="flex items-center gap-2 text-[10px] text-gray-400">
-                                                <div className={`${CONTENT_TYPE_COLORS[c.content_type] || 'text-gray-300'}`}>
-                                                    <ContentIcon type={c.content_type} />
-                                                </div>
-                                                <span className="truncate">{c.content_type === 'video' ? 'Video' : c.content_type === 'text' ? 'Texto' : 'Recurso'}</span>
-                                            </div>
-                                        ))}
-                                        {unit.quizzes?.map(q => (
-                                            <div key={q.id} className="flex items-center gap-2 text-[10px] text-indigo-400">
-                                                <ClipboardCheck className="w-3 h-3" />
-                                                <span className="truncate">{q.title}</span>
-                                            </div>
-                                        ))}
-                                    </div>
-                                )}
                             </div>
                         )
                     })}
@@ -140,7 +121,7 @@ function ModuleRow({ module, index, defaultOpen = false }) {
     )
 }
 
-// ── Prerequisite state helpers ────────────────────────────────────────────────
+
 const STATE_LABELS = { completed: 'Completado', in_progress: 'En progreso', not_started: 'No iniciado' }
 const STATE_COLORS = {
     completed: 'text-emerald-700',

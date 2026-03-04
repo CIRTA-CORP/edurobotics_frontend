@@ -2,12 +2,11 @@
  * useContent Custom Hook
  * 
  * Manages content state and operations for a specific unit.
- * Handles content addition and deletion with confirmation dialogs.
- * Supports text, video (YouTube), and resource link content types.
+ * Handles content addition, update, deletion, and reordering.
  */
 
 import { useState } from 'react'
-import { addUnitContent, updateUnitContent, deleteUnitContent } from '../../../../services/courses'
+import { addUnitContent, updateUnitContent, deleteUnitContent, reorderContent } from '../../../../services/courses'
 
 export function useContent(adminToken, refreshSelectedCourse) {
   const [contentForm, setContentForm] = useState({ content_type: 'text', content_value: '', order_index: 1 })
@@ -30,12 +29,11 @@ export function useContent(adminToken, refreshSelectedCourse) {
     }
   }
 
-  const handleContentUpdate = async (event, contentId, selectedCourse) => {
-    event.preventDefault()
+  const handleContentUpdate = async (contentId, payload, selectedCourse) => {
     if (!contentId || !selectedCourse) return
     setMessage(null)
     try {
-      await updateUnitContent(adminToken, contentId, contentForm)
+      await updateUnitContent(adminToken, contentId, payload)
       await refreshSelectedCourse(selectedCourse.id)
       setMessageType('success')
       setMessage('Contenido actualizado')
@@ -47,15 +45,23 @@ export function useContent(adminToken, refreshSelectedCourse) {
 
   const handleContentDelete = async (contentId, selectedCourse) => {
     if (!selectedCourse) return
-
-    // Confirmation handled in parent component
-
     setMessage(null)
     try {
       await deleteUnitContent(adminToken, contentId)
       await refreshSelectedCourse(selectedCourse.id)
       setMessageType('success')
       setMessage('Contenido eliminado')
+    } catch (error) {
+      setMessageType('error')
+      setMessage(error.message)
+    }
+  }
+
+  const handleContentReorder = async (contentId, direction, selectedCourse) => {
+    if (!selectedCourse) return
+    try {
+      await reorderContent(contentId, direction)
+      await refreshSelectedCourse(selectedCourse.id)
     } catch (error) {
       setMessageType('error')
       setMessage(error.message)
@@ -69,8 +75,9 @@ export function useContent(adminToken, refreshSelectedCourse) {
     setMessage,
     messageType,
     handleAddContent,
-    handleContentCreate: handleAddContent, // Alias for compatibility
+    handleContentCreate: handleAddContent,
     handleContentUpdate,
     handleContentDelete,
+    handleContentReorder,
   }
 }
