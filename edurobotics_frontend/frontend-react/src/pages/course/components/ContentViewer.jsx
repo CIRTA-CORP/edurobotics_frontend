@@ -51,8 +51,19 @@ function ContentBlock({ content }) {
   }
 
   if (content.content_type === 'text') {
+    // Check if content contains HTML tags (from rich text editor)
+    const isHtml = /<[a-z][\s\S]*>/i.test(content.content_value)
+    if (isHtml) {
+      return (
+        <div
+          className="rich-content prose prose-sm md:prose-base max-w-none w-full overflow-hidden text-gray-700 leading-relaxed break-words"
+          dangerouslySetInnerHTML={{ __html: content.content_value }}
+        />
+      )
+    }
+    // Fallback for plain text (old content)
     return (
-      <div className="prose prose-sm md:prose-base max-w-none text-gray-700 leading-relaxed whitespace-pre-wrap">
+      <div className="prose prose-sm md:prose-base max-w-none w-full overflow-hidden text-gray-700 leading-relaxed whitespace-pre-wrap break-words">
         {content.content_value}
       </div>
     )
@@ -73,13 +84,73 @@ function ContentBlock({ content }) {
   if (content.content_type === 'file') {
     const fileName = content.content_value?.split('/').pop() || 'archivo'
     const ext = fileName.split('.').pop()?.toUpperCase() || ''
+    const fileUrl = buildUrl(content.content_value)
+
+    if (ext === 'PDF') {
+      return (
+        <div className="flex flex-col gap-3 w-full">
+          {/* PDF Header / Download Bar */}
+          <div className="flex items-center justify-between px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl">
+            <div className="flex items-center gap-3 min-w-0">
+              <div className="w-8 h-8 rounded-lg bg-rose-100 flex items-center justify-center flex-shrink-0">
+                <FileDown className="w-4 h-4 text-rose-600" />
+              </div>
+              <div className="min-w-0">
+                <h3 className="text-sm font-semibold text-gray-800 truncate" title={fileName}>
+                  {fileName}
+                </h3>
+                <p className="text-[11px] font-medium text-gray-500">Documento PDF</p>
+              </div>
+            </div>
+            <a
+              href={fileUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              download
+              className="flex-shrink-0 flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-gray-700 bg-white border border-gray-200 hover:bg-gray-50 hover:text-blue-600 rounded-lg transition-colors shadow-sm"
+              title="Descargar PDF"
+            >
+              <FileDown className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">Descargar</span>
+            </a>
+          </div>
+
+          {/* PDF Embed */}
+          <div className="w-full bg-gray-100 rounded-xl border border-gray-200 overflow-hidden shadow-inner" style={{ height: '75vh', minHeight: '600px' }}>
+            <object
+              data={fileUrl}
+              type="application/pdf"
+              className="w-full h-full"
+            >
+              <div className="flex flex-col items-center justify-center h-full p-8 text-center bg-gray-50">
+                <div className="w-16 h-16 bg-gray-200 rounded-full flex items-center justify-center mb-4">
+                  <FileDown className="w-8 h-8 text-gray-400" />
+                </div>
+                <p className="text-gray-600 mb-5 font-medium">Tu navegador de internet no soporta la previsualización de PDFs integrados.</p>
+                <a
+                  href={fileUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  download
+                  className="px-5 py-2.5 text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-xl transition-colors shadow-sm"
+                >
+                  Descargar el archivo PDF directamente
+                </a>
+              </div>
+            </object>
+          </div>
+        </div>
+      )
+    }
+
+    // Default download card for non-PDF files (Word, Excel, etc)
     return (
       <a
-        href={buildUrl(content.content_value)}
+        href={fileUrl}
         target="_blank"
         rel="noopener noreferrer"
         download
-        className="flex items-center gap-4 px-5 py-4 bg-gradient-to-r from-rose-50 to-orange-50 hover:from-rose-100 hover:to-orange-100 rounded-xl border border-rose-200/60 transition-all group"
+        className="flex items-center gap-4 px-5 py-4 bg-gradient-to-r from-rose-50 to-orange-50 hover:from-rose-100 hover:to-orange-100 rounded-xl border border-rose-200/60 transition-all group w-full"
       >
         <div className="w-11 h-11 rounded-lg bg-white shadow-sm flex items-center justify-center border border-rose-200/50 flex-shrink-0">
           <FileDown className="w-5 h-5 text-rose-500 group-hover:scale-110 transition-transform" />
@@ -215,7 +286,7 @@ export function ContentViewer({
         {/* ── Lesson content card — everything flows together ── */}
         {contents.length > 0 && (
           <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
-            <div className="p-6 md:p-8 lg:p-10 space-y-6">
+            <div className="p-6 md:p-8 lg:p-12 space-y-8 max-w-[800px] mx-auto">
               {contents.map((content) => (
                 <ContentBlock key={content.id} content={content} />
               ))}

@@ -14,6 +14,7 @@ import { BookOpen, Loader2 } from 'lucide-react'
 import { StudentHeader } from './components/StudentHeader'
 import { HeroSection } from './components/HeroSection'
 import { CourseGrid } from './components/CourseGrid'
+import { LogoutModal } from '../../components/LogoutModal'
 
 function StudentDashboardPage({ userOverride = null, hideLogout = false, hideHeader = false, adminView = null, setAdminView = null }) {
   const navigate = useNavigate()
@@ -32,45 +33,42 @@ function StudentDashboardPage({ userOverride = null, hideLogout = false, hideHea
     setUser(storedUser)
   }, [navigate, userOverride])
 
+  // Load courses + roadmap in parallel
   useEffect(() => {
-    const loadCourses = async () => {
+    const loadAll = async () => {
+      if (!user || !Number.isInteger(user.id)) return
       try {
-        const response = await getCourses()
-        setCourses(response.courses || [])
+        const [coursesResp, roadmapResp] = await Promise.all([
+          getCourses(),
+          getRoadmap(user.id).catch(() => null),
+        ])
+
+        const courseList = coursesResp.courses || []
+
+        // Merge roadmap data into courses
+        if (roadmapResp?.roadmap && Array.isArray(roadmapResp.roadmap)) {
+          const map = {}
+          roadmapResp.roadmap.forEach(c => { map[c.id] = c })
+          setCourses(courseList.map(course => ({ ...course, roadmapSummary: map[course.id] })))
+        } else {
+          setCourses(courseList)
+        }
       } catch (err) {
         setError(err.message)
       } finally {
         setLoading(false)
       }
     }
-    loadCourses()
-  }, [])
+    loadAll()
+  }, [user])
 
-  // Fetch roadmap summary once we have the user and courses loaded
-  const [roadmapFetched, setRoadmapFetched] = useState(false)
-  useEffect(() => {
-    const loadRoadmap = async () => {
-      if (!user || !Number.isInteger(user.id)) return
-      if (!courses || courses.length === 0) return
-      if (roadmapFetched) return
-
-      try {
-        const roadmapResp = await getRoadmap(user.id)
-        const map = {}
-        if (roadmapResp?.roadmap && Array.isArray(roadmapResp.roadmap)) {
-          roadmapResp.roadmap.forEach(c => { map[c.id] = c })
-        }
-        setCourses(prev => (prev || []).map(course => ({ ...course, roadmapSummary: map[course.id] })))
-      } catch (e) {
-        // ignore roadmap errors for now
-      } finally {
-        setRoadmapFetched(true)
-      }
-    }
-    loadRoadmap()
-  }, [user, courses, roadmapFetched])
+  const [showLogoutModal, setShowLogoutModal] = useState(false)
 
   const handleLogout = () => {
+    setShowLogoutModal(true)
+  }
+
+  const confirmLogout = () => {
     clearStoredUser()
     navigate('/login')
   }
@@ -83,6 +81,11 @@ function StudentDashboardPage({ userOverride = null, hideLogout = false, hideHea
 
   return (
     <div className={hideHeader ? "" : "min-h-screen bg-gradient-to-br from-gray-50 to-gray-100"}>
+      <LogoutModal
+        isOpen={showLogoutModal}
+        onConfirm={confirmLogout}
+        onCancel={() => setShowLogoutModal(false)}
+      />
       {!hideHeader && (
         <>
           <StudentHeader

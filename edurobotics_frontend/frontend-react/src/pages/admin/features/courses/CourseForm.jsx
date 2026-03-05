@@ -30,6 +30,7 @@ export function CourseForm({
   onDelete,
   onPrereqSave,
   selectedCourse,
+  isSubmitting = false,
   allCourses = [],    // all courses for the checkbox list
   expanded,
   onToggle
@@ -163,15 +164,15 @@ export function CourseForm({
 
             {/* Action buttons */}
             {isCreateMode ? (
-              <Button type="submit" className="w-full gap-1.5 bg-blue-600 hover:bg-blue-700">
+              <Button type="submit" disabled={isSubmitting} className="w-full gap-1.5 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed">
                 <Plus className="w-4 h-4" />
-                Crear Curso
+                {isSubmitting ? 'Creando...' : 'Crear Curso'}
               </Button>
             ) : (
               <div className="flex gap-2 pt-2">
-                <Button type="submit" className="flex-1 gap-1.5 bg-blue-600 hover:bg-blue-700">
+                <Button type="submit" disabled={isSubmitting} className="flex-1 gap-1.5 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed">
                   <Save className="w-4 h-4" />
-                  Guardar cambios
+                  {isSubmitting ? 'Guardando...' : 'Guardar cambios'}
                 </Button>
                 <Button
                   type="button"

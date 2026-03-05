@@ -16,6 +16,7 @@ import {
 import { AdminHeader } from './components/AdminHeader'
 import { CourseList } from './features/courses/CourseList'
 import { CourseForm } from './features/courses/CourseForm'
+import { LogoutModal } from '../../components/LogoutModal'
 import { ModuleForm } from './features/modules/ModuleForm'
 import { ModuleList } from './features/modules/ModuleList'
 import { UnitForm } from './features/units/UnitForm'
@@ -148,7 +149,13 @@ function AdminDashboardPage() {
     loadCourses()
   }, [])
 
+  const [showLogoutModal, setShowLogoutModal] = useState(false)
+
   const handleLogout = () => {
+    setShowLogoutModal(true)
+  }
+
+  const confirmLogout = () => {
     clearStoredUser()
     navigate('/login')
   }
@@ -295,6 +302,11 @@ function AdminDashboardPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
+      <LogoutModal
+        isOpen={showLogoutModal}
+        onConfirm={confirmLogout}
+        onCancel={() => setShowLogoutModal(false)}
+      />
       <AdminHeader
         adminView={adminView}
         onViewChange={setAdminView}
@@ -329,10 +341,10 @@ function AdminDashboardPage() {
 
       {/* Vista Admin */}
       {adminView === 'admin' && (
-        <div className="max-w-7xl mx-auto p-6">
-          <div className="grid grid-cols-12 gap-6">
+        <div className="max-w-7xl mx-auto p-3 lg:p-6">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 lg:gap-6">
             {/* Sidebar */}
-            <aside className="col-span-3">
+            <aside className="lg:col-span-3">
               <CourseList
                 courses={courses}
                 selectedCourse={selectedCourse}
@@ -341,10 +353,10 @@ function AdminDashboardPage() {
             </aside>
 
             {/* Main Content */}
-            <main className="col-span-9">
+            <main className="lg:col-span-9">
               {/* Tabs */}
-              <div className="mb-6">
-                <div className="flex items-center gap-1 bg-gray-100 rounded-xl p-1">
+              <div className="mb-4 lg:mb-6">
+                <div className="flex items-center gap-1 bg-gray-100 rounded-xl p-1 overflow-x-auto">
                   {[
                     { id: 'dashboard', label: 'Dashboard', icon: BarChart3, enabled: true },
                     { id: 'cursos', label: 'Cursos', icon: BookOpen, enabled: true },
@@ -360,15 +372,15 @@ function AdminDashboardPage() {
                         key={tab.id}
                         onClick={() => setActiveTab(tab.id)}
                         disabled={!tab.enabled}
-                        className={`flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 ${isActive
+                        className={`flex items-center justify-center gap-1.5 px-3 lg:px-4 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 whitespace-nowrap ${isActive
                           ? 'bg-white text-gray-900 shadow-sm'
                           : tab.enabled
                             ? 'text-gray-500 hover:text-gray-700'
                             : 'text-gray-300 cursor-not-allowed'
                           }`}
                       >
-                        <TabIcon className="w-4 h-4" />
-                        {tab.label}
+                        <TabIcon className="w-4 h-4 flex-shrink-0" />
+                        <span className="hidden sm:inline">{tab.label}</span>
                       </button>
                     )
                   })}
@@ -402,6 +414,7 @@ function AdminDashboardPage() {
                         setCourseForm={courseHooks.setCourseForm}
                         prereqIds={courseHooks.prereqIds}
                         setPrereqIds={courseHooks.setPrereqIds}
+                        isSubmitting={courseHooks.isSubmitting}
                         onSubmit={(e) => courseHooks.handleCourseUpdate(e, selectedCourse)}
                         onDelete={() => {
                           if (window.confirm(`¿Eliminar el curso "${selectedCourse.title}"?`)) {
@@ -434,6 +447,7 @@ function AdminDashboardPage() {
                         mode="create"
                         courseForm={courseHooks.courseForm}
                         setCourseForm={courseHooks.setCourseForm}
+                        isSubmitting={courseHooks.isSubmitting}
                         onSubmit={async (e) => {
                           await handleCourseCreate(e)
                           setIsCourseModalOpen(false)

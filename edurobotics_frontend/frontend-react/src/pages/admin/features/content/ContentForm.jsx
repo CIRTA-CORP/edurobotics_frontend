@@ -7,6 +7,8 @@
  */
 
 import { useState, useRef } from 'react'
+import ReactQuill from 'react-quill-new'
+import 'react-quill-new/dist/quill.snow.css'
 import { Card, CardContent } from '../../../../components/ui/card'
 import { Button } from '../../../../components/ui/button'
 import { Badge } from '../../../../components/ui/badge'
@@ -217,18 +219,44 @@ export function ContentForm({
                     <p className="text-xs text-red-600 bg-red-50 px-3 py-2 rounded-lg">{uploadError}</p>
                   )}
                 </div>
+              ) : contentForm.content_type === 'text' ? (
+                <div className="rounded-lg border border-gray-200 overflow-hidden bg-white">
+                  <ReactQuill
+                    theme="snow"
+                    value={contentForm.content_value}
+                    onChange={(value) => setContentForm({ ...contentForm, content_value: value })}
+                    placeholder="Escribe el contenido aquí. Usa la barra de herramientas para dar formato..."
+                    modules={{
+                      toolbar: [
+                        [{ 'header': [1, 2, 3, false] }],
+                        ['bold', 'italic', 'underline', 'strike'],
+                        [{ 'list': 'ordered' }, { 'list': 'bullet' }],
+                        ['blockquote'],
+                        ['link'],
+                        ['clean'],
+                      ],
+                    }}
+                    formats={[
+                      'header',
+                      'bold', 'italic', 'underline', 'strike',
+                      'list',
+                      'blockquote',
+                      'link',
+                    ]}
+                    style={{ minHeight: '180px' }}
+                  />
+                </div>
               ) : (
-                <textarea
+                <input
+                  type="text"
                   placeholder={
                     contentForm.content_type === 'video'
                       ? 'https://www.youtube.com/watch?v=...'
-                      : contentForm.content_type === 'resource'
-                        ? 'https://...'
-                        : 'Escribe el contenido de texto aquí...'
+                      : 'https://...'
                   }
                   value={contentForm.content_value}
                   onChange={(e) => setContentForm({ ...contentForm, content_value: e.target.value })}
-                  className="flex min-h-[100px] w-full rounded-lg border border-gray-200 bg-white px-3 py-2.5 text-sm placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-colors resize-none"
+                  className="flex w-full rounded-lg border border-gray-200 bg-white px-3 py-2.5 text-sm placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-colors"
                   required
                 />
               )}
@@ -311,11 +339,23 @@ export function ContentForm({
                         </div>
                         {isEditing && content.content_type === 'text' ? (
                           <div className="flex gap-2">
-                            <textarea
-                              value={editValue}
-                              onChange={(e) => setEditValue(e.target.value)}
-                              className="flex-1 min-h-[60px] rounded-lg border border-blue-300 bg-white px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 resize-none"
-                            />
+                            <div className="flex-1 rounded-lg border border-blue-300 overflow-hidden bg-white">
+                              <ReactQuill
+                                theme="snow"
+                                value={editValue}
+                                onChange={setEditValue}
+                                modules={{
+                                  toolbar: [
+                                    [{ 'header': [1, 2, 3, false] }],
+                                    ['bold', 'italic', 'underline'],
+                                    [{ 'list': 'ordered' }, { 'list': 'bullet' }],
+                                    ['blockquote'],
+                                    ['link', 'clean']
+                                  ]
+                                }}
+                                style={{ minHeight: '100px' }}
+                              />
+                            </div>
                             <div className="flex flex-col gap-1">
                               <Button
                                 type="button"
@@ -346,7 +386,11 @@ export function ContentForm({
                             className="w-32 h-20 object-cover rounded-lg border border-gray-200"
                           />
                         ) : (
-                          <p className="text-sm text-gray-700 break-words line-clamp-3">{content.content_value}</p>
+                          <p className="text-sm text-gray-700 break-words line-clamp-3">
+                            {content.content_type === 'text'
+                              ? content.content_value.replace(/<[^>]+>/g, '') // Strip HTML tags for preview
+                              : content.content_value}
+                          </p>
                         )}
                       </div>
 

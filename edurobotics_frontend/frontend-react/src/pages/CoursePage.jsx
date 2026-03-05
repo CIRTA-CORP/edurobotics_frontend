@@ -11,7 +11,7 @@ import { getStoredUser } from '../services/auth'
 import { getCourseDetail } from '../services/courses'
 import { Button } from '../components/ui/button'
 import {
-  Loader2, BookOpen, ArrowLeft, GraduationCap, Zap, Trophy, Shield
+  Loader2, BookOpen, ArrowLeft, GraduationCap, Zap, Trophy, Shield, Menu, X
 } from 'lucide-react'
 import { CourseSidebar } from './course/components/CourseSidebar'
 import { ContentViewer } from './course/components/ContentViewer'
@@ -31,6 +31,7 @@ function CoursePage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [selectedUnitId, setSelectedUnitId] = useState(null)
+  const [sidebarOpen, setSidebarOpen] = useState(false)
 
   const progressHook = useProgress(user?.id, parseInt(courseId))
 
@@ -125,24 +126,46 @@ function CoursePage() {
       <CourseTopBar course={course} user={user} onBack={() => navigate('/dashboard')} />
 
       {/* Body: sidebar + content */}
-      <div className="flex flex-1 overflow-hidden">
+      <div className="flex flex-1 overflow-hidden relative">
+        {/* Mobile sidebar toggle */}
+        <button
+          onClick={() => setSidebarOpen(!sidebarOpen)}
+          className="lg:hidden fixed bottom-4 left-4 z-50 w-12 h-12 bg-blue-600 text-white rounded-full shadow-lg flex items-center justify-center hover:bg-blue-700 transition-colors"
+        >
+          {sidebarOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+        </button>
+
+        {/* Mobile backdrop */}
+        {sidebarOpen && (
+          <div
+            className="lg:hidden fixed inset-0 bg-black/30 z-30"
+            onClick={() => setSidebarOpen(false)}
+          />
+        )}
+
         {/* ── Sidebar ── */}
-        <aside className="w-72 flex-shrink-0 bg-white border-r border-gray-200 overflow-y-auto">
+        <aside className={`
+          w-72 flex-shrink-0 bg-white border-r border-gray-200 overflow-y-auto
+          fixed lg:relative inset-y-0 left-0 z-40
+          transform transition-transform duration-200 ease-in-out
+          ${sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
+          top-0 lg:top-auto pt-14 lg:pt-0
+        `}>
           <CourseSidebar
             modules={course.modules || []}
             selectedUnitId={selectedUnitId}
-            onUnitClick={setSelectedUnitId}
+            onUnitClick={(id) => { setSelectedUnitId(id); setSidebarOpen(false) }}
             getModuleProgress={progressHook.getModuleProgress}
             getUnitProgress={progressHook.getUnitProgress}
             progressData={progressHook.progress}
             userId={user?.id}
             courseId={parseInt(courseId)}
-            onNavigateUnit={setSelectedUnitId}
+            onNavigateUnit={(id) => { setSelectedUnitId(id); setSidebarOpen(false) }}
           />
         </aside>
 
         {/* ── Main content ── */}
-        <main className="flex-1 overflow-y-auto p-6">
+        <main className="flex-1 overflow-y-auto p-3 lg:p-6">
           <ContentViewer
             unit={currentUnit}
             allUnits={allUnits}

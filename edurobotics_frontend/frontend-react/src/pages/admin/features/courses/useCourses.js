@@ -14,9 +14,12 @@ export function useCourses(adminToken, refreshCourses, refreshSelectedCourse) {
   const [prereqIds, setPrereqIds] = useState([]) // number[]
   const [message, setMessage] = useState(null)
   const [messageType, setMessageType] = useState('success')
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
   const handleCourseCreate = async (event) => {
     event.preventDefault()
+    if (isSubmitting) return // Prevent double submission
+    setIsSubmitting(true)
     setMessage(null)
     try {
       await createCourse(adminToken, courseForm)
@@ -27,12 +30,15 @@ export function useCourses(adminToken, refreshCourses, refreshSelectedCourse) {
     } catch (error) {
       setMessageType('error')
       setMessage(error.message)
+    } finally {
+      setIsSubmitting(false)
     }
   }
 
   const handleCourseUpdate = async (event, selectedCourse) => {
     event.preventDefault()
-    if (!selectedCourse) return
+    if (!selectedCourse || isSubmitting) return
+    setIsSubmitting(true)
     setMessage(null)
     try {
       await updateCourse(adminToken, selectedCourse.id, courseForm)
@@ -43,6 +49,8 @@ export function useCourses(adminToken, refreshCourses, refreshSelectedCourse) {
     } catch (error) {
       setMessageType('error')
       setMessage(error.message)
+    } finally {
+      setIsSubmitting(false)
     }
   }
 
@@ -90,6 +98,7 @@ export function useCourses(adminToken, refreshCourses, refreshSelectedCourse) {
     message,
     setMessage,
     messageType,
+    isSubmitting,
     handleCourseCreate,
     handleCourseUpdate,
     handleCourseDelete,

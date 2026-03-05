@@ -335,7 +335,7 @@ function CoursePreviewPage() {
         setUser(storedUser)
     }, [navigate])
 
-    // Load course detail
+    // Load course detail IMMEDIATELY (no user dependency)
     useEffect(() => {
         const load = async () => {
             try {
@@ -350,54 +350,43 @@ function CoursePreviewPage() {
         load()
     }, [courseId])
 
-    // Load progress + all courses for mini roadmap
+    // Load user-dependent data in parallel (roadmap + prereqs)
     useEffect(() => {
         if (!user?.id) return
-        getRoadmap(user.id, parseInt(courseId))
-            .then(data => {
-                const roadmap = data?.roadmap
-                if (roadmap && typeof roadmap === 'object' && !Array.isArray(roadmap)) {
-                    setProgress({ percentage: roadmap.percentage ?? 0, state: roadmap.state ?? 'not_started' })
-                }
-            })
-            .catch(() => { })
 
-        // Load all courses roadmap for mini graph
-        getRoadmap(user.id)
-            .then(data => {
-                if (data?.roadmap && Array.isArray(data.roadmap)) {
-                    const map = {}
-                    data.roadmap.forEach(c => { map[c.id] = c })
-                    setRoadmapData(map)
-                }
-            })
-            .catch(() => { })
-
-        getCoursesRoadmap()
-            .then(data => setAllCourses(data.courses || []))
-            .catch(() => { })
-    }, [user, courseId])
-
-    // Check prerequisites (always fetch, even for admins, so the panel shows)
-    useEffect(() => {
-        if (!user?.id || !course) return
-        if (!course.prerequisites || course.prerequisites.length === 0) {
-            setPrereqCheck({ allowed: true, details: [], missing: [] })
-            return
-        }
-        checkPrerequisites(parseInt(courseId), user.id)
-            .then(data => {
-                // Admins can always access but still see prereq info
+        Promise.all([
+            getRoadmap(user.id, parseInt(courseId)).catch(() => null),
+            getRoadmap(user.id).catch(() => null),
+            getCoursesRoadmap().catch(() => null),
+            checkPrerequisites(parseInt(courseId), user.id).catch(() => null),
+        ]).then(([singleRoadmap, fullRoadmap, coursesRoadmap, prereqData]) => {
+            // Single course progress
+            const roadmap = singleRoadmap?.roadmap
+            if (roadmap && typeof roadmap === 'object' && !Array.isArray(roadmap)) {
+                setProgress({ percentage: roadmap.percentage ?? 0, state: roadmap.state ?? 'not_started' })
+            }
+            // Full roadmap data
+            if (fullRoadmap?.roadmap && Array.isArray(fullRoadmap.roadmap)) {
+                const map = {}
+                fullRoadmap.roadmap.forEach(c => { map[c.id] = c })
+                setRoadmapData(map)
+            }
+            // All courses for mini roadmap
+            if (coursesRoadmap?.courses) {
+                setAllCourses(coursesRoadmap.courses)
+            }
+            // Prerequisites
+            if (prereqData) {
                 if (user.role === 'admin') {
-                    setPrereqCheck({ ...data, allowed: true })
+                    setPrereqCheck({ ...prereqData, allowed: true })
                 } else {
-                    setPrereqCheck(data)
+                    setPrereqCheck(prereqData)
                 }
-            })
-            .catch(() => {
+            } else {
                 setPrereqCheck({ allowed: true, details: [], missing: [] })
-            })
-    }, [user, course, courseId])
+            }
+        })
+    }, [user, courseId])
 
     const handleStartStudy = () => {
         navigate(`/courses/${courseId}/study`)
