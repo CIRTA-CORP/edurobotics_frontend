@@ -370,7 +370,13 @@ function AdminDashboardPage() {
                     return (
                       <button
                         key={tab.id}
-                        onClick={() => setActiveTab(tab.id)}
+                        onClick={() => {
+                          setActiveTab(tab.id)
+                          courseHooks.setMessage?.(null)
+                          moduleHooks.setMessage?.(null)
+                          unitHooks.setMessage?.(null)
+                          contentHooks.setMessage?.(null)
+                        }}
                         disabled={!tab.enabled}
                         className={`flex items-center justify-center gap-1.5 px-3 lg:px-4 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 whitespace-nowrap ${isActive
                           ? 'bg-white text-gray-900 shadow-sm'
@@ -476,10 +482,13 @@ function AdminDashboardPage() {
                       title="Crear Nuevo Módulo"
                     >
                       <ModuleForm
+                        mode="create"
+                        isSubmitting={moduleHooks.isSubmitting}
                         moduleForm={moduleHooks.moduleForm}
                         setModuleForm={moduleHooks.setModuleForm}
                         onSubmit={async (e) => {
-                          await moduleHooks.handleModuleCreate(e, selectedCourse)
+                          const newModule = await moduleHooks.handleModuleCreate(e, selectedCourse)
+                          if (newModule) handleModuleSelect(newModule)
                           setIsModuleModalOpen(false)
                         }}
                         expanded={true}
@@ -506,6 +515,8 @@ function AdminDashboardPage() {
                       title="Editar Módulo"
                     >
                       <ModuleForm
+                        mode="edit"
+                        isSubmitting={moduleHooks.isSubmitting}
                         moduleForm={moduleHooks.moduleForm}
                         setModuleForm={moduleHooks.setModuleForm}
                         onSubmit={async (e) => {
@@ -537,10 +548,13 @@ function AdminDashboardPage() {
                       title="Crear Nueva Unidad"
                     >
                       <UnitForm
+                        mode="create"
+                        isSubmitting={unitHooks.isSubmitting}
                         unitForm={unitHooks.unitForm}
                         setUnitForm={unitHooks.setUnitForm}
                         onSubmit={async (e) => {
-                          await unitHooks.handleUnitCreate(e, selectedModule, selectedCourse)
+                          const newUnit = await unitHooks.handleUnitCreate(e, selectedModule, selectedCourse)
+                          if (newUnit) handleUnitSelect(newUnit)
                           setIsUnitModalOpen(false)
                         }}
                         expanded={true}
@@ -567,6 +581,8 @@ function AdminDashboardPage() {
                       title="Editar Unidad"
                     >
                       <UnitForm
+                        mode="edit"
+                        isSubmitting={unitHooks.isSubmitting}
                         unitForm={unitHooks.unitForm}
                         setUnitForm={unitHooks.setUnitForm}
                         onSubmit={async (e) => {

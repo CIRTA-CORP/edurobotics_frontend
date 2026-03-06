@@ -13,20 +13,25 @@ export function useModules(adminToken, refreshSelectedCourse) {
   const [selectedModuleId, setSelectedModuleId] = useState('')
   const [message, setMessage] = useState(null)
   const [messageType, setMessageType] = useState('success')
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
   const handleModuleCreate = async (event, selectedCourse) => {
     event.preventDefault()
     if (!selectedCourse) return
     setMessage(null)
+    setIsSubmitting(true)
     try {
-      await createModule(adminToken, selectedCourse.id, moduleForm)
+      const newModule = await createModule(adminToken, selectedCourse.id, moduleForm)
       await refreshSelectedCourse(selectedCourse.id)
       setMessageType('success')
       setMessage('Módulo creado')
       setModuleForm({ title: '', description: '', order_index: 1 })
+      return newModule
     } catch (error) {
       setMessageType('error')
       setMessage(error.message)
+    } finally {
+      setIsSubmitting(false)
     }
   }
 
@@ -34,6 +39,7 @@ export function useModules(adminToken, refreshSelectedCourse) {
     event.preventDefault()
     if (!moduleId || !selectedCourse) return
     setMessage(null)
+    setIsSubmitting(true)
     try {
       await updateModule(adminToken, moduleId, moduleForm)
       await refreshSelectedCourse(selectedCourse.id)
@@ -42,6 +48,8 @@ export function useModules(adminToken, refreshSelectedCourse) {
     } catch (error) {
       setMessageType('error')
       setMessage(error.message)
+    } finally {
+      setIsSubmitting(false)
     }
   }
 
@@ -74,5 +82,6 @@ export function useModules(adminToken, refreshSelectedCourse) {
     handleModuleCreate,
     handleModuleUpdate,
     handleModuleDelete,
+    isSubmitting,
   }
 }

@@ -13,20 +13,25 @@ export function useUnits(adminToken, refreshSelectedCourse) {
   const [selectedUnitId, setSelectedUnitId] = useState('')
   const [message, setMessage] = useState(null)
   const [messageType, setMessageType] = useState('success')
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
   const handleUnitCreate = async (event, selectedModule, selectedCourse) => {
     event.preventDefault()
     if (!selectedModule || !selectedCourse) return
     setMessage(null)
+    setIsSubmitting(true)
     try {
-      await createUnit(adminToken, selectedModule.id, unitForm)
+      const newUnit = await createUnit(adminToken, selectedModule.id, unitForm)
       await refreshSelectedCourse(selectedCourse.id)
       setMessageType('success')
       setMessage('Unidad creada')
       setUnitForm({ title: '', description: '', order_index: 1 })
+      return newUnit
     } catch (error) {
       setMessageType('error')
       setMessage(error.message)
+    } finally {
+      setIsSubmitting(false)
     }
   }
 
@@ -34,6 +39,7 @@ export function useUnits(adminToken, refreshSelectedCourse) {
     event.preventDefault()
     if (!unitId || !selectedCourse) return
     setMessage(null)
+    setIsSubmitting(true)
     try {
       await updateUnit(adminToken, unitId, unitForm)
       await refreshSelectedCourse(selectedCourse.id)
@@ -42,6 +48,8 @@ export function useUnits(adminToken, refreshSelectedCourse) {
     } catch (error) {
       setMessageType('error')
       setMessage(error.message)
+    } finally {
+      setIsSubmitting(false)
     }
   }
 
@@ -72,5 +80,6 @@ export function useUnits(adminToken, refreshSelectedCourse) {
     handleUnitCreate,
     handleUnitUpdate,
     handleUnitDelete,
+    isSubmitting,
   }
 }

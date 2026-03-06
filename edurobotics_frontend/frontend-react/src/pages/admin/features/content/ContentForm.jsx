@@ -388,14 +388,20 @@ export function ContentForm({
                         ) : (
                           <p className="text-sm text-gray-700 break-words line-clamp-3">
                             {content.content_type === 'text'
-                              ? content.content_value.replace(/<[^>]+>/g, '') // Strip HTML tags for preview
+                              ? (() => {
+                                try {
+                                  return new DOMParser().parseFromString(content.content_value, 'text/html').body.textContent || ''
+                                } catch (e) {
+                                  return content.content_value.replace(/<[^>]+>/g, '')
+                                }
+                              })()
                               : content.content_value}
                           </p>
                         )}
                       </div>
 
                       {/* Action buttons */}
-                      <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity ml-1 flex-shrink-0">
+                      <div className="flex items-center gap-0.5 opacity-100 sm:opacity-0 group-hover:opacity-100 transition-opacity ml-1 flex-shrink-0">
                         {content.content_type === 'text' && !isEditing && (
                           <Button
                             type="button"

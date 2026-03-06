@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { Button } from '../../../../components/ui/button';
 import {
     Plus, Trash2, X, HelpCircle, Check, Loader2, AlertCircle,
-    ClipboardCheck, BookOpen, Settings, ChevronDown, ChevronUp, MessageSquare
+    ClipboardCheck, BookOpen, Settings, ChevronDown, ChevronUp, MessageSquare, Edit3
 } from 'lucide-react';
 import quizService from '../../../../services/quizzes';
 
@@ -21,6 +21,8 @@ export function QuizEditor({ unitId, moduleId }) {
     const [showCreateForm, setShowCreateForm] = useState(false);
     const [newTitle, setNewTitle] = useState('');
     const [confirmDelete, setConfirmDelete] = useState(null); // { type: 'quiz'|'question', id, title }
+    const [isEditingTitle, setIsEditingTitle] = useState(false);
+    const [editTitleValue, setEditTitleValue] = useState('');
 
     const showMessage = useCallback((msg, type = 'success') => {
         setMessage(msg);
@@ -52,6 +54,26 @@ export function QuizEditor({ unitId, moduleId }) {
     }, [loadQuizzes]);
 
     // ── QUIZ CRUD ──
+    const handleSaveTitle = async () => {
+        if (!editTitleValue.trim() || editTitleValue === selectedQuiz.title) {
+            setIsEditingTitle(false);
+            return;
+        }
+        try {
+            setSaving(true);
+            await quizService.updateQuiz(selectedQuiz.id, { title: editTitleValue.trim() });
+            setSelectedQuiz(prev => ({ ...prev, title: editTitleValue.trim() }));
+            setIsEditingTitle(false);
+            showMessage('Título actualizado exitosamente');
+            // Refresh list in background to sync main list
+            loadQuizzes();
+        } catch (err) {
+            showMessage('Error al actualizar el título', 'error');
+        } finally {
+            setSaving(false);
+        }
+    };
+
     const handleCreateQuiz = async () => {
         if (!newTitle.trim()) return;
         try {
@@ -237,7 +259,41 @@ export function QuizEditor({ unitId, moduleId }) {
                             <X className="w-4 h-4" />
                         </button>
                         <div>
-                            <h3 className="text-lg font-semibold text-gray-900">{selectedQuiz.title}</h3>
+                            {isEditingTitle ? (
+                                <div className="flex items-center gap-1">
+                                    <input
+                                        type="text"
+                                        className="text-lg font-semibold text-gray-900 bg-white border border-gray-200 rounded px-2 py-0.5 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                        value={editTitleValue}
+                                        onChange={(e) => setEditTitleValue(e.target.value)}
+                                        onKeyDown={(e) => {
+                                            if (e.key === 'Enter') handleSaveTitle();
+                                            if (e.key === 'Escape') setIsEditingTitle(false);
+                                        }}
+                                        autoFocus
+                                    />
+                                    <Button size="sm" variant="ghost" onClick={handleSaveTitle} className="h-7 w-7 p-0 text-blue-600">
+                                        <Check className="w-4 h-4" />
+                                    </Button>
+                                    <Button size="sm" variant="ghost" onClick={() => setIsEditingTitle(false)} className="h-7 w-7 p-0 text-gray-400 hover:text-red-500">
+                                        <X className="w-4 h-4" />
+                                    </Button>
+                                </div>
+                            ) : (
+                                <div className="flex items-center gap-2 group">
+                                    <h3 className="text-lg font-semibold text-gray-900 leading-tight">{selectedQuiz.title}</h3>
+                                    <button
+                                        onClick={() => {
+                                            setEditTitleValue(selectedQuiz.title);
+                                            setIsEditingTitle(true);
+                                        }}
+                                        className="opacity-100 sm:opacity-0 group-hover:opacity-100 transition-opacity p-1 text-gray-400 hover:text-blue-600 rounded"
+                                        title="Editar Título"
+                                    >
+                                        <Edit3 className="w-3.5 h-3.5" />
+                                    </button>
+                                </div>
+                            )}
                             <p className="text-xs text-gray-500 mt-0.5">
                                 {questions.length} pregunta{questions.length !== 1 ? 's' : ''} · Mínimo: {selectedQuiz.passing_score}%
                                 {saving && <span className="ml-2 text-gray-400">Guardando...</span>}
@@ -513,7 +569,7 @@ function QuestionBlock({ q, idx, onSaveQuestion, onDeleteQuestion, onSetCorrect,
 
             {/* Answers */}
             <div className="p-4 space-y-2">
-                {q.answers.map(a => (
+                {[...q.answers].sort((a, b) => a.id - b.id).map(a => (
                     <div key={a.id} className="space-y-1">
                         <div className={`flex items-center gap-2.5 p-2.5 rounded-lg border ${a.is_correct ? 'border-emerald-200 bg-emerald-50/40' : 'border-gray-100 bg-white'
                             }`}>
