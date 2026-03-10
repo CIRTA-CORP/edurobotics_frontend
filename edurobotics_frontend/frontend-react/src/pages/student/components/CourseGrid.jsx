@@ -3,8 +3,12 @@
  *
  * Responsive grid displaying course cards with visual progress bars,
  * level badges, and state-based colors. Shows empty state when no courses.
+ *
+ * Performance: Prefetches course detail data on hover so the
+ * CoursePreviewPage loads instantly when the user clicks.
  */
 
+import { useCallback } from 'react'
 import { Card, CardContent } from '../../../components/ui/card'
 import { Badge } from '../../../components/ui/badge'
 import { Button } from '../../../components/ui/button'
@@ -12,6 +16,7 @@ import {
   BookOpen, ArrowRight, Check, Clock, PlayCircle,
   GraduationCap, Zap, Trophy
 } from 'lucide-react'
+import { getCourseDetail } from '../../../services/courses'
 
 const LEVEL_CONFIG = {
   beginner: { label: 'Principiante', color: 'bg-emerald-100 text-emerald-700', icon: GraduationCap },
@@ -26,6 +31,11 @@ const STATE_CONFIG = {
 }
 
 export function CourseGrid({ courses, onCourseClick }) {
+  // Prefetch course data on hover — fires silently, fills the cache
+  const handlePrefetch = useCallback((courseId) => {
+    getCourseDetail(courseId).catch(() => { })
+  }, [])
+
   if (courses.length === 0) {
     return (
       <Card className="border-dashed border-2 border-gray-200">
@@ -57,6 +67,7 @@ export function CourseGrid({ courses, onCourseClick }) {
             key={course.id}
             className="group cursor-pointer"
             onClick={() => onCourseClick(course.id)}
+            onMouseEnter={() => handlePrefetch(course.id)}
           >
             <Card className={`h-full transition-all duration-300 hover:shadow-lg hover:-translate-y-1 border ${completed ? 'border-emerald-200' : 'border-gray-200 hover:border-gray-300'}`}>
               {/* Color accent bar */}

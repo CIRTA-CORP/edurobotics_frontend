@@ -10,6 +10,30 @@ const parseError = async (response) => {
   }
 }
 
+// ── In-memory cache for getCourseDetail ──
+// Avoids re-fetching the same course when navigating Preview → Study
+const courseCache = new Map()
+const CACHE_TTL = 60_000 // 60 seconds
+
+function getCachedCourse(courseId) {
+  const entry = courseCache.get(String(courseId))
+  if (entry && Date.now() - entry.timestamp < CACHE_TTL) {
+    return entry.data
+  }
+  courseCache.delete(String(courseId))
+  return null
+}
+
+function setCachedCourse(courseId, data) {
+  courseCache.set(String(courseId), { data, timestamp: Date.now() })
+}
+
+/** Clear cache for a specific course (call after admin edits) */
+export function invalidateCourseCache(courseId) {
+  if (courseId) courseCache.delete(String(courseId))
+  else courseCache.clear()
+}
+
 // === COURSES (Public) ===
 
 export const getCourses = async () => {
@@ -21,11 +45,17 @@ export const getCourses = async () => {
 }
 
 export const getCourseDetail = async (courseId) => {
+  // Return cached version if fresh
+  const cached = getCachedCourse(courseId)
+  if (cached) return cached
+
   const response = await fetch(`${API_BASE}/api/courses/${courseId}`)
   if (!response.ok) {
     throw new Error(await parseError(response))
   }
-  return response.json()
+  const data = await response.json()
+  setCachedCourse(courseId, data)
+  return data
 }
 
 // === COURSES (Admin - JWT Protected) ===

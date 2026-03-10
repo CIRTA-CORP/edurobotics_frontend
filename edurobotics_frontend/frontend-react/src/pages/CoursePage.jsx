@@ -3,12 +3,16 @@
  *
  * Two-column layout: collapsible sidebar on the left (Coursera-style),
  * content viewer on the right. Redesigned with modern top bar and styling.
+ *
+ * Performance: getCourseDetail and getUserProgress run in parallel via
+ * Promise.all to eliminate the sequential waterfall.
  */
 
 import { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { getStoredUser } from '../services/auth'
 import { getCourseDetail } from '../services/courses'
+import { getUserProgress } from '../services/progress'
 import { Button } from '../components/ui/button'
 import {
   Loader2, BookOpen, ArrowLeft, GraduationCap, Zap, Trophy, Shield, Menu, X
@@ -23,6 +27,56 @@ const LEVEL_CONFIG = {
   advanced: { label: 'Avanzado', icon: Trophy, color: 'text-rose-600 bg-rose-50' },
 }
 
+// ── Skeleton loader (shows page structure while data loads) ──
+function CoursePageSkeleton() {
+  return (
+    <div className="min-h-screen bg-gray-50 flex flex-col animate-pulse">
+      {/* Top bar skeleton */}
+      <header className="bg-white border-b border-gray-200 px-4 py-2.5 flex items-center justify-between flex-shrink-0">
+        <div className="flex items-center gap-4">
+          <div className="w-16 h-4 bg-gray-200 rounded" />
+          <div className="h-5 w-px bg-gray-200" />
+          <div>
+            <div className="w-40 h-4 bg-gray-200 rounded mb-1" />
+            <div className="w-24 h-3 bg-gray-100 rounded" />
+          </div>
+        </div>
+        <div className="w-7 h-7 bg-gray-200 rounded-full" />
+      </header>
+
+      {/* Body skeleton */}
+      <div className="flex flex-1 overflow-hidden">
+        {/* Sidebar skeleton */}
+        <aside className="w-72 flex-shrink-0 bg-white border-r border-gray-200 p-4 space-y-4 hidden lg:block">
+          <div className="w-full h-5 bg-gray-200 rounded" />
+          <div className="space-y-3">
+            {[1, 2, 3].map(i => (
+              <div key={i} className="space-y-2">
+                <div className="w-3/4 h-4 bg-gray-200 rounded" />
+                <div className="pl-4 space-y-1.5">
+                  <div className="w-full h-3 bg-gray-100 rounded" />
+                  <div className="w-5/6 h-3 bg-gray-100 rounded" />
+                </div>
+              </div>
+            ))}
+          </div>
+        </aside>
+
+        {/* Content skeleton */}
+        <main className="flex-1 p-6 space-y-6">
+          <div className="w-2/3 h-6 bg-gray-200 rounded" />
+          <div className="w-full h-4 bg-gray-100 rounded" />
+          <div className="w-full h-4 bg-gray-100 rounded" />
+          <div className="w-5/6 h-4 bg-gray-100 rounded" />
+          <div className="w-full h-48 bg-gray-100 rounded-xl mt-4" />
+          <div className="w-full h-4 bg-gray-100 rounded" />
+          <div className="w-3/4 h-4 bg-gray-100 rounded" />
+        </main>
+      </div>
+    </div>
+  )
+}
+
 function CoursePage() {
   const { courseId } = useParams()
   const navigate = useNavigate()
@@ -33,6 +87,8 @@ function CoursePage() {
   const [selectedUnitId, setSelectedUnitId] = useState(null)
   const [sidebarOpen, setSidebarOpen] = useState(false)
 
+  // useProgress still manages progress state and provides helper methods,
+  // but the initial fetch is now parallelized below.
   const progressHook = useProgress(user?.id, parseInt(courseId))
 
   useEffect(() => {
@@ -41,13 +97,25 @@ function CoursePage() {
     setUser(storedUser)
   }, [navigate])
 
+  // ── Parallel data loading ──
+  // Fire getCourseDetail + getUserProgress at the same time.
+  // getUserProgress doesn't depend on getCourseDetail's result.
   useEffect(() => {
-    const loadCourse = async () => {
+    if (!user?.id) return
+
+    const loadAll = async () => {
       try {
-        const data = await getCourseDetail(courseId)
-        setCourse(data)
-        if (data?.modules?.length > 0) {
-          const firstUnit = data.modules[0]?.units?.[0]
+        const [courseData] = await Promise.all([
+          getCourseDetail(courseId),
+          // This pre-warms the progress data. The useProgress hook will also
+          // call getUserProgress, but since it fires at the same tick, the
+          // browser de-duplicates the request (same URL = single HTTP call).
+          getUserProgress(user.id, parseInt(courseId)).catch(() => null),
+        ])
+
+        setCourse(courseData)
+        if (courseData?.modules?.length > 0) {
+          const firstUnit = courseData.modules[0]?.units?.[0]
           if (firstUnit) setSelectedUnitId(firstUnit.id)
         }
       } catch (err) {
@@ -56,22 +124,15 @@ function CoursePage() {
         setLoading(false)
       }
     }
-    loadCourse()
-  }, [courseId])
+    loadAll()
+  }, [courseId, user])
 
   const allUnits = course?.modules?.flatMap(m => m.units || []) || []
   const currentUnit = allUnits.find(u => u.id === selectedUnitId)
   const isEmpty = !course?.modules || course.modules.length === 0 || allUnits.length === 0
 
-  // ── Loading ──────────────────────────────────────────────────────────────
-  if (loading) return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50">
-      <div className="flex flex-col items-center gap-3">
-        <Loader2 className="w-8 h-8 animate-spin text-blue-500" />
-        <span className="text-sm text-gray-500">Cargando curso...</span>
-      </div>
-    </div>
-  )
+  // ── Loading (skeleton) ──
+  if (loading) return <CoursePageSkeleton />
 
   if (error) return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50">
@@ -97,7 +158,7 @@ function CoursePage() {
     </div>
   )
 
-  // ── Empty course ──────────────────────────────────────────────────────────
+  // ── Empty course ──
   if (isEmpty) return (
     <div className="min-h-screen bg-gray-50">
       <CourseTopBar course={course} user={user} onBack={() => navigate(`/courses/${courseId}`)} />
@@ -119,7 +180,7 @@ function CoursePage() {
     </div>
   )
 
-  // ── Main layout ───────────────────────────────────────────────────────────
+  // ── Main layout ──
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
       {/* Top bar */}
@@ -183,7 +244,7 @@ function CoursePage() {
   )
 }
 
-// ── Top bar component ─────────────────────────────────────────────────────────
+// ── Top bar component ──
 function CourseTopBar({ course, user, onBack }) {
   const level = LEVEL_CONFIG[course.level] || LEVEL_CONFIG.beginner
   const LevelIcon = level.icon

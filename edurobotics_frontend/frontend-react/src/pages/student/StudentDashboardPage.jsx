@@ -109,8 +109,19 @@ function StudentDashboardPage({ userOverride = null, hideLogout = false, hideHea
         </div>
 
         {loading && (
-          <div className="flex items-center justify-center py-12">
-            <Loader2 className="w-8 h-8 animate-spin text-gray-600" />
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 animate-pulse">
+            {[1, 2, 3, 4, 5, 6].map(i => (
+              <div key={i} className="bg-white rounded-xl border border-gray-100 p-5 space-y-3">
+                <div className="flex items-center gap-2">
+                  <div className="w-16 h-5 bg-gray-200 rounded-full" />
+                  <div className="w-10 h-5 bg-gray-100 rounded-full" />
+                </div>
+                <div className="w-3/4 h-5 bg-gray-200 rounded" />
+                <div className="w-full h-3 bg-gray-100 rounded" />
+                <div className="w-5/6 h-3 bg-gray-100 rounded" />
+                <div className="w-full h-2 bg-gray-100 rounded-full mt-2" />
+              </div>
+            ))}
           </div>
         )}
 

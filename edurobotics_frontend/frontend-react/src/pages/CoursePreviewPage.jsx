@@ -394,10 +394,42 @@ function CoursePreviewPage() {
 
     // ── Loading / Error ───────────────────────────────────────────────────────
     if (loading) return (
-        <div className="min-h-screen flex items-center justify-center bg-gray-50">
-            <div className="flex flex-col items-center gap-3">
-                <Loader2 className="w-8 h-8 animate-spin text-blue-500" />
-                <span className="text-sm text-gray-500">Cargando curso...</span>
+        <div className="min-h-screen bg-gray-50 animate-pulse">
+            {/* Nav skeleton */}
+            <header className="bg-white border-b border-gray-200 px-6 py-2.5 flex items-center justify-between">
+                <div className="w-24 h-4 bg-gray-200 rounded" />
+                <div className="w-7 h-7 bg-gray-200 rounded-full" />
+            </header>
+            {/* Hero skeleton */}
+            <div className="bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
+                <div className="max-w-5xl mx-auto px-6 py-12 space-y-4">
+                    <div className="flex gap-2">
+                        <div className="w-24 h-6 bg-white/10 rounded-full" />
+                        <div className="w-12 h-6 bg-white/10 rounded-full" />
+                    </div>
+                    <div className="w-2/3 h-8 bg-white/10 rounded" />
+                    <div className="w-full h-4 bg-white/5 rounded" />
+                    <div className="w-3/4 h-4 bg-white/5 rounded" />
+                    <div className="flex gap-6 mt-4">
+                        {[1, 2, 3].map(i => <div key={i} className="w-20 h-4 bg-white/10 rounded" />)}
+                    </div>
+                    <div className="w-40 h-12 bg-white/10 rounded-xl mt-6" />
+                </div>
+            </div>
+            {/* Module list skeleton */}
+            <div className="max-w-5xl mx-auto px-6 py-10 space-y-3">
+                <div className="w-48 h-5 bg-gray-200 rounded mb-5" />
+                {[1, 2, 3].map(i => (
+                    <div key={i} className="rounded-xl border border-gray-100 p-5">
+                        <div className="flex items-center gap-3">
+                            <div className="w-8 h-8 bg-gray-200 rounded-lg" />
+                            <div className="space-y-1.5">
+                                <div className="w-48 h-4 bg-gray-200 rounded" />
+                                <div className="w-32 h-3 bg-gray-100 rounded" />
+                            </div>
+                        </div>
+                    </div>
+                ))}
             </div>
         </div>
     )
@@ -541,14 +573,9 @@ function CoursePreviewPage() {
                         />
                     )}
 
-                    {/* CTA */}
+                    {/* CTA — Optimistic: show button immediately, block only if prereqs fail */}
                     {totalModules > 0 ? (
-                        prereqLoading ? (
-                            <div className="inline-flex items-center gap-2 bg-white/10 text-white/60 font-medium px-6 py-3 rounded-xl backdrop-blur-sm">
-                                <Loader2 className="w-4 h-4 animate-spin" />
-                                Verificando acceso...
-                            </div>
-                        ) : isBlocked ? (
+                        isBlocked ? (
                             <div className="inline-flex items-center gap-2 bg-white/10 text-white/50 font-medium px-6 py-3 rounded-xl cursor-not-allowed select-none backdrop-blur-sm">
                                 <Lock className="w-4 h-4" />
                                 Completa los prerequisitos primero
