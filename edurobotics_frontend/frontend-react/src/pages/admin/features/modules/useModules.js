@@ -19,11 +19,13 @@ export function useModules(adminToken, refreshSelectedCourse) {
     if (!selectedCourse) return
     setIsSubmitting(true)
     try {
-      const newModule = await createModule(adminToken, selectedCourse.id, moduleForm)
-      await refreshSelectedCourse(selectedCourse.id)
+      const result = await createModule(adminToken, selectedCourse.id, moduleForm)
+      const refreshedCourse = await refreshSelectedCourse(selectedCourse.id)
       toast.success('Módulo creado')
       setModuleForm({ title: '', description: '', order_index: 1 })
-      return newModule
+      // Return the full module object from refreshed data
+      const newModule = refreshedCourse?.modules?.find(m => m.id === result.module_id)
+      return newModule || null
     } catch (error) {
       toast.error(error.message)
     } finally {

@@ -11,7 +11,7 @@
 import { useEffect, useState, useRef } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { getStoredUser } from '../services/auth'
-import { getCourseDetail } from '../services/courses'
+import { getCourseDetail, checkPrerequisites } from '../services/courses'
 import { getUserProgress } from '../services/progress'
 import { Button } from '../components/ui/button'
 import {
@@ -107,13 +107,21 @@ function CoursePage() {
 
     const loadAll = async () => {
       try {
-        const [courseData] = await Promise.all([
+        const [courseData, , prereqResult] = await Promise.all([
           getCourseDetail(courseId),
           // This pre-warms the progress data. The useProgress hook will also
           // call getUserProgress, but since it fires at the same tick, the
           // browser de-duplicates the request (same URL = single HTTP call).
           getUserProgress(user.id, parseInt(courseId)).catch(() => null),
+          // Check prerequisites in parallel
+          checkPrerequisites(parseInt(courseId), user.id).catch(() => null),
         ])
+
+        // If prerequisites not met, redirect back to preview
+        if (prereqResult && !prereqResult.allowed && user.role !== 'admin') {
+          navigate(`/courses/${courseId}`, { replace: true })
+          return
+        }
 
         setCourse(courseData)
         if (courseData?.modules?.length > 0) {

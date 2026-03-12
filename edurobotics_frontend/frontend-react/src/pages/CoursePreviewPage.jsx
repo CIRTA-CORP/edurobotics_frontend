@@ -375,13 +375,9 @@ function CoursePreviewPage() {
             if (coursesRoadmap?.courses) {
                 setAllCourses(coursesRoadmap.courses)
             }
-            // Prerequisites
+            // Prerequisites (store real data for all users, admin override is in CTA)
             if (prereqData) {
-                if (user.role === 'admin') {
-                    setPrereqCheck({ ...prereqData, allowed: true })
-                } else {
-                    setPrereqCheck(prereqData)
-                }
+                setPrereqCheck(prereqData)
             } else {
                 setPrereqCheck({ allowed: true, details: [], missing: [] })
             }
@@ -573,13 +569,34 @@ function CoursePreviewPage() {
                         />
                     )}
 
-                    {/* CTA — Optimistic: show button immediately, block only if prereqs fail */}
+                    {/* CTA — Blocked while prereqs load, blocked if prereqs fail */}
                     {totalModules > 0 ? (
                         isBlocked ? (
-                            <div className="inline-flex items-center gap-2 bg-white/10 text-white/50 font-medium px-6 py-3 rounded-xl cursor-not-allowed select-none backdrop-blur-sm">
-                                <Lock className="w-4 h-4" />
-                                Completa los prerequisitos primero
+                            <div className="space-y-3">
+                                <div className="inline-flex items-center gap-2 bg-white/10 text-white/50 font-medium px-6 py-3 rounded-xl cursor-not-allowed select-none backdrop-blur-sm">
+                                    <Lock className="w-4 h-4" />
+                                    Completa los prerequisitos primero
+                                </div>
+                                {user?.role === 'admin' && (
+                                    <div>
+                                        <button
+                                            onClick={handleStartStudy}
+                                            className="inline-flex items-center gap-2 text-xs font-medium text-white/40 hover:text-white/70 transition-colors"
+                                        >
+                                            <Shield className="w-3 h-3" />
+                                            Acceder como admin
+                                        </button>
+                                    </div>
+                                )}
                             </div>
+                        ) : prereqLoading ? (
+                            <button
+                                disabled
+                                className="inline-flex items-center gap-2.5 font-semibold px-7 py-3.5 rounded-xl bg-blue-500/50 text-white/70 cursor-not-allowed"
+                            >
+                                <Loader2 className="w-5 h-5 animate-spin" />
+                                Verificando acceso...
+                            </button>
                         ) : (
                             <button
                                 onClick={handleStartStudy}

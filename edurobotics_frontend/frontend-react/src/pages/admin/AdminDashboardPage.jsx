@@ -2,7 +2,7 @@ import { useEffect, useState, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 import { clearStoredUser, getStoredUser } from '../../services/auth'
-import { getCourseDetail, getAllCourses } from '../../services/courses'
+import { getCourseDetail, getAllCourses, invalidateCourseCache } from '../../services/courses'
 import { CourseFeedbackSummary } from './features/courses/CourseFeedbackSummary'
 import { GlobalMetrics } from './features/courses/GlobalMetrics'
 import StudentDashboardPage from '../student/StudentDashboardPage'
@@ -70,12 +70,15 @@ function AdminDashboardPage() {
   }, [])
 
   const refreshSelectedCourse = useCallback(async (courseId = selectedCourse?.id) => {
-    if (!courseId) return
+    if (!courseId) return null
     try {
+      invalidateCourseCache(courseId)
       const detail = await getCourseDetail(courseId)
       setSelectedCourse(detail)
+      return detail
     } catch (error) {
       console.error('Error refreshing course:', error)
+      return null
     }
   }, [selectedCourse?.id])
 

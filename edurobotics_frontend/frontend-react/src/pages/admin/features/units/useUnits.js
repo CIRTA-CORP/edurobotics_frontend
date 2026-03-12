@@ -19,11 +19,14 @@ export function useUnits(adminToken, refreshSelectedCourse) {
     if (!selectedModule || !selectedCourse) return
     setIsSubmitting(true)
     try {
-      const newUnit = await createUnit(adminToken, selectedModule.id, unitForm)
-      await refreshSelectedCourse(selectedCourse.id)
+      const result = await createUnit(adminToken, selectedModule.id, unitForm)
+      const refreshedCourse = await refreshSelectedCourse(selectedCourse.id)
       toast.success('Unidad creada')
       setUnitForm({ title: '', description: '', order_index: 1 })
-      return newUnit
+      // Return the full unit object from refreshed data
+      const updatedModule = refreshedCourse?.modules?.find(m => m.id === selectedModule.id)
+      const newUnit = updatedModule?.units?.find(u => u.id === result.unit_id)
+      return newUnit || null
     } catch (error) {
       toast.error(error.message)
     } finally {
