@@ -156,3 +156,113 @@
 .ql-editor {
   min-height: 150px;
 }
+
+/* ── TipTap Editor Styles ── */
+.tiptap {
+  outline: none;
+}
+
+.tiptap p.is-editor-empty:first-child::before {
+  content: attr(data-placeholder);
+  float: left;
+  color: #9ca3af;
+  pointer-events: none;
+  height: 0;
+}
+
+.tiptap img {
+  max-width: 100%;
+  height: auto;
+  border-radius: 0.75rem;
+  margin: 1rem auto;
+  display: block;
+}
+
+.tiptap img.ProseMirror-selectednode {
+  outline: 3px solid #3b82f6;
+  outline-offset: 2px;
+  border-radius: 0.75rem;
+}
+
+.tiptap hr {
+  border: none;
+  border-top: 2px solid #e5e7eb;
+  margin: 1.5rem 0;
+}
+
+.tiptap div[data-youtube-video] {
+  position: relative;
+  width: 100%;
+  padding-bottom: 56.25%;
+  margin: 1rem 0;
+  border-radius: 0.75rem;
+  overflow: hidden;
+}
+
+.tiptap div[data-youtube-video] iframe {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  border: 0;
+}
+
+.tiptap div[data-file-attachment] {
+  margin: 1rem 0 !important;
+}
+
+.tiptap div[data-file-attachment] a {
+  text-decoration: none !important;
+}
+
+/* Rich content YouTube embeds (student view) */
+.rich-content div[data-youtube-video],
+.rich-content .youtube-embed {
+  position: relative;
+  width: 100%;
+  padding-bottom: 56.25%;
+  margin: 1rem 0;
+  border-radius: 0.75rem;
+  overflow: hidden;
+}
+
+.rich-content div[data-youtube-video] iframe,
+.rich-content .youtube-embed iframe {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  border: 0;
+}
+
+.rich-content iframe {
+  max-width: 100%;
+  border-radius: 0.75rem;
+}
+
+.rich-content img {
+  max-width: 100%;
+  height: auto;
+  border-radius: 0.75rem;
+  margin: 1rem auto;
+  display: block;
+}
+
+.rich-content div[data-file-attachment] a {
+  text-decoration: none !important;
+}
+
+/* Rich content image resize — respect saved width */
+.rich-content img[width] {
+  width: attr(width px);
+  max-width: 100%;
+}
+
+/* Scroll to heading smooth behavior */
+.rich-content h1[id],
+.rich-content h2[id],
+.rich-content h3[id] {
+  scroll-margin-top: 1.5rem;
+}

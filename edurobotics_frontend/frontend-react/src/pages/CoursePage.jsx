@@ -8,7 +8,7 @@
  * Promise.all to eliminate the sequential waterfall.
  */
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { getStoredUser } from '../services/auth'
 import { getCourseDetail } from '../services/courses'
@@ -86,6 +86,8 @@ function CoursePage() {
   const [error, setError] = useState(null)
   const [selectedUnitId, setSelectedUnitId] = useState(null)
   const [sidebarOpen, setSidebarOpen] = useState(false)
+  const mainRef = useRef(null)
+  const [readProgress, setReadProgress] = useState(0)
 
   // useProgress still manages progress state and provides helper methods,
   // but the initial fetch is now parallelized below.
@@ -130,6 +132,22 @@ function CoursePage() {
   const allUnits = course?.modules?.flatMap(m => m.units || []) || []
   const currentUnit = allUnits.find(u => u.id === selectedUnitId)
   const isEmpty = !course?.modules || course.modules.length === 0 || allUnits.length === 0
+
+  // ── Reading progress bar (scroll-based) ──
+  useEffect(() => {
+    const el = mainRef.current
+    if (!el) return
+    const onScroll = () => {
+      const { scrollTop, scrollHeight, clientHeight } = el
+      const max = scrollHeight - clientHeight
+      setReadProgress(max > 0 ? Math.min(100, (scrollTop / max) * 100) : 0)
+    }
+    el.addEventListener('scroll', onScroll, { passive: true })
+    return () => el.removeEventListener('scroll', onScroll)
+  }, [course])
+
+  // Reset progress bar on unit change
+  useEffect(() => { setReadProgress(0) }, [selectedUnitId])
 
   // ── Loading (skeleton) ──
   if (loading) return <CoursePageSkeleton />
@@ -188,6 +206,13 @@ function CoursePage() {
 
       {/* Body: sidebar + content */}
       <div className="flex flex-1 overflow-hidden relative">
+        {/* Reading progress bar */}
+        <div className="absolute top-0 left-0 right-0 z-50 h-0.5 bg-gray-100">
+          <div
+            className="h-full bg-gradient-to-r from-blue-500 to-indigo-500 transition-all duration-150 ease-out"
+            style={{ width: `${readProgress}%` }}
+          />
+        </div>
         {/* Mobile sidebar toggle */}
         <button
           onClick={() => setSidebarOpen(!sidebarOpen)}
@@ -226,10 +251,11 @@ function CoursePage() {
         </aside>
 
         {/* ── Main content ── */}
-        <main className="flex-1 overflow-y-auto p-3 lg:p-6">
+        <main ref={mainRef} className="flex-1 overflow-y-auto p-3 lg:p-6">
           <ContentViewer
             unit={currentUnit}
             allUnits={allUnits}
+            modules={course.modules || []}
             userId={user?.id}
             isContentCompleted={progressHook.isContentCompleted}
             isQuizCompleted={progressHook.isQuizCompleted}
@@ -237,6 +263,7 @@ function CoursePage() {
             refreshProgress={progressHook.refreshProgress}
             getUnitProgress={progressHook.getUnitProgress}
             onUnitChange={setSelectedUnitId}
+            scrollRef={mainRef}
           />
         </main>
       </div>

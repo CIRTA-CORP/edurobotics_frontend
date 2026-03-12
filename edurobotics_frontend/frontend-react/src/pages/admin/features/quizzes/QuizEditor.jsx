@@ -1,14 +1,21 @@
 import { useState, useEffect, useCallback } from 'react';
+import { toast } from 'sonner';
 import { Button } from '../../../../components/ui/button';
 import {
     Plus, Trash2, X, HelpCircle, Check, Loader2, AlertCircle,
-    ClipboardCheck, BookOpen, Settings, ChevronDown, ChevronUp, MessageSquare, Edit3
+    ClipboardCheck, BookOpen, Settings, Edit3
 } from 'lucide-react';
 import quizService from '../../../../services/quizzes';
+import { QuestionBlock } from './QuestionBlock';
 
 /**
  * QuizEditor — Full-page tab component for managing quizzes
- * Designed to match the admin panel aesthetic (Cursos, Módulos, Unidades, Contenido)
+ * 
+ * Key performance improvements:
+ * - Optimistic UI: local state updates first, API syncs in background
+ * - Collapsible questions: each QuestionBlock starts collapsed
+ * - Sticky footer: "Add Question" buttons always visible
+ * - Sonner toasts: no more inline message banners
  */
 export function QuizEditor({ unitId, moduleId }) {
     const [quizzes, setQuizzes] = useState([]);
@@ -16,19 +23,11 @@ export function QuizEditor({ unitId, moduleId }) {
     const [selectedQuiz, setSelectedQuiz] = useState(null);
     const [questions, setQuestions] = useState([]);
     const [saving, setSaving] = useState(false);
-    const [message, setMessage] = useState('');
-    const [messageType, setMessageType] = useState('success');
     const [showCreateForm, setShowCreateForm] = useState(false);
     const [newTitle, setNewTitle] = useState('');
-    const [confirmDelete, setConfirmDelete] = useState(null); // { type: 'quiz'|'question', id, title }
+    const [confirmDelete, setConfirmDelete] = useState(null);
     const [isEditingTitle, setIsEditingTitle] = useState(false);
     const [editTitleValue, setEditTitleValue] = useState('');
-
-    const showMessage = useCallback((msg, type = 'success') => {
-        setMessage(msg);
-        setMessageType(type);
-        setTimeout(() => setMessage(''), 3000);
-    }, []);
 
     const loadQuizzes = useCallback(async () => {
         try {
@@ -41,11 +40,11 @@ export function QuizEditor({ unitId, moduleId }) {
             }
             setQuizzes(data);
         } catch (err) {
-            showMessage('Error al cargar evaluaciones', 'error');
+            toast.error('Error al cargar evaluaciones');
         } finally {
             setLoading(false);
         }
-    }, [unitId, moduleId, showMessage]);
+    }, [unitId, moduleId]);
 
     useEffect(() => {
         loadQuizzes();
@@ -64,11 +63,10 @@ export function QuizEditor({ unitId, moduleId }) {
             await quizService.updateQuiz(selectedQuiz.id, { title: editTitleValue.trim() });
             setSelectedQuiz(prev => ({ ...prev, title: editTitleValue.trim() }));
             setIsEditingTitle(false);
-            showMessage('Título actualizado exitosamente');
-            // Refresh list in background to sync main list
+            toast.success('Título actualizado');
             loadQuizzes();
         } catch (err) {
-            showMessage('Error al actualizar el título', 'error');
+            toast.error('Error al actualizar el título');
         } finally {
             setSaving(false);
         }
@@ -83,12 +81,12 @@ export function QuizEditor({ unitId, moduleId }) {
                 unit_id: unitId || null,
                 module_id: moduleId || null
             });
-            showMessage('Evaluación creada');
+            toast.success('Evaluación creada');
             setNewTitle('');
             setShowCreateForm(false);
             await loadQuizzes();
         } catch (err) {
-            showMessage('Error al crear', 'error');
+            toast.error('Error al crear evaluación');
         } finally {
             setSaving(false);
         }
@@ -101,11 +99,11 @@ export function QuizEditor({ unitId, moduleId }) {
                 setSelectedQuiz(null);
                 setQuestions([]);
             }
-            showMessage('Evaluación eliminada');
+            toast.success('Evaluación eliminada');
             setConfirmDelete(null);
             await loadQuizzes();
         } catch (err) {
-            showMessage('Error al eliminar', 'error');
+            toast.error('Error al eliminar');
         }
     };
 
@@ -116,33 +114,61 @@ export function QuizEditor({ unitId, moduleId }) {
             setSelectedQuiz(data);
             setQuestions(data.questions || []);
         } catch (err) {
-            showMessage('No se pudieron cargar los detalles', 'error');
+            toast.error('No se pudieron cargar los detalles');
         } finally {
             setLoading(false);
         }
     };
 
-    // ── QUESTION CRUD ──
+    // ── QUESTION CRUD (optimistic) ──
     const handleAddQuestion = async (type = 'alternative') => {
+        // 1) Optimistic: add a placeholder question to local state immediately
+        const tempId = `temp-${Date.now()}`;
+        const defaultAnswers = type === 'true_false'
+            ? [
+                { id: `ta-${Date.now()}-1`, answer_text: 'Verdadero', is_correct: true, explanation: null },
+                { id: `ta-${Date.now()}-2`, answer_text: 'Falso', is_correct: false, explanation: null },
+            ]
+            : [
+                { id: `ta-${Date.now()}-1`, answer_text: 'Opción 1', is_correct: true, explanation: null },
+            ];
+
+        const optimisticQuestion = {
+            id: tempId,
+            question_text: type === 'true_false' ? 'Pregunta de Verdadero o Falso' : 'Nueva pregunta',
+            question_type: type,
+            answers: defaultAnswers,
+        };
+
+        setQuestions(prev => [...prev, optimisticQuestion]);
+        toast.success('Pregunta añadida');
+
+        // 2) API call in background
         try {
             setSaving(true);
             const res = await quizService.addQuestion(selectedQuiz.id, {
-                question_text: type === 'true_false' ? 'Pregunta de Verdadero o Falso' : 'Nueva pregunta',
+                question_text: optimisticQuestion.question_text,
                 question_type: type
             });
+
             if (res.success && res.question_id) {
                 if (type === 'true_false') {
-                    await quizService.addAnswer(res.question_id, { answer_text: 'Verdadero', is_correct: true });
-                    await quizService.addAnswer(res.question_id, { answer_text: 'Falso', is_correct: false });
+                    await Promise.all([
+                        quizService.addAnswer(res.question_id, { answer_text: 'Verdadero', is_correct: true }),
+                        quizService.addAnswer(res.question_id, { answer_text: 'Falso', is_correct: false }),
+                    ]);
                 } else {
                     await quizService.addAnswer(res.question_id, { answer_text: 'Opción 1', is_correct: true });
                 }
             }
+
+            // 3) Sync with real data from server (replaces temp IDs)
             const data = await quizService.getAdminQuiz(selectedQuiz.id);
             setQuestions(data.questions);
-            showMessage('Pregunta añadida');
         } catch (err) {
-            showMessage('Error al añadir pregunta', 'error');
+            // Rollback: remove optimistic question
+            setQuestions(prev => prev.filter(q => q.id !== tempId));
+            toast.error('Error al añadir pregunta');
         } finally {
             setSaving(false);
         }
@@ -151,36 +177,52 @@ export function QuizEditor({ unitId, moduleId }) {
     const handleSaveQuestion = async (questionId, text) => {
         try {
             await quizService.updateQuestion(questionId, { question_text: text });
-            showMessage('Pregunta guardada');
+            toast.success('Pregunta guardada');
         } catch (err) {
-            showMessage('Error al guardar', 'error');
+            toast.error('Error al guardar');
         }
     };
 
     const handleDeleteQuestion = async (questionId) => {
+        // Optimistic: remove from local state immediately
+        const backup = [...questions];
+        setQuestions(prev => prev.filter(q => q.id !== questionId));
+        setConfirmDelete(null);
+        toast.success('Pregunta eliminada');
+
         try {
             setSaving(true);
             await quizService.deleteQuestion(questionId);
-            const data = await quizService.getAdminQuiz(selectedQuiz.id);
-            setQuestions(data.questions);
-            showMessage('Pregunta eliminada');
-            setConfirmDelete(null);
         } catch (err) {
-            showMessage('Error al eliminar', 'error');
+            // Rollback
+            setQuestions(backup);
+            toast.error('Error al eliminar');
         } finally {
             setSaving(false);
         }
     };
 
-    // ── ANSWER CRUD ──
+    // ── ANSWER CRUD (optimistic) ──
     const handleAddAnswer = async (questionId) => {
+        // Optimistic: add placeholder answer
+        const tempAnswerId = `ta-${Date.now()}`;
+        setQuestions(prev => prev.map(q => {
+            if (q.id !== questionId) return q;
+            return { ...q, answers: [...q.answers, { id: tempAnswerId, answer_text: 'Nueva opción', is_correct: false, explanation: null }] };
+        }));
+
         try {
             setSaving(true);
             await quizService.addAnswer(questionId, { answer_text: 'Nueva opción', is_correct: false });
             const data = await quizService.getAdminQuiz(selectedQuiz.id);
             setQuestions(data.questions);
         } catch (err) {
-            showMessage('Error al añadir opción', 'error');
+            // Rollback
+            setQuestions(prev => prev.map(q => {
+                if (q.id !== questionId) return q;
+                return { ...q, answers: q.answers.filter(a => a.id !== tempAnswerId) };
+            }));
+            toast.error('Error al añadir opción');
         } finally {
             setSaving(false);
         }
@@ -190,33 +232,45 @@ export function QuizEditor({ unitId, moduleId }) {
         try {
             await quizService.updateAnswer(answerId, { answer_text: text, explanation: explanation || null });
         } catch (err) {
-            showMessage('Error al guardar opción', 'error');
+            toast.error('Error al guardar opción');
         }
     };
 
     const handleSetCorrect = async (questionId, answerId) => {
+        // Optimistic: update local state immediately
+        setQuestions(prev => prev.map(q => {
+            if (q.id !== questionId) return q;
+            return { ...q, answers: q.answers.map(a => ({ ...a, is_correct: a.id === answerId })) };
+        }));
+        toast.success('Respuesta correcta actualizada');
+
         try {
             setSaving(true);
             await quizService.updateAnswer(answerId, { is_correct: true });
+        } catch (err) {
+            // Refetch to restore correct state
             const data = await quizService.getAdminQuiz(selectedQuiz.id);
             setQuestions(data.questions);
-            showMessage('Respuesta correcta actualizada');
-        } catch (err) {
-            showMessage('Error al marcar', 'error');
+            toast.error('Error al marcar');
         } finally {
             setSaving(false);
         }
     };
 
     const handleDeleteAnswer = async (answerId) => {
+        // Optimistic: remove from local state
+        const backup = questions.map(q => ({ ...q, answers: [...q.answers] }));
+        setQuestions(prev => prev.map(q => ({
+            ...q, answers: q.answers.filter(a => a.id !== answerId)
+        })));
+
         try {
             setSaving(true);
             await quizService.deleteAnswer(answerId);
-            const data = await quizService.getAdminQuiz(selectedQuiz.id);
-            setQuestions(data.questions);
             setConfirmDelete(null);
         } catch (err) {
-            showMessage('Error al eliminar opción', 'error');
+            setQuestions(backup);
+            toast.error('Error al eliminar opción');
         } finally {
             setSaving(false);
         }
@@ -232,28 +286,17 @@ export function QuizEditor({ unitId, moduleId }) {
         );
     }
 
-    // ── TOAST ──
-    const Toast = message ? (
-        <div className={`mb-4 p-3 rounded-lg border flex items-center gap-2 text-sm font-medium ${messageType === 'error'
-            ? 'bg-red-50 border-red-200 text-red-700'
-            : 'bg-emerald-50 border-emerald-200 text-emerald-700'
-            }`}>
-            {messageType === 'error' ? <AlertCircle className="w-4 h-4" /> : <Check className="w-4 h-4" />}
-            {message}
-        </div>
-    ) : null;
-
     // ══════════════════════════════════════
     // VISTA: EDITOR DE PREGUNTAS
     // ══════════════════════════════════════
     if (selectedQuiz) {
         return (
-            <div className="space-y-6">
+            <div className="space-y-4 relative">
                 {/* Header */}
                 <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
                         <button
-                            onClick={() => { setSelectedQuiz(null); setQuestions([]); }}
+                            onClick={() => { setSelectedQuiz(null); setQuestions([]) }}
                             className="w-9 h-9 rounded-lg bg-gray-100 hover:bg-gray-200 flex items-center justify-center text-gray-500 transition-colors"
                         >
                             <X className="w-4 h-4" />
@@ -296,17 +339,9 @@ export function QuizEditor({ unitId, moduleId }) {
                             )}
                             <p className="text-xs text-gray-500 mt-0.5">
                                 {questions.length} pregunta{questions.length !== 1 ? 's' : ''} · Mínimo: {selectedQuiz.passing_score}%
-                                {saving && <span className="ml-2 text-gray-400">Guardando...</span>}
+                                {saving && <span className="ml-2 text-gray-400">Sincronizando...</span>}
                             </p>
                         </div>
-                    </div>
-                    <div className="flex gap-2">
-                        <Button onClick={() => handleAddQuestion('alternative')} variant="outline" size="sm" className="gap-1.5 text-xs">
-                            <Plus className="w-3.5 h-3.5" /> Alternativa
-                        </Button>
-                        <Button onClick={() => handleAddQuestion('true_false')} size="sm" className="gap-1.5 text-xs">
-                            <Plus className="w-3.5 h-3.5" /> V/F
-                        </Button>
                     </div>
                 </div>
 
@@ -326,8 +361,8 @@ export function QuizEditor({ unitId, moduleId }) {
                                     setSelectedQuiz(prev => ({ ...prev, passing_type: newType }));
                                     try {
                                         await quizService.updateQuiz(selectedQuiz.id, { passing_type: newType });
-                                        showMessage('Configuración actualizada');
-                                    } catch { showMessage('Error al actualizar', 'error'); }
+                                        toast.success('Configuración actualizada');
+                                    } catch { toast.error('Error al actualizar'); }
                                 }}
                                 className="w-full px-3 py-2 text-sm bg-white border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
                             >
@@ -352,14 +387,14 @@ export function QuizEditor({ unitId, moduleId }) {
                                     onMouseUp={async (e) => {
                                         try {
                                             await quizService.updateQuiz(selectedQuiz.id, { passing_score: parseInt(e.target.value) });
-                                            showMessage('Puntaje actualizado');
-                                        } catch { showMessage('Error al actualizar', 'error'); }
+                                            toast.success('Puntaje actualizado');
+                                        } catch { toast.error('Error al actualizar'); }
                                     }}
                                     onTouchEnd={async (e) => {
                                         try {
                                             await quizService.updateQuiz(selectedQuiz.id, { passing_score: parseInt(e.target.value) });
-                                            showMessage('Puntaje actualizado');
-                                        } catch { showMessage('Error al actualizar', 'error'); }
+                                            toast.success('Puntaje actualizado');
+                                        } catch { toast.error('Error al actualizar'); }
                                     }}
                                     className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-blue-600"
                                 />
@@ -371,8 +406,6 @@ export function QuizEditor({ unitId, moduleId }) {
                         )}
                     </div>
                 </div>
-
-                {Toast}
 
                 {/* Confirm Delete Dialog */}
                 {confirmDelete && confirmDelete.type === 'question' && (
@@ -388,21 +421,22 @@ export function QuizEditor({ unitId, moduleId }) {
                     </div>
                 )}
 
-                {/* Questions */}
+                {/* Questions (collapsible) */}
                 {questions.length === 0 ? (
                     <div className="text-center py-16 border-2 border-dashed border-gray-200 rounded-2xl bg-gray-50">
                         <HelpCircle className="w-10 h-10 text-gray-300 mx-auto mb-3" />
                         <p className="text-sm text-gray-500 font-medium">Añade tu primera pregunta para comenzar</p>
                     </div>
                 ) : (
-                    <div className="space-y-4">
+                    <div className="space-y-3">
                         {questions.map((q, idx) => (
                             <QuestionBlock
                                 key={q.id}
                                 q={q}
                                 idx={idx}
+                                defaultExpanded={typeof q.id === 'string' && q.id.startsWith('temp-')}
                                 onSaveQuestion={handleSaveQuestion}
-                                onDeleteQuestion={() => setConfirmDelete({ type: 'question', id: q.id })}
+                                onDeleteQuestion={(qId) => setConfirmDelete({ type: 'question', id: qId })}
                                 onSetCorrect={handleSetCorrect}
                                 onSaveAnswer={handleSaveAnswer}
                                 onAddAnswer={handleAddAnswer}
@@ -411,6 +445,21 @@ export function QuizEditor({ unitId, moduleId }) {
                         ))}
                     </div>
                 )}
+
+                {/* Sticky Add Question Footer */}
+                <div className="sticky bottom-0 bg-white/90 backdrop-blur-sm border-t border-gray-200 -mx-3 px-3 py-3 mt-4 flex items-center justify-between rounded-b-xl">
+                    <span className="text-xs text-gray-400">
+                        {questions.length} pregunta{questions.length !== 1 ? 's' : ''}
+                    </span>
+                    <div className="flex gap-2">
+                        <Button onClick={() => handleAddQuestion('alternative')} variant="outline" size="sm" className="gap-1.5 text-xs" disabled={saving}>
+                            <Plus className="w-3.5 h-3.5" /> Alternativa
+                        </Button>
+                        <Button onClick={() => handleAddQuestion('true_false')} size="sm" className="gap-1.5 text-xs" disabled={saving}>
+                            <Plus className="w-3.5 h-3.5" /> V/F
+                        </Button>
+                    </div>
+                </div>
             </div>
         );
     }
@@ -443,7 +492,7 @@ export function QuizEditor({ unitId, moduleId }) {
                         autoFocus
                     />
                     <div className="flex items-center gap-2 justify-end">
-                        <Button variant="outline" size="sm" onClick={() => { setShowCreateForm(false); setNewTitle(''); }}>
+                        <Button variant="outline" size="sm" onClick={() => { setShowCreateForm(false); setNewTitle('') }}>
                             Cancelar
                         </Button>
                         <Button size="sm" onClick={handleCreateQuiz} disabled={!newTitle.trim() || saving} className="gap-1.5">
@@ -453,8 +502,6 @@ export function QuizEditor({ unitId, moduleId }) {
                     </div>
                 </div>
             )}
-
-            {Toast}
 
             {quizzes.length === 0 ? (
                 <div className="text-center py-16 border-2 border-dashed border-gray-200 rounded-2xl bg-gray-50">
@@ -498,143 +545,6 @@ export function QuizEditor({ unitId, moduleId }) {
                     ))}
                 </div>
             )}
-        </div>
-    );
-}
-
-
-/**
- * QuestionBlock — Self-contained question editor
- * Uses local state for inputs to avoid parent re-renders (performance)
- */
-function QuestionBlock({ q, idx, onSaveQuestion, onDeleteQuestion, onSetCorrect, onSaveAnswer, onAddAnswer, onDeleteAnswer }) {
-    const [questionText, setQuestionText] = useState(q.question_text);
-    const [showExplanations, setShowExplanations] = useState({});
-    const [answerTexts, setAnswerTexts] = useState({});
-    const [explanationTexts, setExplanationTexts] = useState({});
-    const [dirty, setDirty] = useState(false);
-
-    // Init local answer state
-    useEffect(() => {
-        const texts = {};
-        const exps = {};
-        q.answers.forEach(a => {
-            texts[a.id] = a.answer_text;
-            exps[a.id] = a.explanation || '';
-        });
-        setAnswerTexts(texts);
-        setExplanationTexts(exps);
-    }, [q.answers]);
-
-    const toggleExplanation = (answerId) => {
-        setShowExplanations(prev => ({ ...prev, [answerId]: !prev[answerId] }));
-    };
-
-    return (
-        <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
-            {/* Question Header */}
-            <div className="p-4 bg-gray-50 border-b border-gray-200">
-                <div className="flex items-start gap-3">
-                    <div className="w-7 h-7 rounded-lg bg-gray-200 text-gray-600 flex-shrink-0 flex items-center justify-center text-xs font-bold mt-0.5">
-                        {idx + 1}
-                    </div>
-                    <div className="flex-1 space-y-2">
-                        <input
-                            type="text"
-                            className="w-full bg-white border border-gray-200 rounded-lg px-3 py-2 text-sm font-medium text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                            value={questionText}
-                            onChange={(e) => { setQuestionText(e.target.value); setDirty(true); }}
-                            placeholder="Escribe el enunciado aquí..."
-                        />
-                        <div className="flex items-center justify-between">
-                            <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">
-                                {q.question_type === 'true_false' ? 'Verdadero / Falso' : 'Opción Múltiple'}
-                            </span>
-                            <div className="flex items-center gap-1.5">
-                                {dirty && (
-                                    <Button size="sm" variant="outline" className="text-xs h-7 px-2.5"
-                                        onClick={() => { onSaveQuestion(q.id, questionText); setDirty(false); }}>
-                                        <Check className="w-3 h-3 mr-1" /> Guardar
-                                    </Button>
-                                )}
-                                <Button size="sm" variant="ghost" className="text-gray-400 hover:text-red-500 h-7 px-2"
-                                    onClick={() => onDeleteQuestion(q.id)}>
-                                    <Trash2 className="w-3.5 h-3.5" />
-                                </Button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            {/* Answers */}
-            <div className="p-4 space-y-2">
-                {[...q.answers].sort((a, b) => a.id - b.id).map(a => (
-                    <div key={a.id} className="space-y-1">
-                        <div className={`flex items-center gap-2.5 p-2.5 rounded-lg border ${a.is_correct ? 'border-emerald-200 bg-emerald-50/40' : 'border-gray-100 bg-white'
-                            }`}>
-                            {/* Correct toggle */}
-                            <button
-                                onClick={() => onSetCorrect(q.id, a.id)}
-                                className={`w-5 h-5 rounded flex items-center justify-center flex-shrink-0 cursor-pointer ${a.is_correct ? 'bg-emerald-500 text-white' : 'bg-gray-100 hover:bg-emerald-100'
-                                    }`}
-                            >
-                                {a.is_correct && <Check className="w-3 h-3" />}
-                            </button>
-
-                            {/* Answer text */}
-                            <input
-                                className={`flex-1 bg-transparent border-none outline-none text-sm ${a.is_correct ? 'text-emerald-900 font-medium' : 'text-gray-700'
-                                    }`}
-                                value={answerTexts[a.id] ?? a.answer_text}
-                                onChange={(e) => setAnswerTexts(prev => ({ ...prev, [a.id]: e.target.value }))}
-                                onBlur={() => onSaveAnswer(a.id, answerTexts[a.id], explanationTexts[a.id])}
-                                placeholder="Respuesta..."
-                            />
-
-                            {/* Explanation toggle */}
-                            {!a.is_correct && (
-                                <button
-                                    onClick={() => toggleExplanation(a.id)}
-                                    className={`p-1 rounded text-gray-400 hover:text-gray-600 hover:bg-gray-100 ${(explanationTexts[a.id] || showExplanations[a.id]) ? 'text-amber-500' : ''
-                                        }`}
-                                    title="Justificación (opcional)"
-                                >
-                                    <MessageSquare className="w-3.5 h-3.5" />
-                                </button>
-                            )}
-
-                            {/* Delete answer */}
-                            {q.question_type !== 'true_false' && (
-                                <button onClick={() => onDeleteAnswer(a.id)}
-                                    className="p-1 text-gray-300 hover:text-red-500 rounded">
-                                    <X className="w-3.5 h-3.5" />
-                                </button>
-                            )}
-                        </div>
-
-                        {/* Explanation input (collapsible) */}
-                        {!a.is_correct && showExplanations[a.id] && (
-                            <div className="ml-8 mr-2">
-                                <input
-                                    className="w-full bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 text-xs text-amber-900 placeholder:text-amber-400 focus:outline-none focus:ring-1 focus:ring-amber-300"
-                                    value={explanationTexts[a.id] ?? ''}
-                                    onChange={(e) => setExplanationTexts(prev => ({ ...prev, [a.id]: e.target.value }))}
-                                    onBlur={() => onSaveAnswer(a.id, answerTexts[a.id], explanationTexts[a.id])}
-                                    placeholder="¿Por qué esta respuesta es incorrecta? (opcional)"
-                                />
-                            </div>
-                        )}
-                    </div>
-                ))}
-
-                {q.question_type !== 'true_false' && (
-                    <button onClick={() => onAddAnswer(q.id)}
-                        className="inline-flex items-center gap-1.5 mt-2 px-3 py-1.5 text-gray-500 hover:text-gray-700 hover:bg-gray-50 rounded-lg text-xs font-medium transition-colors">
-                        <Plus className="w-3.5 h-3.5" /> Añadir Opción
-                    </button>
-                )}
-            </div>
         </div>
     );
 }

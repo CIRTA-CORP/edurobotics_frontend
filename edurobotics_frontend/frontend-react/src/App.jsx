@@ -1,6 +1,7 @@
 import { lazy, Suspense, useEffect } from 'react'
 import { Routes, Route, Navigate } from 'react-router-dom'
 import { Loader2 } from 'lucide-react'
+import { Toaster } from 'sonner'
 import ProtectedRoute from './components/ProtectedRoute.jsx'
 import { API_BASE } from './config'
 
@@ -33,91 +34,94 @@ function App() {
   }, [])
 
   return (
-    <Suspense fallback={<PageLoader />}>
-      <Routes>
-        <Route path="/" element={<Navigate to="/login" replace />} />
-        <Route path="/login" element={<LoginPage />} />
-        <Route path="/register" element={<RegisterPage />} />
+    <>
+      <Toaster position="top-right" richColors closeButton duration={3000} />
+      <Suspense fallback={<PageLoader />}>
+        <Routes>
+          <Route path="/" element={<Navigate to="/login" replace />} />
+          <Route path="/login" element={<LoginPage />} />
+          <Route path="/register" element={<RegisterPage />} />
 
-        {/* Rutas protegidas - requieren autenticación */}
-        <Route
-          path="/dashboard"
-          element={
-            <ProtectedRoute>
-              <DashboardPage />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/admin"
-          element={
-            <ProtectedRoute requiredRole="admin">
-              <AdminDashboardPage />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/student"
-          element={
-            <ProtectedRoute requiredRole="student">
-              <StudentDashboardPage />
-            </ProtectedRoute>
-          }
-        />
+          {/* Rutas protegidas - requieren autenticación */}
+          <Route
+            path="/dashboard"
+            element={
+              <ProtectedRoute>
+                <DashboardPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin"
+            element={
+              <ProtectedRoute requiredRole="admin">
+                <AdminDashboardPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/student"
+            element={
+              <ProtectedRoute requiredRole="student">
+                <StudentDashboardPage />
+              </ProtectedRoute>
+            }
+          />
 
-        {/* Course preview (landing page before study mode) */}
-        <Route
-          path="/courses/:courseId"
-          element={
-            <ProtectedRoute>
-              <CoursePreviewPage />
-            </ProtectedRoute>
-          }
-        />
+          {/* Course preview (landing page before study mode) */}
+          <Route
+            path="/courses/:courseId"
+            element={
+              <ProtectedRoute>
+                <CoursePreviewPage />
+              </ProtectedRoute>
+            }
+          />
 
-        {/* Course study mode (sidebar + content viewer) */}
-        <Route
-          path="/courses/:courseId/study"
-          element={
-            <ProtectedRoute>
-              <CoursePage />
-            </ProtectedRoute>
-          }
-        />
+          {/* Course study mode (sidebar + content viewer) */}
+          <Route
+            path="/courses/:courseId/study"
+            element={
+              <ProtectedRoute>
+                <CoursePage />
+              </ProtectedRoute>
+            }
+          />
 
-        {/* Visual roadmap (dependency graph) */}
-        <Route
-          path="/roadmap"
-          element={
-            <ProtectedRoute>
-              <RoadmapPage />
-            </ProtectedRoute>
-          }
-        />
+          {/* Visual roadmap (dependency graph) */}
+          <Route
+            path="/roadmap"
+            element={
+              <ProtectedRoute>
+                <RoadmapPage />
+              </ProtectedRoute>
+            }
+          />
 
-        {/* Dedicated Quiz Page */}
-        <Route
-          path="/courses/:courseId/quiz/:quizId"
-          element={
-            <ProtectedRoute>
-              <QuizPage />
-            </ProtectedRoute>
-          }
-        />
+          {/* Dedicated Quiz Page */}
+          <Route
+            path="/courses/:courseId/quiz/:quizId"
+            element={
+              <ProtectedRoute>
+                <QuizPage />
+              </ProtectedRoute>
+            }
+          />
 
-        {/* User Profile */}
-        <Route
-          path="/profile"
-          element={
-            <ProtectedRoute>
-              <UserProfilePage />
-            </ProtectedRoute>
-          }
-        />
+          {/* User Profile */}
+          <Route
+            path="/profile"
+            element={
+              <ProtectedRoute>
+                <UserProfilePage />
+              </ProtectedRoute>
+            }
+          />
 
-        <Route path="*" element={<Navigate to="/login" replace />} />
-      </Routes>
-    </Suspense>
+          <Route path="*" element={<Navigate to="/login" replace />} />
+        </Routes>
+      </Suspense>
+    </>
   )
 }
 

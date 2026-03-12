@@ -7,12 +7,13 @@
  * Quiz section appears at the bottom.
  */
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo, useRef } from 'react'
 import { Button } from '../../../components/ui/button'
 import {
-  BookOpen, FileText, FileDown,
+  FileText, FileDown,
   CheckCircle, ChevronRight, ExternalLink,
-  ClipboardCheck, Target
+  ClipboardCheck, ChevronLeft, ArrowUp,
+  ListTree
 } from 'lucide-react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { CourseFeedbackModal } from './CourseFeedbackModal'
@@ -182,30 +183,155 @@ function ContentBlock({ content }) {
   )
 }
 
+/**
+ * Parse heading elements from HTML string for table of contents
+ */
+function extractHeadings(html) {
+  if (!html) return []
+  const parser = new DOMParser()
+  const doc = parser.parseFromString(html, 'text/html')
+  const headings = []
+  doc.querySelectorAll('h1, h2, h3').forEach((el, i) => {
+    const text = el.textContent.trim()
+    if (text) {
+      const id = `heading-${i}`
+      headings.push({
+        id,
+        text,
+        level: parseInt(el.tagName[1]),
+      })
+    }
+  })
+  return headings
+}
+
+/**
+ * Table of Contents — rendered inside the content card
+ */
+function TableOfContents({ headings }) {
+  if (headings.length < 2) return null
+
+  const scrollToHeading = (id) => {
+    const el = document.getElementById(id)
+    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  }
+
+  return (
+    <nav className="mb-8 px-5 py-4 bg-gray-50/80 rounded-xl border border-gray-100">
+      <div className="flex items-center gap-2 mb-3">
+        <ListTree className="w-4 h-4 text-indigo-500" />
+        <span className="text-xs font-bold text-gray-600 uppercase tracking-wide">Contenido</span>
+      </div>
+      <ul className="space-y-1">
+        {headings.map((h) => (
+          <li key={h.id}>
+            <button
+              onClick={() => scrollToHeading(h.id)}
+              className={`text-left w-full text-sm hover:text-blue-600 transition-colors truncate ${
+                h.level === 1 ? 'font-semibold text-gray-800' :
+                h.level === 2 ? 'pl-4 text-gray-600' :
+                'pl-8 text-gray-500 text-xs'
+              }`}
+            >
+              {h.text}
+            </button>
+          </li>
+        ))}
+      </ul>
+    </nav>
+  )
+}
+
+/**
+ * Inject id attributes into rendered rich HTML so ToC links work
+ */
+function injectHeadingIds(html) {
+  if (!html) return html
+  let counter = 0
+  return html.replace(/<(h[123])([^>]*)>/gi, (match, tag, attrs) => {
+    const id = `heading-${counter++}`
+    if (attrs.includes('id=')) return match
+    return `<${tag}${attrs} id="${id}">`
+  })
+}
+
+/**
+ * Scroll to top floating button
+ */
+function ScrollToTop({ scrollRef }) {
+  const [visible, setVisible] = useState(false)
+
+  useEffect(() => {
+    const el = scrollRef?.current
+    if (!el) return
+    const onScroll = () => setVisible(el.scrollTop > 400)
+    el.addEventListener('scroll', onScroll, { passive: true })
+    return () => el.removeEventListener('scroll', onScroll)
+  }, [scrollRef])
+
+  if (!visible) return null
+
+  return (
+    <button
+      onClick={() => scrollRef.current?.scrollTo({ top: 0, behavior: 'smooth' })}
+      className="fixed bottom-6 right-6 z-40 w-10 h-10 bg-white border border-gray-200 rounded-full shadow-lg flex items-center justify-center text-gray-500 hover:text-blue-600 hover:border-blue-200 transition-all animate-fade-in"
+      title="Volver arriba"
+    >
+      <ArrowUp className="w-4 h-4" />
+    </button>
+  )
+}
+
 export function ContentViewer({
   unit,
   allUnits,
+  modules,
   userId,
   isContentCompleted,
   isQuizCompleted,
   markComplete,
   refreshProgress,
   getUnitProgress,
-  onUnitChange
+  onUnitChange,
+  scrollRef,
 }) {
   const { courseId } = useParams()
   const navigate = useNavigate()
   const [navigating, setNavigating] = useState(false)
   const [showFeedbackModal, setShowFeedbackModal] = useState(false)
+  const [visible, setVisible] = useState(true) // for transition animation
 
   const hasQuiz = unit?.quizzes && unit.quizzes.length > 0
   const quiz = hasQuiz ? unit.quizzes[0] : null
   const contents = [...(unit?.contents || [])].sort((a, b) => a.order_index - b.order_index)
+
+  // Separate rich_text content from legacy blocks
+  const richContent = contents.find(c => c.content_type === 'rich_text')
+  const legacyContents = contents.filter(c => c.content_type !== 'rich_text')
+
+  // Prepare HTML with heading IDs for ToC anchors
+  const processedHtml = useMemo(() => injectHeadingIds(richContent?.content_value), [richContent?.content_value])
+  const headings = useMemo(() => extractHeadings(richContent?.content_value), [richContent?.content_value])
+
+  // Find current module for breadcrumbs
+  const currentModule = useMemo(() => {
+    if (!modules || !unit) return null
+    return modules.find(m => m.units?.some(u => u.id === unit.id))
+  }, [modules, unit])
+
   const allContentsCompleted = contents.every(c => isContentCompleted?.(c.id))
 
   const currentUnitIndex = allUnits?.findIndex(u => u.id === unit?.id) ?? -1
+  const isFirstUnit = currentUnitIndex === 0
   const isLastUnit = currentUnitIndex === (allUnits?.length - 1)
   const isQuizPassed = hasQuiz && isQuizCompleted?.(quiz?.id)
+
+  // Transition animation on unit change
+  useEffect(() => {
+    setVisible(false)
+    const timer = setTimeout(() => setVisible(true), 50)
+    return () => clearTimeout(timer)
+  }, [unit?.id])
 
   useEffect(() => {
     const handleFocus = () => {
@@ -231,6 +357,17 @@ export function ContentViewer({
       const nextUnit = allUnits[currentUnitIndex + 1]
       if (nextUnit && onUnitChange) {
         onUnitChange(nextUnit.id)
+        scrollRef?.current?.scrollTo({ top: 0, behavior: 'smooth' })
+      }
+    }
+  }
+
+  const handlePreviousUnit = () => {
+    if (currentUnitIndex > 0) {
+      const prevUnit = allUnits[currentUnitIndex - 1]
+      if (prevUnit && onUnitChange) {
+        onUnitChange(prevUnit.id)
+        scrollRef?.current?.scrollTo({ top: 0, behavior: 'smooth' })
       }
     }
   }
@@ -260,34 +397,42 @@ export function ContentViewer({
 
   return (
     <>
-      <div className="max-w-4xl mx-auto space-y-4">
-        {/* ── Unit title header ── */}
-        <div className={`flex items-center justify-between px-5 py-3 rounded-xl border ${allContentsCompleted ? 'bg-emerald-50/80 border-emerald-200' : 'bg-white border-gray-200'}`}>
-          <div className="flex items-center gap-3">
-            <div className={`w-9 h-9 rounded-lg flex items-center justify-center ${allContentsCompleted ? 'bg-emerald-100' : 'bg-indigo-50'}`}>
-              <BookOpen className={`w-4.5 h-4.5 ${allContentsCompleted ? 'text-emerald-600' : 'text-indigo-500'}`} />
-            </div>
-            <div>
-              <h2 className="text-sm font-bold text-gray-900">{unit.title}</h2>
-              <p className="text-[11px] text-gray-400 mt-0.5">
-                {contents.length} contenido{contents.length !== 1 ? 's' : ''}
-                {hasQuiz ? ' • Evaluación incluida' : ''}
-              </p>
-            </div>
-          </div>
+      <div className={`max-w-4xl mx-auto space-y-4 transition-all duration-300 ${visible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'}`}>
+        {/* ── Breadcrumbs + status ── */}
+        <div className="flex items-center justify-between px-1">
+          <nav className="flex items-center gap-1.5 text-xs text-gray-400 min-w-0">
+            {currentModule && (
+              <>
+                <span className="truncate max-w-[160px]" title={currentModule.title}>{currentModule.title}</span>
+                <ChevronRight className="w-3 h-3 flex-shrink-0" />
+              </>
+            )}
+            <span className="text-gray-700 font-medium truncate max-w-[220px]" title={unit.title}>{unit.title}</span>
+          </nav>
           {allContentsCompleted && (
-            <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-100">
-              <CheckCircle className="w-3.5 h-3.5 text-emerald-600" />
-              <span className="text-[11px] text-emerald-700 font-semibold">Completado</span>
+            <div className="flex items-center gap-1 text-emerald-600 flex-shrink-0 ml-3">
+              <CheckCircle className="w-3.5 h-3.5" />
+              <span className="text-[11px] font-semibold">Completado</span>
             </div>
           )}
         </div>
 
         {/* ── Lesson content card — everything flows together ── */}
-        {contents.length > 0 && (
+        {(richContent || legacyContents.length > 0) && (
           <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
             <div className="p-6 md:p-8 lg:p-12 space-y-8 max-w-[800px] mx-auto">
-              {contents.map((content) => (
+              {/* Table of Contents */}
+              {richContent && <TableOfContents headings={headings} />}
+
+              {/* Rich text content (new TipTap format) — single unified document */}
+              {richContent && (
+                <div
+                  className="rich-content prose prose-sm md:prose-base max-w-none w-full overflow-hidden text-gray-700 leading-relaxed break-words"
+                  dangerouslySetInnerHTML={{ __html: processedHtml }}
+                />
+              )}
+              {/* Legacy content blocks (old multi-block format) */}
+              {legacyContents.map((content) => (
                 <ContentBlock key={content.id} content={content} />
               ))}
             </div>
@@ -296,10 +441,23 @@ export function ContentViewer({
 
         {/* ── Progress + navigation bar ── */}
         <div className="flex items-center justify-between px-5 py-3 bg-white rounded-xl border border-gray-200">
-          <p className="text-xs text-gray-400">
-            {contents.filter(c => isContentCompleted?.(c.id)).length} / {contents.length} completados
-          </p>
+          {/* Previous unit */}
+          <div className="flex-1">
+            {!isFirstUnit && (
+              <button
+                onClick={handlePreviousUnit}
+                className="flex items-center gap-1.5 text-xs text-gray-400 hover:text-blue-600 transition-colors"
+              >
+                <ChevronLeft className="w-3.5 h-3.5" />
+                <span className="hidden sm:inline truncate max-w-[120px]">
+                  {allUnits[currentUnitIndex - 1]?.title || 'Anterior'}
+                </span>
+                <span className="sm:hidden">Anterior</span>
+              </button>
+            )}
+          </div>
 
+          {/* Center: actions */}
           <div className="flex items-center gap-2">
             {!allContentsCompleted ? (
               <Button
@@ -326,81 +484,107 @@ export function ContentViewer({
               </Button>
             ) : null}
           </div>
+
+          {/* Next unit */}
+          <div className="flex-1 flex justify-end">
+            {!isLastUnit && (
+              <button
+                onClick={handleNextUnit}
+                className="flex items-center gap-1.5 text-xs text-gray-400 hover:text-blue-600 transition-colors"
+              >
+                <span className="hidden sm:inline truncate max-w-[120px]">
+                  {allUnits[currentUnitIndex + 1]?.title || 'Siguiente'}
+                </span>
+                <span className="sm:hidden">Siguiente</span>
+                <ChevronRight className="w-3.5 h-3.5" />
+              </button>
+            )}
+          </div>
         </div>
 
         {/* ── Quiz section ── */}
         {hasQuiz && (
-          <div className="bg-white rounded-3xl border border-blue-100 p-8 md:p-12 shadow-sm shadow-blue-50 text-center">
-            <div className="w-14 h-14 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center mx-auto mb-6">
-              <ClipboardCheck className="w-7 h-7" />
-            </div>
+          <div className={`rounded-2xl border overflow-hidden ${
+            isQuizPassed
+              ? 'bg-emerald-50/50 border-emerald-200'
+              : allContentsCompleted
+                ? 'bg-white border-gray-200' 
+                : 'bg-gray-50/50 border-gray-200'
+          }`}>
+            {/* Top accent line */}
+            <div className={`h-1 ${isQuizPassed ? 'bg-emerald-500' : 'bg-blue-500'}`} />
 
-            <h2 className="text-2xl font-bold text-gray-900 mb-3">Evaluación Final de Unidad</h2>
-            <p className="text-gray-500 max-w-sm mx-auto mb-8">
-              {allContentsCompleted
-                ? 'Has completado todos los contenidos. Es momento de poner a prueba tus conocimientos en:'
-                : 'Completa todo el contenido antes de realizar la evaluación:'}
-              <span className="block font-semibold text-gray-800 mt-1 italic">"{quiz?.title}"</span>
-            </p>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-lg mx-auto mb-8 text-left">
-              <div className="p-4 rounded-2xl bg-gray-50 border border-gray-100 flex items-start gap-3">
-                <div className="w-8 h-8 rounded-lg bg-white flex items-center justify-center border border-gray-100 flex-shrink-0">
-                  <Target className="w-4 h-4 text-emerald-500" />
-                </div>
-                <div>
-                  <div className="text-xs font-bold text-gray-900">Objetivo</div>
-                  <div className="text-[10px] text-gray-500">Aprobar el cuestionario</div>
-                </div>
-              </div>
-              <div className="p-4 rounded-2xl bg-gray-50 border border-gray-100 flex items-start gap-3">
-                <div className="w-8 h-8 rounded-lg bg-white flex items-center justify-center border border-gray-100 flex-shrink-0">
-                  <ClipboardCheck className={`w-4 h-4 ${isQuizPassed ? 'text-emerald-500' : 'text-blue-500'}`} />
-                </div>
-                <div>
-                  <div className="text-xs font-bold text-gray-900">Estado</div>
-                  <div className={`text-[10px] ${isQuizPassed ? 'text-emerald-600 font-bold' : 'text-gray-500'}`}>
-                    {isQuizPassed ? '¡Aprobado!' : 'Pendiente de realizar'}
+            <div className="p-5 md:p-6">
+              {/* Header row */}
+              <div className="flex items-start justify-between gap-4 mb-4">
+                <div className="flex items-start gap-3 min-w-0">
+                  <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${
+                    isQuizPassed ? 'bg-emerald-100' : 'bg-blue-50'
+                  }`}>
+                    <ClipboardCheck className={`w-5 h-5 ${isQuizPassed ? 'text-emerald-600' : 'text-blue-600'}`} />
+                  </div>
+                  <div className="min-w-0">
+                    <h3 className="text-sm font-bold text-gray-900">Evaluación</h3>
+                    <p className="text-xs text-gray-500 mt-0.5 truncate" title={quiz?.title}>{quiz?.title}</p>
                   </div>
                 </div>
+                {isQuizPassed && (
+                  <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-700 text-[11px] font-semibold flex-shrink-0">
+                    <CheckCircle className="w-3 h-3" />
+                    Aprobado
+                  </span>
+                )}
               </div>
+
+              {/* Action area */}
+              {allContentsCompleted ? (
+                <div className="flex items-center gap-3 flex-wrap">
+                  <button
+                    onClick={() => navigate(`/courses/${courseId}/quiz/${quiz.id}`)}
+                    className={`inline-flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-semibold text-white transition-colors ${
+                      isQuizPassed
+                        ? 'bg-gray-700 hover:bg-gray-800'
+                        : 'bg-blue-600 hover:bg-blue-700'
+                    }`}
+                  >
+                    {isQuizPassed ? 'Repetir evaluación' : 'Comenzar evaluación'}
+                    <ChevronRight className="w-4 h-4" />
+                  </button>
+
+                  {isQuizPassed && !isLastUnit && (
+                    <button
+                      onClick={handleFinish}
+                      className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-lg text-sm font-medium text-gray-600 hover:text-gray-800 hover:bg-gray-100 transition-colors"
+                    >
+                      Siguiente unidad
+                      <ChevronRight className="w-3.5 h-3.5" />
+                    </button>
+                  )}
+
+                  {isQuizPassed && isLastUnit && (
+                    <button
+                      onClick={handleFinish}
+                      className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-lg text-sm font-medium text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 transition-colors"
+                    >
+                      Finalizar curso
+                      <ChevronRight className="w-3.5 h-3.5" />
+                    </button>
+                  )}
+                </div>
+              ) : (
+                <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-amber-50 border border-amber-100">
+                  <div className="w-1.5 h-1.5 rounded-full bg-amber-400 flex-shrink-0" />
+                  <p className="text-xs text-amber-700">
+                    Completa el contenido de la unidad para desbloquear la evaluación.
+                  </p>
+                </div>
+              )}
             </div>
-
-            <Button
-              onClick={() => navigate(`/courses/${courseId}/quiz/${quiz.id}`)}
-              disabled={!allContentsCompleted}
-              className={`${isQuizPassed ? 'bg-emerald-600 hover:bg-emerald-700' : 'bg-blue-600 hover:bg-blue-700'} h-12 px-8 rounded-xl shadow-lg gap-2 disabled:opacity-50`}
-            >
-              {isQuizPassed ? 'Repetir evaluación (opcional)' : 'Comenzar evaluación ahora'}
-              <ChevronRight className="w-4 h-4" />
-            </Button>
-
-            {!allContentsCompleted && (
-              <p className="mt-4 text-[11px] text-amber-600">
-                Debes completar todo el contenido antes de acceder a la evaluación.
-              </p>
-            )}
-
-            {isQuizPassed && (
-              <div className="mt-6">
-                <Button
-                  onClick={handleFinish}
-                  variant="outline"
-                  size="sm"
-                  className="gap-1.5"
-                >
-                  {isLastUnit ? 'Finalizar curso' : 'Siguiente unidad'}
-                  <ChevronRight className="w-4 h-4" />
-                </Button>
-              </div>
-            )}
-
-            <p className="mt-6 text-[11px] text-gray-400">
-              Al iniciar, se abrirá una nueva ventana dedicada para la evaluación.
-            </p>
           </div>
         )}
       </div>
+
+      <ScrollToTop scrollRef={scrollRef} />
 
       {showFeedbackModal && (
         <CourseFeedbackModal
