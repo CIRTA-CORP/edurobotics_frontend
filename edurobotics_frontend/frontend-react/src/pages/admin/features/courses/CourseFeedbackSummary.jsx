@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useQuery } from '@tanstack/react-query'
 import { Star, Users, TrendingUp, BarChart3 } from 'lucide-react'
 import { getCourseFeedbackSummary } from '../../../../services/courses'
 
@@ -19,17 +19,12 @@ function RatingBar({ label, value, max = 5 }) {
 }
 
 export function CourseFeedbackSummary({ courseId }) {
-    const [data, setData] = useState(null)
-    const [loading, setLoading] = useState(true)
-
-    useEffect(() => {
-        if (!courseId) return
-        setLoading(true)
-        getCourseFeedbackSummary(courseId)
-            .then(setData)
-            .catch(() => setData(null))
-            .finally(() => setLoading(false))
-    }, [courseId])
+    const { data, isLoading: loading } = useQuery({
+        queryKey: ['course-feedback-summary', courseId],
+        queryFn: () => getCourseFeedbackSummary(courseId),
+        enabled: !!courseId,
+        staleTime: 30_000,
+    })
 
     if (loading) return null
     if (!data || data.total === 0) {

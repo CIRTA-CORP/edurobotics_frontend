@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
+import { useQuery } from '@tanstack/react-query'
 import { QuizView } from './course/components/QuizView'
 import { getStoredUser } from '../services/auth'
 import { getCourseDetail } from '../services/courses'
@@ -8,31 +9,23 @@ import { ArrowLeft, Loader2, BookOpen } from 'lucide-react'
 
 export default function QuizPage() {
     const { courseId, quizId } = useParams()
+    const numericCourseId = Number.parseInt(courseId, 10)
     const navigate = useNavigate()
-    const [user, setUser] = useState(null)
-    const [course, setCourse] = useState(null)
-    const [loading, setLoading] = useState(true)
+    const [user, setUser] = useState(() => getStoredUser())
 
     useEffect(() => {
-        const storedUser = getStoredUser()
-        if (!storedUser) {
+        if (!user) {
             navigate('/login')
             return
         }
-        setUser(storedUser)
+    }, [navigate, user])
 
-        const loadData = async () => {
-            try {
-                const courseData = await getCourseDetail(courseId)
-                setCourse(courseData)
-            } catch (err) {
-                console.error('Error loading quiz page data:', err)
-            } finally {
-                setLoading(false)
-            }
-        }
-        loadData()
-    }, [courseId, navigate])
+    const { data: course, isLoading: loading } = useQuery({
+        queryKey: ['course-detail', numericCourseId],
+        queryFn: () => getCourseDetail(numericCourseId),
+        enabled: Number.isFinite(numericCourseId),
+        staleTime: 60_000,
+    })
 
     if (loading) {
         return (

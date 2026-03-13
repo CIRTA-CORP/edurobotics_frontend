@@ -1,5 +1,6 @@
 import { useEffect, useState, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import { clearStoredUser, getStoredUser } from '../../services/auth'
 import { getCourseDetail, getAllCourses, invalidateCourseCache } from '../../services/courses'
@@ -33,10 +34,10 @@ import { useContent } from './features/content/useContent'
 
 function AdminDashboardPage() {
   const navigate = useNavigate()
+  const queryClient = useQueryClient()
   const [user, setUser] = useState(null)
   const [adminView, setAdminView] = useState('admin')
-  const [courses, setCourses] = useState([])
-  const [selectedCourse, setSelectedCourse] = useState(null)
+  const [selectedCourseId, setSelectedCourseId] = useState(null)
   const [selectedModule, setSelectedModule] = useState(null)
   const [selectedUnit, setSelectedUnit] = useState(null)
   const [activeTab, setActiveTab] = useState('cursos')
@@ -62,25 +63,28 @@ function AdminDashboardPage() {
   // Definir funciones de refresh antes de los hooks
   const refreshCourses = useCallback(async () => {
     try {
-      const response = await getAllCourses()
-      setCourses(response.courses || [])
+      await queryClient.invalidateQueries({ queryKey: ['admin-courses'] })
+      await queryClient.refetchQueries({ queryKey: ['admin-courses'] })
     } catch (error) {
       console.error('Error refreshing courses:', error)
     }
-  }, [])
+  }, [queryClient])
 
-  const refreshSelectedCourse = useCallback(async (courseId = selectedCourse?.id) => {
+  const refreshSelectedCourse = useCallback(async (courseId = selectedCourseId) => {
     if (!courseId) return null
     try {
       invalidateCourseCache(courseId)
-      const detail = await getCourseDetail(courseId)
-      setSelectedCourse(detail)
+      await queryClient.invalidateQueries({ queryKey: ['admin-course-detail', courseId] })
+      const detail = await queryClient.fetchQuery({
+        queryKey: ['admin-course-detail', courseId],
+        queryFn: () => getCourseDetail(courseId),
+      })
       return detail
     } catch (error) {
       console.error('Error refreshing course:', error)
       return null
     }
-  }, [selectedCourse?.id])
+  }, [queryClient, selectedCourseId])
 
   // Custom hooks para lógica de negocio
   const courseHooks = useCourses(null, refreshCourses, refreshSelectedCourse)
@@ -90,10 +94,43 @@ function AdminDashboardPage() {
 
   // Messages are now handled by sonner toasts (no more inline banners)
 
+  useEffect(() => {
+    const storedUser = getStoredUser()
+    if (!storedUser) {
+      navigate('/login')
+      return
+    }
+    setUser(storedUser)
+  }, [navigate])
+
+  const { data: coursesResp, error: coursesError } = useQuery({
+    queryKey: ['admin-courses'],
+    queryFn: getAllCourses,
+    enabled: !!user && adminView === 'admin',
+    staleTime: 30_000,
+  })
+
+  useEffect(() => {
+    if (coursesError) {
+      toast.error(coursesError.message)
+    }
+  }, [coursesError])
+
+  const courses = coursesResp?.courses || []
+
+  const { data: selectedCourseData } = useQuery({
+    queryKey: ['admin-course-detail', selectedCourseId],
+    queryFn: () => getCourseDetail(selectedCourseId),
+    enabled: !!selectedCourseId,
+    staleTime: 30_000,
+  })
+
+  const selectedCourse = selectedCourseData || null
+
   // Sincronizar selectedModule y selectedUnit cuando se actualiza selectedCourse
   useEffect(() => {
     if (selectedCourse) {
-      if (!selectedModule) return; // Nada que sincronizar si no hay módulo seleccionado
+      if (!selectedModule) return // Nada que sincronizar si no hay módulo seleccionado
 
       const updatedModule = selectedCourse.modules?.find(m => m.id === selectedModule.id)
 
@@ -123,27 +160,6 @@ function AdminDashboardPage() {
     }
   }, [selectedCourse, selectedModule, selectedUnit])
 
-  useEffect(() => {
-    const storedUser = getStoredUser()
-    if (!storedUser) {
-      navigate('/login')
-      return
-    }
-    setUser(storedUser)
-  }, [navigate])
-
-  useEffect(() => {
-    const loadCourses = async () => {
-      try {
-        const response = await getAllCourses()
-        setCourses(response.courses || [])
-      } catch (error) {
-        toast.error(error.message)
-      }
-    }
-    loadCourses()
-  }, [])
-
   const [showLogoutModal, setShowLogoutModal] = useState(false)
 
   const handleLogout = () => {
@@ -158,7 +174,8 @@ function AdminDashboardPage() {
   const handleCourseSelect = async (course) => {
     try {
       const detail = await getCourseDetail(course.id)
-      setSelectedCourse(detail)
+      queryClient.setQueryData(['admin-course-detail', course.id], detail)
+      setSelectedCourseId(course.id)
 
       // Pre-fill course form with selected course data
       courseHooks.setCourseForm({
@@ -193,7 +210,7 @@ function AdminDashboardPage() {
       // Stay in Cursos tab instead of navigating to Módulos
       // setActiveTab('modulos') // REMOVED
     } catch (error) {
-      setMessage(error.message)
+      toast.error(error.message)
     }
   }
 
@@ -458,7 +475,7 @@ function AdminDashboardPage() {
                         onDelete={() => {
                           if (window.confirm(`¿Eliminar el curso "${selectedCourse.title}"?`)) {
                             courseHooks.handleCourseDelete(selectedCourse)
-                            setSelectedCourse(null)
+                            setSelectedCourseId(null)
                             setSelectedModule(null)
                             setSelectedUnit(null)
                           }

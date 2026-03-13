@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useMutation, useQuery } from '@tanstack/react-query';
 import { Button } from '../../../components/ui/button';
 import {
     CheckCircle, XCircle, AlertCircle, Loader2,
@@ -13,30 +14,32 @@ import { useParams, useNavigate } from 'react-router-dom';
  * One question at a time with progress indicator and elegant results
  */
 export function QuizView({ quizId, userId, onComplete }) {
-    const [quiz, setQuiz] = useState(null);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState(null);
     const [answers, setAnswers] = useState({});
     const [currentIndex, setCurrentIndex] = useState(0);
-    const [submitting, setSubmitting] = useState(false);
     const [result, setResult] = useState(null);
     const { courseId } = useParams();
     const navigate = useNavigate();
 
-    useEffect(() => {
-        const loadQuiz = async () => {
-            try {
-                setLoading(true);
-                const data = await quizService.getQuiz(quizId);
-                setQuiz(data);
-            } catch (err) {
-                setError('No se pudo cargar la evaluación.');
-            } finally {
-                setLoading(false);
+    const {
+        data: quiz,
+        isLoading: loading,
+        error,
+    } = useQuery({
+        queryKey: ['quiz-detail', quizId],
+        queryFn: () => quizService.getQuiz(quizId),
+        enabled: !!quizId,
+        staleTime: 30_000,
+    });
+
+    const submitQuizMutation = useMutation({
+        mutationFn: (payload) => quizService.submitQuiz(quizId, payload),
+        onSuccess: (data) => {
+            setResult(data);
+            if (data.passed && onComplete) {
+                onComplete();
             }
-        };
-        if (quizId) loadQuiz();
-    }, [quizId]);
+        },
+    });
 
     const handleSelectAnswer = (questionId, answerId) => {
         if (result) return;
@@ -49,19 +52,12 @@ export function QuizView({ quizId, userId, onComplete }) {
             return;
         }
         try {
-            setSubmitting(true);
-            const data = await quizService.submitQuiz(quizId, {
+            await submitQuizMutation.mutateAsync({
                 user_id: userId,
                 answers: answers
             });
-            setResult(data);
-            if (data.passed && onComplete) {
-                onComplete();
-            }
         } catch (err) {
             alert('Error al enviar la evaluación.');
-        } finally {
-            setSubmitting(false);
         }
     };
 
@@ -82,7 +78,7 @@ export function QuizView({ quizId, userId, onComplete }) {
     if (error) return (
         <div className="p-8 text-center bg-red-50 rounded-2xl border border-red-100">
             <AlertCircle className="w-10 h-10 text-red-400 mx-auto mb-3" />
-            <p className="text-red-700 font-medium">{error}</p>
+            <p className="text-red-700 font-medium">No se pudo cargar la evaluación.</p>
         </div>
     );
 
@@ -287,13 +283,13 @@ export function QuizView({ quizId, userId, onComplete }) {
                 {isLast ? (
                     <Button
                         onClick={handleSubmit}
-                        disabled={submitting || !allAnswered}
+                        disabled={submitQuizMutation.isPending || !allAnswered}
                         className={`gap-1.5 px-6 ${allAnswered
                             ? 'bg-blue-600 hover:bg-blue-700 shadow-lg shadow-blue-200'
                             : 'bg-gray-300 cursor-not-allowed'
                             }`}
                     >
-                        {submitting ? (
+                        {submitQuizMutation.isPending ? (
                             <><Loader2 className="w-4 h-4 animate-spin" /> Enviando...</>
                         ) : (
                             <>Finalizar Evaluación <ChevronRight className="w-4 h-4" /></>

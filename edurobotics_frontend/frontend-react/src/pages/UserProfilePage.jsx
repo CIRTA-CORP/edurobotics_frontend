@@ -7,6 +7,7 @@
 
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useQuery } from '@tanstack/react-query'
 import { getStoredUser } from '../services/auth'
 import { getUserProfile } from '../services/courses'
 import { Button } from '../components/ui/button'
@@ -24,20 +25,18 @@ const LEVEL_CONFIG = {
 
 function UserProfilePage() {
     const navigate = useNavigate()
-    const [user, setUser] = useState(null)
-    const [profileData, setProfileData] = useState(null)
-    const [loading, setLoading] = useState(true)
+    const [user, setUser] = useState(() => getStoredUser())
 
     useEffect(() => {
-        const storedUser = getStoredUser()
-        if (!storedUser) { navigate('/login'); return }
-        setUser(storedUser)
+        if (!user) { navigate('/login'); return }
+    }, [navigate, user])
 
-        getUserProfile(storedUser.id)
-            .then(data => setProfileData(data))
-            .catch(err => console.error('Profile load error:', err))
-            .finally(() => setLoading(false))
-    }, [navigate])
+    const { data: profileData, isLoading: loading } = useQuery({
+        queryKey: ['user-profile', user?.id],
+        queryFn: () => getUserProfile(user.id),
+        enabled: !!user?.id,
+        staleTime: 30_000,
+    })
 
     if (loading) {
         return (

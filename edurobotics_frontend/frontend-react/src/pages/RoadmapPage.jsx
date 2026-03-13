@@ -10,6 +10,7 @@
 
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useQuery } from '@tanstack/react-query'
 import { getStoredUser } from '../services/auth'
 import { getCoursesRoadmap } from '../services/courses'
 import { getRoadmap } from '../services/progress'
@@ -18,52 +19,34 @@ import RoadmapGraph from './roadmap/RoadmapGraph'
 
 function RoadmapPage() {
     const navigate = useNavigate()
-    const [user, setUser] = useState(null)
-    const [courses, setCourses] = useState([])
-    const [roadmapData, setRoadmapData] = useState({})
-    const [loading, setLoading] = useState(true)
-    const [error, setError] = useState(null)
+    const [user, setUser] = useState(() => getStoredUser())
 
     // Load user
     useEffect(() => {
-        const storedUser = getStoredUser()
-        if (!storedUser) { navigate('/login'); return }
-        setUser(storedUser)
-    }, [navigate])
+        if (!user) { navigate('/login'); return }
+    }, [navigate, user])
 
-    // Load courses and progress
-    useEffect(() => {
-        if (!user) return
-        let mounted = true
+    const { data: coursesResp, isLoading: coursesLoading, error: coursesError } = useQuery({
+        queryKey: ['courses-roadmap'],
+        queryFn: getCoursesRoadmap,
+        enabled: !!user,
+        staleTime: 60_000,
+    })
 
-        const loadData = async () => {
-            try {
-                // Load courses with prerequisites
-                const coursesResp = await getCoursesRoadmap()
-                const allCourses = coursesResp.courses || []
-                if (mounted) setCourses(allCourses)
+    const { data: roadmapResp } = useQuery({
+        queryKey: ['roadmap-full', user?.id],
+        queryFn: () => getRoadmap(user.id),
+        enabled: !!user?.id,
+        staleTime: 20_000,
+    })
 
-                // Load overall roadmap for progress data
-                try {
-                    const roadmapResp = await getRoadmap(user.id)
-                    if (mounted && roadmapResp?.roadmap && Array.isArray(roadmapResp.roadmap)) {
-                        const map = {}
-                        roadmapResp.roadmap.forEach(c => { map[c.id] = c })
-                        setRoadmapData(map)
-                    }
-                } catch {
-                    // Progress data is optional, ignore errors
-                }
-            } catch (err) {
-                if (mounted) setError(err.message)
-            } finally {
-                if (mounted) setLoading(false)
-            }
-        }
-
-        loadData()
-        return () => { mounted = false }
-    }, [user])
+    const courses = coursesResp?.courses || []
+    const roadmapData = {}
+    if (roadmapResp?.roadmap && Array.isArray(roadmapResp.roadmap)) {
+        roadmapResp.roadmap.forEach(c => { roadmapData[c.id] = c })
+    }
+    const loading = coursesLoading
+    const error = coursesError?.message || null
 
     // ── Loading ──────────────────────────────────────────────────────────────
     if (loading) return (

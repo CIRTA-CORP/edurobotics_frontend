@@ -14,8 +14,9 @@
  * Redesigned with modern hero section, glassmorphism, and visual hierarchy.
  */
 
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
+import { useQuery } from '@tanstack/react-query'
 import { getStoredUser } from '../services/auth'
 import { getCourseDetail, checkPrerequisites, getCoursesRoadmap } from '../services/courses'
 import { getRoadmap } from '../services/progress'
@@ -319,77 +320,78 @@ function MiniRoadmap({ currentCourseId, allCourses, roadmapData, navigate }) {
 function CoursePreviewPage() {
     const { courseId } = useParams()
     const navigate = useNavigate()
-    const [user, setUser] = useState(null)
-    const [course, setCourse] = useState(null)
-    const [progress, setProgress] = useState(null)
-    const [prereqCheck, setPrereqCheck] = useState(null)
-    const [allCourses, setAllCourses] = useState([])
-    const [roadmapData, setRoadmapData] = useState({})
-    const [loading, setLoading] = useState(true)
-    const [error, setError] = useState(null)
+    const [user] = useState(() => getStoredUser())
+    const numericCourseId = Number.parseInt(courseId, 10)
 
     // Load user
     useEffect(() => {
-        const storedUser = getStoredUser()
-        if (!storedUser) { navigate('/login'); return }
-        setUser(storedUser)
-    }, [navigate])
+        if (!user) { navigate('/login'); return }
+    }, [navigate, user])
 
-    // Load course detail IMMEDIATELY (no user dependency)
-    useEffect(() => {
-        const load = async () => {
-            try {
-                const data = await getCourseDetail(courseId)
-                setCourse(data)
-            } catch (err) {
-                setError(err.message)
-            } finally {
-                setLoading(false)
-            }
+    const {
+        data: course,
+        isLoading: courseLoading,
+        error: courseError,
+    } = useQuery({
+        queryKey: ['course-detail', numericCourseId],
+        queryFn: () => getCourseDetail(numericCourseId),
+        enabled: Number.isFinite(numericCourseId),
+        staleTime: 60_000,
+    })
+
+    const { data: singleRoadmap } = useQuery({
+        queryKey: ['roadmap-single', user?.id, numericCourseId],
+        queryFn: () => getRoadmap(user.id, numericCourseId),
+        enabled: !!user?.id && Number.isFinite(numericCourseId),
+        staleTime: 15_000,
+    })
+
+    const { data: fullRoadmap } = useQuery({
+        queryKey: ['roadmap-full', user?.id],
+        queryFn: () => getRoadmap(user.id),
+        enabled: !!user?.id,
+        staleTime: 20_000,
+    })
+
+    const { data: coursesRoadmap } = useQuery({
+        queryKey: ['courses-roadmap'],
+        queryFn: getCoursesRoadmap,
+        staleTime: 60_000,
+    })
+
+    const { data: prereqData } = useQuery({
+        queryKey: ['prereq-check', numericCourseId, user?.id],
+        queryFn: () => checkPrerequisites(numericCourseId, user.id),
+        enabled: !!user?.id && Number.isFinite(numericCourseId),
+        staleTime: 10_000,
+    })
+
+    const progress = useMemo(() => {
+        const roadmap = singleRoadmap?.roadmap
+        if (roadmap && typeof roadmap === 'object' && !Array.isArray(roadmap)) {
+            return { percentage: roadmap.percentage ?? 0, state: roadmap.state ?? 'not_started' }
         }
-        load()
-    }, [courseId])
+        return null
+    }, [singleRoadmap])
 
-    // Load user-dependent data in parallel (roadmap + prereqs)
-    useEffect(() => {
-        if (!user?.id) return
+    const roadmapData = useMemo(() => {
+        if (!fullRoadmap?.roadmap || !Array.isArray(fullRoadmap.roadmap)) return {}
+        return fullRoadmap.roadmap.reduce((acc, c) => {
+            acc[c.id] = c
+            return acc
+        }, {})
+    }, [fullRoadmap])
 
-        Promise.all([
-            getRoadmap(user.id, parseInt(courseId)).catch(() => null),
-            getRoadmap(user.id).catch(() => null),
-            getCoursesRoadmap().catch(() => null),
-            checkPrerequisites(parseInt(courseId), user.id).catch(() => null),
-        ]).then(([singleRoadmap, fullRoadmap, coursesRoadmap, prereqData]) => {
-            // Single course progress
-            const roadmap = singleRoadmap?.roadmap
-            if (roadmap && typeof roadmap === 'object' && !Array.isArray(roadmap)) {
-                setProgress({ percentage: roadmap.percentage ?? 0, state: roadmap.state ?? 'not_started' })
-            }
-            // Full roadmap data
-            if (fullRoadmap?.roadmap && Array.isArray(fullRoadmap.roadmap)) {
-                const map = {}
-                fullRoadmap.roadmap.forEach(c => { map[c.id] = c })
-                setRoadmapData(map)
-            }
-            // All courses for mini roadmap
-            if (coursesRoadmap?.courses) {
-                setAllCourses(coursesRoadmap.courses)
-            }
-            // Prerequisites (store real data for all users, admin override is in CTA)
-            if (prereqData) {
-                setPrereqCheck(prereqData)
-            } else {
-                setPrereqCheck({ allowed: true, details: [], missing: [] })
-            }
-        })
-    }, [user, courseId])
+    const allCourses = coursesRoadmap?.courses || []
+    const prereqLoading = !!user?.id && !prereqData
+    const prereqCheck = prereqData || { allowed: true, details: [], missing: [] }
 
     const handleStartStudy = () => {
         navigate(`/courses/${courseId}/study`)
     }
 
     // ── Loading / Error ───────────────────────────────────────────────────────
-    if (loading) return (
+    if (courseLoading) return (
         <div className="min-h-screen bg-gray-50 animate-pulse">
             {/* Nav skeleton */}
             <header className="bg-white border-b border-gray-200 px-6 py-2.5 flex items-center justify-between">
@@ -430,13 +432,13 @@ function CoursePreviewPage() {
         </div>
     )
 
-    if (error || !course) return (
+    if (courseError || !course) return (
         <div className="min-h-screen flex items-center justify-center bg-gray-50">
             <div className="text-center">
                 <div className="w-12 h-12 rounded-full bg-red-100 flex items-center justify-center mx-auto mb-3">
                     <BookOpen className="w-6 h-6 text-red-500" />
                 </div>
-                <p className="text-red-600 mb-4 text-sm">{error || 'Curso no encontrado'}</p>
+                <p className="text-red-600 mb-4 text-sm">{courseError?.message || 'Curso no encontrado'}</p>
                 <button onClick={() => navigate('/dashboard')} className="text-blue-600 hover:underline text-sm">
                     ← Volver al dashboard
                 </button>
@@ -459,8 +461,7 @@ function CoursePreviewPage() {
     const LevelIcon = levelConf.icon
 
     // Prerequisite state
-    const prereqLoading = prereqCheck === null
-    const isBlocked = !prereqLoading && prereqCheck?.allowed === false
+    const isBlocked = prereqCheck?.allowed === false
     const hasPrereqs = prereqCheck?.details?.length > 0
 
     const ctaLabel = state === 'completed'

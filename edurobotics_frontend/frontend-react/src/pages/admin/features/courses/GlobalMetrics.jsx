@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useQuery } from '@tanstack/react-query'
 import { Users, BookOpen, CheckCircle, ClipboardCheck, Star, TrendingUp, UserPlus, BarChart3 } from 'lucide-react'
 import { getAdminMetrics } from '../../../../services/courses'
 
@@ -22,15 +22,13 @@ function MetricCard({ icon: Icon, label, value, sub, color, bgColor }) {
 }
 
 export function GlobalMetrics() {
-    const [metrics, setMetrics] = useState(null)
-    const [loading, setLoading] = useState(true)
+    const { data, isLoading: loading } = useQuery({
+        queryKey: ['admin-metrics'],
+        queryFn: getAdminMetrics,
+        staleTime: 30_000,
+    })
 
-    useEffect(() => {
-        getAdminMetrics()
-            .then(res => setMetrics(res.metrics))
-            .catch(err => console.error('Metrics error:', err))
-            .finally(() => setLoading(false))
-    }, [])
+    const metrics = data?.metrics || null
 
     if (loading) {
         return (

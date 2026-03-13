@@ -7,7 +7,7 @@
  * Redesigned with modern card-style and visual indicators.
  */
 
-import { useEffect, useState } from 'react'
+import { useQuery } from '@tanstack/react-query'
 import { Loader2, ChevronRight, CheckCircle, Clock, Circle } from 'lucide-react'
 import { getRoadmap } from '../../../services/progress'
 
@@ -18,27 +18,13 @@ const STATE_CONFIG = {
 }
 
 export default function CourseRoadmap({ userId, courseId, onNavigateUnit }) {
-  const [roadmap, setRoadmap] = useState(null)
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState(null)
-
-  useEffect(() => {
-    if (!userId) return
-    let mounted = true
-    const load = async () => {
-      setLoading(true)
-      try {
-        const data = await getRoadmap(userId, courseId)
-        if (mounted) setRoadmap(data.roadmap)
-      } catch (err) {
-        if (mounted) setError(err.message)
-      } finally {
-        if (mounted) setLoading(false)
-      }
-    }
-    load()
-    return () => { mounted = false }
-  }, [userId, courseId])
+  const { data, isLoading: loading, error } = useQuery({
+    queryKey: ['roadmap-single', userId, courseId],
+    queryFn: () => getRoadmap(userId, courseId),
+    enabled: !!userId,
+    staleTime: 15_000,
+  })
+  const roadmap = data?.roadmap || null
 
   if (!userId) return null
 

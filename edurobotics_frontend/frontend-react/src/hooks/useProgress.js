@@ -5,68 +5,67 @@
  * Handles marking content as complete and tracking progress.
  */
 
-import { useState, useEffect, useCallback } from 'react'
+import { useCallback } from 'react'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { markContentComplete, updateLastAccessed, getUserProgress } from '../services/progress'
 
 export function useProgress(userId, courseId = null) {
-  const [progress, setProgress] = useState({})
-  const [passedQuizIds, setPassedQuizIds] = useState([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState(null)
+  const queryClient = useQueryClient()
 
-  const fetchProgress = useCallback(async () => {
-    if (!userId) {
-      setLoading(false)
-      return
+  const progressQuery = useQuery({
+    queryKey: ['user-progress', userId, courseId ?? 'all'],
+    queryFn: () => getUserProgress(userId, courseId),
+    enabled: !!userId,
+    staleTime: 15_000,
+  })
+
+  const progressResult = progressQuery.data?.success ? progressQuery.data : null
+  const progress = progressResult?.progress || {}
+  const passedQuizIds = progressResult?.passed_quiz_ids || []
+
+  const refreshProgress = useCallback(() => {
+    if (!userId) return
+    queryClient.invalidateQueries({ queryKey: ['user-progress', userId] })
+    if (courseId) {
+      queryClient.invalidateQueries({ queryKey: ['roadmap-single', userId, courseId] })
     }
-    try {
-      setLoading(true)
-      const result = await getUserProgress(userId, courseId)
-      if (result.success) {
-        setProgress(result.progress)
-        setPassedQuizIds(result.passed_quiz_ids || [])
-      }
-    } catch (err) {
-      setError(err.message)
-    } finally {
-      setLoading(false)
-    }
-  }, [userId, courseId])
+    queryClient.invalidateQueries({ queryKey: ['roadmap-full', userId] })
+  }, [queryClient, userId, courseId])
 
-  const refreshProgress = useCallback(() => fetchProgress(), [fetchProgress])
-
-  useEffect(() => {
-    fetchProgress()
-  }, [fetchProgress])
+  const markCompleteMutation = useMutation({
+    mutationFn: (contentId) => markContentComplete(userId, contentId),
+    onSuccess: () => {
+      refreshProgress()
+    },
+  })
 
   // Mark content as complete
   const markComplete = useCallback(async (contentId) => {
     if (!userId || !contentId) return { success: false }
 
     try {
-      const result = await markContentComplete(userId, contentId)
-      if (result.success) {
-        // Refresh progress
-        fetchProgress()
-      }
+      const result = await markCompleteMutation.mutateAsync(contentId)
       return result
     } catch (err) {
-      setError(err.message)
       return { success: false, error: err.message }
     }
-  }, [userId, fetchProgress])
+  }, [userId, markCompleteMutation])
+
+  const updateAccessMutation = useMutation({
+    mutationFn: (contentId) => updateLastAccessed(userId, contentId),
+  })
 
   // Update last accessed
   const updateAccess = useCallback(async (contentId) => {
     if (!userId || !contentId) return { success: false }
 
     try {
-      const result = await updateLastAccessed(userId, contentId)
+      const result = await updateAccessMutation.mutateAsync(contentId)
       return result
     } catch (err) {
       return { success: false, error: err.message }
     }
-  }, [userId])
+  }, [userId, updateAccessMutation])
 
   // Check if content is completed
   const isContentCompleted = useCallback((contentId) => {
@@ -147,8 +146,8 @@ export function useProgress(userId, courseId = null) {
 
   return {
     progress,
-    loading,
-    error,
+    loading: progressQuery.isLoading,
+    error: progressQuery.error?.message || null,
     markComplete,
     updateAccess,
     isContentCompleted,

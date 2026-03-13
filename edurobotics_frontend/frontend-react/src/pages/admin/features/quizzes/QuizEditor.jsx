@@ -1,4 +1,5 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { Button } from '../../../../components/ui/button';
 import {
@@ -18,7 +19,7 @@ import { QuestionBlock } from './QuestionBlock';
  * - Sonner toasts: no more inline message banners
  */
 export function QuizEditor({ unitId, moduleId }) {
-    const [quizzes, setQuizzes] = useState([]);
+    const queryClient = useQueryClient();
     const [loading, setLoading] = useState(true);
     const [selectedQuiz, setSelectedQuiz] = useState(null);
     const [questions, setQuestions] = useState([]);
@@ -28,29 +29,31 @@ export function QuizEditor({ unitId, moduleId }) {
     const [confirmDelete, setConfirmDelete] = useState(null);
     const [isEditingTitle, setIsEditingTitle] = useState(false);
     const [editTitleValue, setEditTitleValue] = useState('');
+    const quizListQueryKey = ['admin-quizzes', unitId ?? null, moduleId ?? null];
 
-    const loadQuizzes = useCallback(async () => {
-        try {
-            setLoading(true);
-            let data = [];
-            if (unitId) {
-                data = await quizService.listUnitQuizzes(unitId);
-            } else if (moduleId) {
-                data = await quizService.listModuleQuizzes(moduleId);
-            }
-            setQuizzes(data);
-        } catch (err) {
-            toast.error('Error al cargar evaluaciones');
-        } finally {
-            setLoading(false);
-        }
-    }, [unitId, moduleId]);
+    const {
+        data: quizzes = [],
+        isLoading: quizzesLoading,
+    } = useQuery({
+        queryKey: quizListQueryKey,
+        queryFn: async () => {
+            if (unitId) return quizService.listUnitQuizzes(unitId);
+            if (moduleId) return quizService.listModuleQuizzes(moduleId);
+            return [];
+        },
+        enabled: !!unitId || !!moduleId,
+        staleTime: 20_000,
+    });
 
     useEffect(() => {
-        loadQuizzes();
+        // List loading is managed by React Query; local loading is only for detail screens.
+        setLoading(false);
+    }, [quizzesLoading]);
+
+    useEffect(() => {
         setSelectedQuiz(null);
         setQuestions([]);
-    }, [loadQuizzes]);
+    }, [unitId, moduleId]);
 
     // ── QUIZ CRUD ──
     const handleSaveTitle = async () => {
@@ -64,7 +67,7 @@ export function QuizEditor({ unitId, moduleId }) {
             setSelectedQuiz(prev => ({ ...prev, title: editTitleValue.trim() }));
             setIsEditingTitle(false);
             toast.success('Título actualizado');
-            loadQuizzes();
+            await queryClient.invalidateQueries({ queryKey: quizListQueryKey });
         } catch (err) {
             toast.error('Error al actualizar el título');
         } finally {
@@ -84,7 +87,7 @@ export function QuizEditor({ unitId, moduleId }) {
             toast.success('Evaluación creada');
             setNewTitle('');
             setShowCreateForm(false);
-            await loadQuizzes();
+            await queryClient.invalidateQueries({ queryKey: quizListQueryKey });
         } catch (err) {
             toast.error('Error al crear evaluación');
         } finally {
@@ -101,7 +104,7 @@ export function QuizEditor({ unitId, moduleId }) {
             }
             toast.success('Evaluación eliminada');
             setConfirmDelete(null);
-            await loadQuizzes();
+            await queryClient.invalidateQueries({ queryKey: quizListQueryKey });
         } catch (err) {
             toast.error('Error al eliminar');
         }
@@ -110,7 +113,10 @@ export function QuizEditor({ unitId, moduleId }) {
     const startEditing = async (quiz) => {
         try {
             setLoading(true);
-            const data = await quizService.getAdminQuiz(quiz.id);
+            const data = await queryClient.fetchQuery({
+                queryKey: ['admin-quiz-detail', quiz.id],
+                queryFn: () => quizService.getAdminQuiz(quiz.id),
+            });
             setSelectedQuiz(data);
             setQuestions(data.questions || []);
         } catch (err) {
@@ -163,7 +169,10 @@ export function QuizEditor({ unitId, moduleId }) {
             }
 
             // 3) Sync with real data from server (replaces temp IDs)
-            const data = await quizService.getAdminQuiz(selectedQuiz.id);
+            const data = await queryClient.fetchQuery({
+                queryKey: ['admin-quiz-detail', selectedQuiz.id],
+                queryFn: () => quizService.getAdminQuiz(selectedQuiz.id),
+            });
             setQuestions(data.questions);
         } catch (err) {
             // Rollback: remove optimistic question
@@ -214,7 +223,10 @@ export function QuizEditor({ unitId, moduleId }) {
         try {
             setSaving(true);
             await quizService.addAnswer(questionId, { answer_text: 'Nueva opción', is_correct: false });
-            const data = await quizService.getAdminQuiz(selectedQuiz.id);
+            const data = await queryClient.fetchQuery({
+                queryKey: ['admin-quiz-detail', selectedQuiz.id],
+                queryFn: () => quizService.getAdminQuiz(selectedQuiz.id),
+            });
             setQuestions(data.questions);
         } catch (err) {
             // Rollback
@@ -249,7 +261,10 @@ export function QuizEditor({ unitId, moduleId }) {
             await quizService.updateAnswer(answerId, { is_correct: true });
         } catch (err) {
             // Refetch to restore correct state
-            const data = await quizService.getAdminQuiz(selectedQuiz.id);
+            const data = await queryClient.fetchQuery({
+                queryKey: ['admin-quiz-detail', selectedQuiz.id],
+                queryFn: () => quizService.getAdminQuiz(selectedQuiz.id),
+            });
             setQuestions(data.questions);
             toast.error('Error al marcar');
         } finally {
@@ -277,7 +292,7 @@ export function QuizEditor({ unitId, moduleId }) {
     };
 
     // ── LOADING ──
-    if (loading && !selectedQuiz) {
+    if ((loading || quizzesLoading) && !selectedQuiz) {
         return (
             <div className="flex flex-col items-center justify-center py-20">
                 <Loader2 className="w-8 h-8 animate-spin text-gray-400 mb-4" />

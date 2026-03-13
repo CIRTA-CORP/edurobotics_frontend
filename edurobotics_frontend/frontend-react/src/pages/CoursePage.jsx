@@ -10,9 +10,9 @@
 
 import { useEffect, useState, useRef } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
+import { useQuery } from '@tanstack/react-query'
 import { getStoredUser } from '../services/auth'
 import { getCourseDetail, checkPrerequisites } from '../services/courses'
-import { getUserProgress } from '../services/progress'
 import { Button } from '../components/ui/button'
 import {
   Loader2, BookOpen, ArrowLeft, GraduationCap, Zap, Trophy, Shield, Menu, X
@@ -79,11 +79,9 @@ function CoursePageSkeleton() {
 
 function CoursePage() {
   const { courseId } = useParams()
+  const numericCourseId = Number.parseInt(courseId, 10)
   const navigate = useNavigate()
-  const [user, setUser] = useState(null)
-  const [course, setCourse] = useState(null)
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState(null)
+  const [user, setUser] = useState(() => getStoredUser())
   const [selectedUnitId, setSelectedUnitId] = useState(null)
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const mainRef = useRef(null)
@@ -91,51 +89,41 @@ function CoursePage() {
 
   // useProgress still manages progress state and provides helper methods,
   // but the initial fetch is now parallelized below.
-  const progressHook = useProgress(user?.id, parseInt(courseId))
+  const progressHook = useProgress(user?.id, numericCourseId)
 
   useEffect(() => {
-    const storedUser = getStoredUser()
-    if (!storedUser) { navigate('/login'); return }
-    setUser(storedUser)
-  }, [navigate])
+    if (!user) { navigate('/login'); return }
+  }, [navigate, user])
 
-  // ── Parallel data loading ──
-  // Fire getCourseDetail + getUserProgress at the same time.
-  // getUserProgress doesn't depend on getCourseDetail's result.
+  const {
+    data: course,
+    isLoading: courseLoading,
+    error: courseError,
+  } = useQuery({
+    queryKey: ['course-detail', numericCourseId],
+    queryFn: () => getCourseDetail(numericCourseId),
+    enabled: Number.isFinite(numericCourseId),
+    staleTime: 60_000,
+  })
+
+  const { data: prereqResult } = useQuery({
+    queryKey: ['prereq-check', numericCourseId, user?.id],
+    queryFn: () => checkPrerequisites(numericCourseId, user.id),
+    enabled: !!user?.id && Number.isFinite(numericCourseId),
+    staleTime: 10_000,
+  })
+
   useEffect(() => {
-    if (!user?.id) return
-
-    const loadAll = async () => {
-      try {
-        const [courseData, , prereqResult] = await Promise.all([
-          getCourseDetail(courseId),
-          // This pre-warms the progress data. The useProgress hook will also
-          // call getUserProgress, but since it fires at the same tick, the
-          // browser de-duplicates the request (same URL = single HTTP call).
-          getUserProgress(user.id, parseInt(courseId)).catch(() => null),
-          // Check prerequisites in parallel
-          checkPrerequisites(parseInt(courseId), user.id).catch(() => null),
-        ])
-
-        // If prerequisites not met, redirect back to preview
-        if (prereqResult && !prereqResult.allowed && user.role !== 'admin') {
-          navigate(`/courses/${courseId}`, { replace: true })
-          return
-        }
-
-        setCourse(courseData)
-        if (courseData?.modules?.length > 0) {
-          const firstUnit = courseData.modules[0]?.units?.[0]
-          if (firstUnit) setSelectedUnitId(firstUnit.id)
-        }
-      } catch (err) {
-        setError(err.message)
-      } finally {
-        setLoading(false)
-      }
+    if (prereqResult && !prereqResult.allowed && user?.role !== 'admin') {
+      navigate(`/courses/${courseId}`, { replace: true })
     }
-    loadAll()
-  }, [courseId, user])
+  }, [prereqResult, user?.role, navigate, courseId])
+
+  useEffect(() => {
+    if (!course || selectedUnitId) return
+    const firstUnit = course.modules?.[0]?.units?.[0]
+    if (firstUnit) setSelectedUnitId(firstUnit.id)
+  }, [course, selectedUnitId])
 
   const allUnits = course?.modules?.flatMap(m => m.units || []) || []
   const currentUnit = allUnits.find(u => u.id === selectedUnitId)
@@ -158,15 +146,15 @@ function CoursePage() {
   useEffect(() => { setReadProgress(0) }, [selectedUnitId])
 
   // ── Loading (skeleton) ──
-  if (loading) return <CoursePageSkeleton />
+  if (courseLoading) return <CoursePageSkeleton />
 
-  if (error) return (
+  if (courseError) return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50">
       <div className="text-center">
         <div className="w-12 h-12 rounded-full bg-red-100 flex items-center justify-center mx-auto mb-3">
           <BookOpen className="w-6 h-6 text-red-500" />
         </div>
-        <p className="text-red-600 mb-4 text-sm">{error}</p>
+        <p className="text-red-600 mb-4 text-sm">{courseError?.message}</p>
         <Button onClick={() => navigate('/dashboard')} variant="outline" size="sm">Volver al dashboard</Button>
       </div>
     </div>
@@ -253,7 +241,7 @@ function CoursePage() {
             getUnitProgress={progressHook.getUnitProgress}
             progressData={progressHook.progress}
             userId={user?.id}
-            courseId={parseInt(courseId)}
+            courseId={numericCourseId}
             onNavigateUnit={(id) => { setSelectedUnitId(id); setSidebarOpen(false) }}
           />
         </aside>

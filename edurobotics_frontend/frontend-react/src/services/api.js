@@ -1,6 +1,46 @@
 import { API_BASE } from '../config'
 import { getToken } from './auth'
 
+const DEFAULT_CACHE_TTL = 30_000
+const responseCache = new Map()
+const inflightRequests = new Map()
+
+function buildCacheKey(endpoint, token, cacheKey) {
+    if (cacheKey) return cacheKey
+    const authScope = token ? `auth:${token.slice(0, 12)}` : 'public'
+    return `${authScope}:${endpoint}`
+}
+
+function getCachedResponse(key, ttl) {
+    const entry = responseCache.get(key)
+    if (!entry) return null
+    if (Date.now() - entry.timestamp > ttl) {
+        responseCache.delete(key)
+        return null
+    }
+    return entry.data
+}
+
+export function invalidateApiCache(prefix = '') {
+    if (!prefix) {
+        responseCache.clear()
+        inflightRequests.clear()
+        return
+    }
+
+    for (const key of responseCache.keys()) {
+        if (key.includes(prefix)) {
+            responseCache.delete(key)
+        }
+    }
+
+    for (const key of inflightRequests.keys()) {
+        if (key.includes(prefix)) {
+            inflightRequests.delete(key)
+        }
+    }
+}
+
 /**
  * Centralized API client with automatic JWT token injection
  */
@@ -56,12 +96,47 @@ export const apiGet = (endpoint) => {
 }
 
 /**
+ * GET request with global in-memory cache and in-flight deduplication.
+ */
+export const apiGetCached = async (
+    endpoint,
+    { ttl = DEFAULT_CACHE_TTL, forceRefresh = false, cacheKey } = {}
+) => {
+    const token = getToken()
+    const key = buildCacheKey(endpoint, token, cacheKey)
+
+    if (!forceRefresh) {
+        const cached = getCachedResponse(key, ttl)
+        if (cached !== null) return cached
+
+        const inflight = inflightRequests.get(key)
+        if (inflight) return inflight
+    }
+
+    const requestPromise = apiGet(endpoint)
+        .then((data) => {
+            responseCache.set(key, { data, timestamp: Date.now() })
+            return data
+        })
+        .finally(() => {
+            inflightRequests.delete(key)
+        })
+
+    inflightRequests.set(key, requestPromise)
+    return requestPromise
+}
+
+/**
  * POST request
  */
 export const apiPost = (endpoint, data) => {
     return apiRequest(endpoint, {
         method: 'POST',
         body: JSON.stringify(data),
+    }).then((result) => {
+        // Writes can stale any cached read endpoint.
+        invalidateApiCache()
+        return result
     })
 }
 
@@ -72,6 +147,9 @@ export const apiPut = (endpoint, data) => {
     return apiRequest(endpoint, {
         method: 'PUT',
         body: JSON.stringify(data),
+    }).then((result) => {
+        invalidateApiCache()
+        return result
     })
 }
 
@@ -79,7 +157,10 @@ export const apiPut = (endpoint, data) => {
  * DELETE request
  */
 export const apiDelete = (endpoint) => {
-    return apiRequest(endpoint, { method: 'DELETE' })
+    return apiRequest(endpoint, { method: 'DELETE' }).then((result) => {
+        invalidateApiCache()
+        return result
+    })
 }
 
 /**

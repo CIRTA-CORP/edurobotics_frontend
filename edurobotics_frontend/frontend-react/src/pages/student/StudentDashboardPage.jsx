@@ -7,6 +7,7 @@
 
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useQuery } from '@tanstack/react-query'
 import { clearStoredUser, getStoredUser } from '../../services/auth'
 import { getCourses } from '../../services/courses'
 import { getRoadmap } from '../../services/progress'
@@ -18,49 +19,38 @@ import { LogoutModal } from '../../components/LogoutModal'
 
 function StudentDashboardPage({ userOverride = null, hideLogout = false, hideHeader = false, adminView = null, setAdminView = null }) {
   const navigate = useNavigate()
-  const [user, setUser] = useState(userOverride)
-  const [courses, setCourses] = useState([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState(null)
+  const [user, setUser] = useState(() => userOverride || getStoredUser())
 
   useEffect(() => {
     if (userOverride) return
-    const storedUser = getStoredUser()
-    if (!storedUser) {
+    if (!user) {
       navigate('/login')
       return
     }
-    setUser(storedUser)
-  }, [navigate, userOverride])
+  }, [navigate, userOverride, user])
 
-  // Load courses + roadmap in parallel
-  useEffect(() => {
-    const loadAll = async () => {
-      if (!user || !Number.isInteger(user.id)) return
-      try {
-        const [coursesResp, roadmapResp] = await Promise.all([
-          getCourses(),
-          getRoadmap(user.id).catch(() => null),
-        ])
+  const { data: coursesResp, isLoading: coursesLoading, error: coursesError } = useQuery({
+    queryKey: ['courses-list'],
+    queryFn: getCourses,
+    enabled: !!user,
+    staleTime: 45_000,
+  })
 
-        const courseList = coursesResp.courses || []
+  const { data: roadmapResp } = useQuery({
+    queryKey: ['roadmap-full', user?.id],
+    queryFn: () => getRoadmap(user.id),
+    enabled: !!user && Number.isInteger(user.id),
+    staleTime: 20_000,
+  })
 
-        // Merge roadmap data into courses
-        if (roadmapResp?.roadmap && Array.isArray(roadmapResp.roadmap)) {
-          const map = {}
-          roadmapResp.roadmap.forEach(c => { map[c.id] = c })
-          setCourses(courseList.map(course => ({ ...course, roadmapSummary: map[course.id] })))
-        } else {
-          setCourses(courseList)
-        }
-      } catch (err) {
-        setError(err.message)
-      } finally {
-        setLoading(false)
-      }
-    }
-    loadAll()
-  }, [user])
+  const courseList = coursesResp?.courses || []
+  const roadmapMap = {}
+  if (roadmapResp?.roadmap && Array.isArray(roadmapResp.roadmap)) {
+    roadmapResp.roadmap.forEach(c => { roadmapMap[c.id] = c })
+  }
+  const courses = courseList.map(course => ({ ...course, roadmapSummary: roadmapMap[course.id] }))
+  const loading = coursesLoading
+  const error = coursesError?.message || null
 
   const [showLogoutModal, setShowLogoutModal] = useState(false)
 

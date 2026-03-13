@@ -1,61 +1,22 @@
-import { API_BASE } from '../config'
-import { apiRequest, apiPost, apiPut, apiDelete, apiGet } from './api'
-
-const parseError = async (response) => {
-  try {
-    const data = await response.json()
-    return data?.detail || data?.error || 'Error en la solicitud'
-  } catch {
-    return 'Error en la solicitud'
-  }
-}
-
-// ── In-memory cache for getCourseDetail ──
-// Avoids re-fetching the same course when navigating Preview → Study
-const courseCache = new Map()
-const CACHE_TTL = 60_000 // 60 seconds
-
-function getCachedCourse(courseId) {
-  const entry = courseCache.get(String(courseId))
-  if (entry && Date.now() - entry.timestamp < CACHE_TTL) {
-    return entry.data
-  }
-  courseCache.delete(String(courseId))
-  return null
-}
-
-function setCachedCourse(courseId, data) {
-  courseCache.set(String(courseId), { data, timestamp: Date.now() })
-}
+import { apiRequest, apiPost, apiPut, apiDelete, apiGet, apiGetCached, invalidateApiCache } from './api'
 
 /** Clear cache for a specific course (call after admin edits) */
 export function invalidateCourseCache(courseId) {
-  if (courseId) courseCache.delete(String(courseId))
-  else courseCache.clear()
+  if (courseId) {
+    invalidateApiCache(`/api/courses/${courseId}`)
+  } else {
+    invalidateApiCache('/api/courses')
+  }
 }
 
 // === COURSES (Public) ===
 
 export const getCourses = async () => {
-  const response = await fetch(`${API_BASE}/api/courses`)
-  if (!response.ok) {
-    throw new Error(await parseError(response))
-  }
-  return response.json()
+  return apiGetCached('/api/courses', { ttl: 45_000 })
 }
 
 export const getCourseDetail = async (courseId) => {
-  // Return cached version if fresh
-  const cached = getCachedCourse(courseId)
-  if (cached) return cached
-
-  const response = await fetch(`${API_BASE}/api/courses/${courseId}`)
-  if (!response.ok) {
-    throw new Error(await parseError(response))
-  }
-  const data = await response.json()
-  setCachedCourse(courseId, data)
-  return data
+  return apiGetCached(`/api/courses/${courseId}`, { ttl: 60_000 })
 }
 
 // === COURSES (Admin - JWT Protected) ===
@@ -65,13 +26,7 @@ export const getCourseDetail = async (courseId) => {
  * Uses apiGet pattern with auth header.
  */
 export const getAllCourses = async () => {
-  const response = await fetch(`${API_BASE}/api/courses/admin/all`, {
-    headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
-  })
-  if (!response.ok) {
-    throw new Error(await parseError(response))
-  }
-  return response.json()
+  return apiGetCached('/api/courses/admin/all', { ttl: 30_000 })
 }
 
 export const createCourse = async (_, payload) => {
@@ -95,11 +50,7 @@ export const setPrerequisites = async (_, courseId, prereqIds) => {
  * Returns: { allowed: bool, details: [{ prereq_id, title, state, percentage }], missing: [] }
  */
 export const checkPrerequisites = async (courseId, userId) => {
-  const response = await fetch(`${API_BASE}/api/courses/${courseId}/prerequisites/check?user_id=${userId}`)
-  if (!response.ok) {
-    throw new Error(await parseError(response))
-  }
-  return response.json()
+  return apiGetCached(`/api/courses/${courseId}/prerequisites/check?user_id=${userId}`, { ttl: 10_000 })
 }
 
 /**
@@ -107,11 +58,7 @@ export const checkPrerequisites = async (courseId, userId) => {
  * Returns: { courses: [{ id, title, description, level, version, prerequisites: [ids] }] }
  */
 export const getCoursesRoadmap = async () => {
-  const response = await fetch(`${API_BASE}/api/courses/roadmap`)
-  if (!response.ok) {
-    throw new Error(await parseError(response))
-  }
-  return response.json()
+  return apiGetCached('/api/courses/roadmap', { ttl: 60_000 })
 }
 
 
@@ -132,11 +79,7 @@ export const updateModule = async (_, moduleId, payload) => {
 // === UNITS (Public) ===
 
 export const getModuleUnits = async (moduleId) => {
-  const response = await fetch(`${API_BASE}/api/modules/${moduleId}/units`)
-  if (!response.ok) {
-    throw new Error(await parseError(response))
-  }
-  return response.json()
+  return apiGetCached(`/api/modules/${moduleId}/units`, { ttl: 30_000 })
 }
 
 // === UNITS (Admin - JWT Protected) ===
@@ -156,11 +99,7 @@ export const deleteUnit = async (_, unitId) => {
 // === UNIT CONTENTS (Public) ===
 
 export const getUnitContents = async (unitId) => {
-  const response = await fetch(`${API_BASE}/api/units/${unitId}/contents`)
-  if (!response.ok) {
-    throw new Error(await parseError(response))
-  }
-  return response.json()
+  return apiGetCached(`/api/units/${unitId}/contents`, { ttl: 30_000 })
 }
 
 // === UNIT CONTENTS (Admin - JWT Protected) ===
