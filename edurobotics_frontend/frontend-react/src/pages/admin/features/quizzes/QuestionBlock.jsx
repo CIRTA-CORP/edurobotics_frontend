@@ -17,25 +17,36 @@ import {
 export function QuestionBlock({
     q, idx, onSaveQuestion, onDeleteQuestion,
     onSetCorrect, onSaveAnswer, onAddAnswer, onDeleteAnswer,
-    defaultExpanded = false
+    defaultExpanded = false,
+    isAddingAnswer = false,
+    isSaving = false
 }) {
     const [questionText, setQuestionText] = useState(q.question_text)
     const [showExplanations, setShowExplanations] = useState({})
     const [answerTexts, setAnswerTexts] = useState({})
     const [explanationTexts, setExplanationTexts] = useState({})
+    const [dirtyAnswers, setDirtyAnswers] = useState({})
+    const [savingAnswerId, setSavingAnswerId] = useState(null)
     const [dirty, setDirty] = useState(false)
     const [expanded, setExpanded] = useState(defaultExpanded)
 
-    // Init local answer state
+    // Sync local answer state but preserve in-progress edits.
     useEffect(() => {
-        const texts = {}
-        const exps = {}
-        q.answers.forEach(a => {
-            texts[a.id] = a.answer_text
-            exps[a.id] = a.explanation || ''
+        setAnswerTexts(prev => {
+            const next = {}
+            q.answers.forEach(a => {
+                next[a.id] = prev[a.id] ?? a.answer_text
+            })
+            return next
         })
-        setAnswerTexts(texts)
-        setExplanationTexts(exps)
+
+        setExplanationTexts(prev => {
+            const next = {}
+            q.answers.forEach(a => {
+                next[a.id] = prev[a.id] ?? (a.explanation || '')
+            })
+            return next
+        })
     }, [q.answers])
 
     // Sync question text if parent updates it
@@ -139,8 +150,20 @@ export function QuestionBlock({
                                         className={`flex-1 bg-transparent border-none outline-none text-sm ${a.is_correct ? 'text-emerald-900 font-medium' : 'text-gray-700'
                                             }`}
                                         value={answerTexts[a.id] ?? a.answer_text}
-                                        onChange={(e) => setAnswerTexts(prev => ({ ...prev, [a.id]: e.target.value }))}
-                                        onBlur={() => onSaveAnswer(a.id, answerTexts[a.id], explanationTexts[a.id])}
+                                        onChange={(e) => {
+                                            setAnswerTexts(prev => ({ ...prev, [a.id]: e.target.value }))
+                                            setDirtyAnswers(prev => ({ ...prev, [a.id]: true }))
+                                        }}
+                                        onBlur={() => {
+                                            if (dirtyAnswers[a.id] && answerTexts[a.id]?.trim()) {
+                                                setSavingAnswerId(a.id)
+                                                onSaveAnswer(a.id, answerTexts[a.id], explanationTexts[a.id])
+                                                    .then(() => {
+                                                        setDirtyAnswers(prev => ({ ...prev, [a.id]: false }))
+                                                    })
+                                                    .finally(() => setSavingAnswerId(null))
+                                            }
+                                        }}
                                         placeholder="Respuesta..."
                                     />
 
@@ -171,8 +194,20 @@ export function QuestionBlock({
                                         <input
                                             className="w-full bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 text-xs text-amber-900 placeholder:text-amber-400 focus:outline-none focus:ring-1 focus:ring-amber-300"
                                             value={explanationTexts[a.id] ?? ''}
-                                            onChange={(e) => setExplanationTexts(prev => ({ ...prev, [a.id]: e.target.value }))}
-                                            onBlur={() => onSaveAnswer(a.id, answerTexts[a.id], explanationTexts[a.id])}
+                                            onChange={(e) => {
+                                                setExplanationTexts(prev => ({ ...prev, [a.id]: e.target.value }))
+                                                setDirtyAnswers(prev => ({ ...prev, [a.id]: true }))
+                                            }}
+                                            onBlur={() => {
+                                                if (dirtyAnswers[a.id]) {
+                                                    setSavingAnswerId(a.id)
+                                                    onSaveAnswer(a.id, answerTexts[a.id], explanationTexts[a.id])
+                                                        .then(() => {
+                                                            setDirtyAnswers(prev => ({ ...prev, [a.id]: false }))
+                                                        })
+                                                        .finally(() => setSavingAnswerId(null))
+                                                }
+                                            }}
                                             placeholder="¿Por qué esta respuesta es incorrecta? (opcional)"
                                         />
                                     </div>
@@ -181,8 +216,14 @@ export function QuestionBlock({
                         ))}
 
                         {q.question_type !== 'true_false' && (
-                            <button onClick={() => onAddAnswer(q.id)}
-                                className="inline-flex items-center gap-1.5 mt-2 px-3 py-1.5 text-gray-500 hover:text-gray-700 hover:bg-gray-50 rounded-lg text-xs font-medium transition-colors">
+                            <button 
+                                onClick={() => onAddAnswer(q.id)}
+                                disabled={isAddingAnswer || isSaving}
+                                className={`inline-flex items-center gap-1.5 mt-2 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                                    isAddingAnswer || isSaving
+                                        ? 'text-gray-300 cursor-not-allowed bg-gray-50'
+                                        : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
+                                }`}>
                                 <Plus className="w-3.5 h-3.5" /> Añadir Opción
                             </button>
                         )}

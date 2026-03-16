@@ -112,6 +112,15 @@ function ToolbarDivider() {
 function EditorToolbar({ editor, onImageUpload, onFileUpload, uploading }) {
   if (!editor) return null
 
+  const handleHeading = useCallback((level) => {
+    const isActive = editor.isActive('heading', { level })
+    if (isActive) {
+      editor.chain().focus().setParagraph().run()
+    } else {
+      editor.chain().focus().clearNodes().setHeading({ level }).run()
+    }
+  }, [editor])
+
   const addYoutubeVideo = useCallback(() => {
     const url = window.prompt('URL del video de YouTube:')
     if (!url) return
@@ -152,13 +161,25 @@ function EditorToolbar({ editor, onImageUpload, onFileUpload, uploading }) {
       <ToolbarDivider />
 
       {/* Headings */}
-      <ToolbarButton onClick={() => editor.chain().focus().toggleHeading({ level: 1 }).run()} active={editor.isActive('heading', { level: 1 })} title="Título 1">
+      <ToolbarButton 
+        onClick={() => handleHeading(1)} 
+        active={editor.isActive('heading', { level: 1 })} 
+        title="Título 1 (H1)"
+      >
         <Heading1 className="w-4 h-4" />
       </ToolbarButton>
-      <ToolbarButton onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()} active={editor.isActive('heading', { level: 2 })} title="Título 2">
+      <ToolbarButton 
+        onClick={() => handleHeading(2)} 
+        active={editor.isActive('heading', { level: 2 })} 
+        title="Título 2 (H2)"
+      >
         <Heading2 className="w-4 h-4" />
       </ToolbarButton>
-      <ToolbarButton onClick={() => editor.chain().focus().toggleHeading({ level: 3 }).run()} active={editor.isActive('heading', { level: 3 })} title="Título 3">
+      <ToolbarButton 
+        onClick={() => handleHeading(3)} 
+        active={editor.isActive('heading', { level: 3 })} 
+        title="Título 3 (H3)"
+      >
         <Heading3 className="w-4 h-4" />
       </ToolbarButton>
 
@@ -237,15 +258,43 @@ export function RichTextEditor({ content, onSave, saving }) {
   const editor = useEditor({
     extensions: [
       StarterKit.configure({
-        heading: { levels: [1, 2, 3] },
+        paragraph: {
+          HTMLAttributes: {
+            class: 'prose-paragraph',
+          },
+        },
+        heading: {
+          levels: [1, 2, 3],
+          HTMLAttributes: {
+            class: 'prose-heading',
+          },
+        },
+        bulletList: {
+          HTMLAttributes: {
+            class: 'prose-ul',
+          },
+        },
+        orderedList: {
+          HTMLAttributes: {
+            class: 'prose-ol',
+          },
+        },
       }),
-      Underline,
+      Underline.configure({
+        HTMLAttributes: {
+          class: 'underline',
+        },
+      }),
       TextAlign.configure({
         types: ['heading', 'paragraph'],
       }),
       Link.configure({
         openOnClick: false,
-        HTMLAttributes: { target: '_blank', rel: 'noopener noreferrer' },
+        HTMLAttributes: { 
+          target: '_blank', 
+          rel: 'noopener noreferrer',
+          class: 'text-blue-500 underline',
+        },
       }),
       ResizableImage.configure({
         HTMLAttributes: { class: 'rounded-xl max-w-full mx-auto' },
@@ -262,7 +311,7 @@ export function RichTextEditor({ content, onSave, saving }) {
     content: content || '',
     editorProps: {
       attributes: {
-        class: 'prose prose-sm md:prose-base max-w-none focus:outline-none min-h-[400px] px-6 py-5',
+        class: 'prose prose-sm max-w-none focus:outline-none min-h-[400px] px-6 py-5 [&_h1]:text-3xl [&_h1]:font-bold [&_h1]:my-4 [&_h2]:text-2xl [&_h2]:font-bold [&_h2]:my-3 [&_h3]:text-xl [&_h3]:font-bold [&_h3]:my-2 [&_ul]:list-disc [&_ul]:ml-4 [&_ol]:list-decimal [&_ol]:ml-4',
       },
     },
   })

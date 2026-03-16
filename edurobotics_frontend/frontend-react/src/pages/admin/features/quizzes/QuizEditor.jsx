@@ -29,6 +29,7 @@ export function QuizEditor({ unitId, moduleId }) {
     const [confirmDelete, setConfirmDelete] = useState(null);
     const [isEditingTitle, setIsEditingTitle] = useState(false);
     const [editTitleValue, setEditTitleValue] = useState('');
+    const [addingAnswerId, setAddingAnswerId] = useState(null);
     const quizListQueryKey = ['admin-quizzes', unitId ?? null, moduleId ?? null];
 
     const {
@@ -129,14 +130,15 @@ export function QuizEditor({ unitId, moduleId }) {
     // ── QUESTION CRUD (optimistic) ──
     const handleAddQuestion = async (type = 'alternative') => {
         // 1) Optimistic: add a placeholder question to local state immediately
-        const tempId = `temp-${Date.now()}`;
+        const nonce = `${Date.now()}-${Math.floor(Math.random() * 10000)}`;
+        const tempId = `temp-${nonce}`;
         const defaultAnswers = type === 'true_false'
             ? [
-                { id: `ta-${Date.now()}-1`, answer_text: 'Verdadero', is_correct: true, explanation: null },
-                { id: `ta-${Date.now()}-2`, answer_text: 'Falso', is_correct: false, explanation: null },
+                { id: `ta-${nonce}-1`, answer_text: 'Verdadero', is_correct: true, explanation: null },
+                { id: `ta-${nonce}-2`, answer_text: 'Falso', is_correct: false, explanation: null },
             ]
             : [
-                { id: `ta-${Date.now()}-1`, answer_text: 'Opción 1', is_correct: true, explanation: null },
+                { id: `ta-${nonce}-1`, answer_text: 'Opción 1', is_correct: true, explanation: null },
             ];
 
         const optimisticQuestion = {
@@ -149,31 +151,41 @@ export function QuizEditor({ unitId, moduleId }) {
         setQuestions(prev => [...prev, optimisticQuestion]);
         toast.success('Pregunta añadida');
 
-        // 2) API call in background
+        // 2) API call in background (without refetching whole quiz to avoid UI resets)
         try {
             setSaving(true);
             const res = await quizService.addQuestion(selectedQuiz.id, {
                 question_text: optimisticQuestion.question_text,
-                question_type: type
+                question_type: type,
             });
 
-            if (res.success && res.question_id) {
-                if (type === 'true_false') {
-                    await Promise.all([
-                        quizService.addAnswer(res.question_id, { answer_text: 'Verdadero', is_correct: true }),
-                        quizService.addAnswer(res.question_id, { answer_text: 'Falso', is_correct: false }),
-                    ]);
-                } else {
-                    await quizService.addAnswer(res.question_id, { answer_text: 'Opción 1', is_correct: true });
-                }
+            if (!(res.success && res.question_id)) {
+                throw new Error('No se pudo crear la pregunta');
             }
 
-            // 3) Sync with real data from server (replaces temp IDs)
-            const data = await queryClient.fetchQuery({
-                queryKey: ['admin-quiz-detail', selectedQuiz.id],
-                queryFn: () => quizService.getAdminQuiz(selectedQuiz.id),
-            });
-            setQuestions(data.questions);
+            let createdAnswers = [];
+            if (type === 'true_false') {
+                const [a1, a2] = await Promise.all([
+                    quizService.addAnswer(res.question_id, { answer_text: 'Verdadero', is_correct: true }),
+                    quizService.addAnswer(res.question_id, { answer_text: 'Falso', is_correct: false }),
+                ]);
+                createdAnswers = [
+                    { id: a1.answer_id ?? `srv-${nonce}-1`, answer_text: 'Verdadero', is_correct: true, explanation: null },
+                    { id: a2.answer_id ?? `srv-${nonce}-2`, answer_text: 'Falso', is_correct: false, explanation: null },
+                ];
+            } else {
+                const a1 = await quizService.addAnswer(res.question_id, { answer_text: 'Opción 1', is_correct: true });
+                createdAnswers = [
+                    { id: a1.answer_id ?? `srv-${nonce}-1`, answer_text: 'Opción 1', is_correct: true, explanation: null },
+                ];
+            }
+
+            // 3) Replace only the optimistic question (do not touch existing questions)
+            setQuestions(prev => prev.map(q => (
+                q.id === tempId
+                    ? { ...q, id: res.question_id, answers: createdAnswers }
+                    : q
+            )));
         } catch (err) {
             // Rollback: remove optimistic question
             setQuestions(prev => prev.filter(q => q.id !== tempId));
@@ -213,23 +225,46 @@ export function QuizEditor({ unitId, moduleId }) {
 
     // ── ANSWER CRUD (optimistic) ──
     const handleAddAnswer = async (questionId) => {
+        // Prevent duplicate adds
+        if (addingAnswerId === questionId) return;
+        
         // Optimistic: add placeholder answer
         const tempAnswerId = `ta-${Date.now()}`;
-        setQuestions(prev => prev.map(q => {
+        
+        setAddingAnswerId(questionId);
+        
+        // Update local state first
+        const updatedQuestions = questions.map(q => {
             if (q.id !== questionId) return q;
-            return { ...q, answers: [...q.answers, { id: tempAnswerId, answer_text: 'Nueva opción', is_correct: false, explanation: null }] };
-        }));
+            return { 
+                ...q, 
+                answers: [...q.answers, { id: tempAnswerId, answer_text: 'Nueva opción', is_correct: false, explanation: null }] 
+            };
+        });
+        setQuestions(updatedQuestions);
 
         try {
             setSaving(true);
-            await quizService.addAnswer(questionId, { answer_text: 'Nueva opción', is_correct: false });
-            const data = await queryClient.fetchQuery({
-                queryKey: ['admin-quiz-detail', selectedQuiz.id],
-                queryFn: () => quizService.getAdminQuiz(selectedQuiz.id),
-            });
-            setQuestions(data.questions);
+            // Call API to create the answer
+            const res = await quizService.addAnswer(questionId, { answer_text: 'Nueva opción', is_correct: false });
+            
+            // Only update the specific question with the real ID from server
+            if (res.answer_id) {
+                setQuestions(prev => prev.map(q => {
+                    if (q.id !== questionId) return q;
+                    return {
+                        ...q,
+                        answers: q.answers.map(a => 
+                            a.id === tempAnswerId 
+                                ? { ...a, id: res.answer_id } 
+                                : a
+                        )
+                    };
+                }));
+                toast.success('Opción agregada');
+            }
         } catch (err) {
-            // Rollback
+            // Rollback: remove the optimistic answer
             setQuestions(prev => prev.map(q => {
                 if (q.id !== questionId) return q;
                 return { ...q, answers: q.answers.filter(a => a.id !== tempAnswerId) };
@@ -237,14 +272,44 @@ export function QuizEditor({ unitId, moduleId }) {
             toast.error('Error al añadir opción');
         } finally {
             setSaving(false);
+            setAddingAnswerId(null);
         }
     };
 
     const handleSaveAnswer = async (answerId, text, explanation) => {
+        const trimmedText = text?.trim();
+        if (!trimmedText) {
+            toast.error('La opción no puede estar vacía');
+            return;
+        }
+
+        // Optimistic local update so subsequent actions (e.g. add option)
+        // don't overwrite the edited value with stale data.
+        setQuestions(prev => prev.map(q => ({
+            ...q,
+            answers: q.answers.map(a => (
+                a.id === answerId
+                    ? { ...a, answer_text: trimmedText, explanation: explanation || null }
+                    : a
+            )),
+        })));
+
         try {
-            await quizService.updateAnswer(answerId, { answer_text: text, explanation: explanation || null });
+            setSaving(true);
+            await quizService.updateAnswer(answerId, {
+                answer_text: trimmedText,
+                explanation: explanation || null,
+            });
         } catch (err) {
+            // Recover server state if update fails.
+            const data = await queryClient.fetchQuery({
+                queryKey: ['admin-quiz-detail', selectedQuiz.id],
+                queryFn: () => quizService.getAdminQuiz(selectedQuiz.id),
+            });
+            setQuestions(data.questions || []);
             toast.error('Error al guardar opción');
+        } finally {
+            setSaving(false);
         }
     };
 
@@ -456,6 +521,8 @@ export function QuizEditor({ unitId, moduleId }) {
                                 onSaveAnswer={handleSaveAnswer}
                                 onAddAnswer={handleAddAnswer}
                                 onDeleteAnswer={handleDeleteAnswer}
+                                isAddingAnswer={addingAnswerId === q.id}
+                                isSaving={saving}
                             />
                         ))}
                     </div>
