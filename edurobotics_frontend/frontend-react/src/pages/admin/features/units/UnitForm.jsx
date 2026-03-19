@@ -67,7 +67,7 @@ export function UnitForm({
           value={unitForm.order_index}
           onChange={(e) => {
             const val = e.target.value.replace(/\D/g, '')
-            setUnitForm({ ...unitForm, order_index: val ? parseInt(val) : 1 })
+            setUnitForm({ ...unitForm, order_index: val === '' ? '' : parseInt(val) })
           }}
           required
           className="w-24"

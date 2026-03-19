@@ -68,7 +68,7 @@ export function ModuleForm({
           value={moduleForm.order_index}
           onChange={(e) => {
             const val = e.target.value.replace(/\D/g, '')
-            setModuleForm({ ...moduleForm, order_index: val ? parseInt(val, 10) : 1 })
+            setModuleForm({ ...moduleForm, order_index: val === '' ? '' : parseInt(val, 10) })
           }}
           required
           className="w-24"
