@@ -18,6 +18,7 @@ const AdminDashboardPage = lazy(() => import('./pages/admin/AdminDashboardPage.j
 const StudentDashboardPage = lazy(() => import('./pages/student/StudentDashboardPage.jsx'))
 const QuizPage = lazy(() => import('./pages/QuizPage.jsx'))
 const UserProfilePage = lazy(() => import('./pages/UserProfilePage.jsx'))
+const SimulatorPage = lazy(() => import('./pages/SimulatorPage.jsx'))
 
 // ── Fallback spinner shown while a lazy chunk downloads ──
 const PageLoader = () => (
@@ -114,6 +115,16 @@ function App() {
             element={
               <ProtectedRoute>
                 <UserProfilePage />
+              </ProtectedRoute>
+            }
+          />
+
+          {/* Simulator */}
+          <Route
+            path="/simulator"
+            element={
+              <ProtectedRoute>
+                <SimulatorPage />
               </ProtectedRoute>
             }
           />

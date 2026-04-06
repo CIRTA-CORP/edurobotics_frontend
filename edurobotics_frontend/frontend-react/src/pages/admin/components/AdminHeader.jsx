@@ -6,7 +6,8 @@
  */
 
 import { Button } from '../../../components/ui/button'
-import { Eye, Layout, LogOut, Shield } from 'lucide-react'
+import { Link } from 'react-router-dom'
+import { Eye, Layout, LogOut, Shield, Terminal } from 'lucide-react'
 
 export function AdminHeader({ adminView, onViewChange, onLogout, onLogoClick }) {
   return (
@@ -58,6 +59,16 @@ export function AdminHeader({ adminView, onViewChange, onLogout, onLogoClick }) 
                 <Eye className="w-3.5 h-3.5" />
                 Estudiante
               </button>
+              
+              <div className="w-px h-6 bg-gray-200 mx-1 self-center" />
+              
+              <Link
+                to="/simulator"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-all text-purple-600 hover:bg-purple-50 hover:text-purple-700"
+              >
+                <Terminal className="w-3.5 h-3.5" />
+                Simulador
+              </Link>
             </div>
 
             <div className="w-px h-6 bg-gray-200" />

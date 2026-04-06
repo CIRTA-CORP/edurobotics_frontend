@@ -17,9 +17,7 @@ import {
 const NAV_LINKS = [
   { label: 'Inicio', path: '/student' },
   { label: 'Malla', path: '/roadmap' },
-  // Future links 
-  // { label: 'Sobre nosotros', path: '/about' },
-  // { label: 'Contacto', path: '/contact' },
+  { label: 'Simulador', path: '/simulator' },
 ]
 
 /* ── User Avatar ────────────────────────────────── */
