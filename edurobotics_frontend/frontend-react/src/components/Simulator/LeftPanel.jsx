@@ -91,7 +91,9 @@ export default function LeftPanel({ setAlertType, handleHide }) {
     }
 
     const token = getToken();
-    const wsUrl = `ws://localhost:8000/api/simulator/ws?token=${token}`;
+    const apiBase = import.meta.env.VITE_API_BASE || 'http://localhost:8001';
+    const wsBase = apiBase.replace(/^http/, 'ws');
+    const wsUrl = `${wsBase}/api/simulator/ws?token=${token}`;
     const ws = new WebSocket(wsUrl);
     wsRef.current = ws;
 

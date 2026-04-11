@@ -31,6 +31,7 @@
     "react": "^19.2.0",
     "react-blockly": "^9.0.0",
     "react-dom": "^19.2.0",
+    "react-ga4": "^3.0.1",
     "react-iframe": "^1.8.5",
     "react-quill-new": "^3.8.3",
     "react-resize-detector": "^12.3.0",
