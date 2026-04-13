@@ -11,6 +11,7 @@ export default function PanelSimulador() {
   const [loadingStatus, setLoadingStatus] = useState(true);
   const [startingServer, setStartingServer] = useState(false);
   const [simulatorLoading, setSimulatorLoading] = useState(true);
+  const [startError, setStartError] = useState(null);
   
   const checkStatus = useCallback(async () => {
     try {
@@ -45,22 +46,30 @@ export default function PanelSimulador() {
 
   const handleStart = async () => {
     setStartingServer(true);
+    setStartError(null);
     try {
       await startSimulator();
       // Poll faster while starting
       const poll = setInterval(async () => {
-        const res = await getSimulatorStatus();
-        if (res.status === "running") {
-          setServerRunning(true);
-          setStartingServer(false);
-          clearInterval(poll);
-        }
+        try {
+          const res = await getSimulatorStatus();
+          if (res.status === "running") {
+            setServerRunning(true);
+            setStartingServer(false);
+            clearInterval(poll);
+          }
+        } catch (_) { /* ignore transient polling errors */ }
       }, 2000);
-      // Stop polling after 60s
-      setTimeout(() => clearInterval(poll), 60000);
+      // After 60s give up and let the user retry
+      setTimeout(() => {
+        clearInterval(poll);
+        setStartingServer(false);
+        setStartError("El simulador tardó demasiado en iniciar. Revisa Docker e inténtalo de nuevo.");
+      }, 60000);
     } catch (err) {
       console.error("Failed to start simulator:", err);
       setStartingServer(false);
+      setStartError(err.message || "No se pudo iniciar el simulador.");
     }
   };
 
@@ -117,7 +126,10 @@ export default function PanelSimulador() {
                 </div>
                 <p className="text-lg font-semibold">Simulador ROS2</p>
                 <p className="text-sm text-gray-400">Inicia el contenedor Docker para empezar a programar tu robot.</p>
-                <button 
+                {startError && (
+                  <p className="text-red-400 text-xs text-center px-2">{startError}</p>
+                )}
+                <button
                   onClick={handleStart}
                   className="bg-emerald-600 hover:bg-emerald-500 text-white font-semibold py-2.5 px-8 rounded-lg transition-colors flex items-center gap-2"
                 >
