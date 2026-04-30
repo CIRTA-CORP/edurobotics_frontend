@@ -4,10 +4,12 @@ import LeftPanel from "./LeftPanel";
 import SimulatorPanel from "./SimulatorPanel";
 import AlertsHandler from "./panels/components/AlertsHandler";
 
+
 const DEFAULT_LEFT_PANEL_WIDTH = 50;
 
 export function Ide() {
   const [alertType, setAlertType] = useState();
+  const [jointAngles, setJointAngles] = useState(null);
   const [leftPanelMaxWidth, setLeftPanelMaxWidth] = useState(
     parseInt(localStorage.getItem("LPWidth")) || 50
   );
@@ -98,6 +100,7 @@ export function Ide() {
             <LeftPanel
               setAlertType={setAlertType}
               handleHide={() => setHideLeftPanel(true)}
+              onJointAngles={setJointAngles}
             />
           </div>
         )}
@@ -127,7 +130,7 @@ export function Ide() {
           id="simulator-panel-container"
           className="flex-grow h-full overflow-hidden"
         >
-          <SimulatorPanel />
+          <SimulatorPanel jointAngles={jointAngles} />
         </div>
       </div>
 

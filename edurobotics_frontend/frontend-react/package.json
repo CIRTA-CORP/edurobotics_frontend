@@ -10,6 +10,8 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@babylonjs/core": "^9.4.1",
+    "@babylonjs/loaders": "^9.4.1",
     "@blockly/theme-dark": "^8.0.3",
     "@monaco-editor/react": "^4.7.0",
     "@tanstack/react-query": "^5.90.21",

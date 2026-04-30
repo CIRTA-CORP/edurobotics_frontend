@@ -16,7 +16,7 @@ const ARDUINO_TEMPLATE_CODE = `
 
 `;
 
-export default function LeftPanel({ setAlertType, handleHide }) {
+export default function LeftPanel({ setAlertType, handleHide, onJointAngles }) {
   const [enviromentConfig, setEnviromentConfig] = useState({
     language: "python",
     editor: "python",
@@ -26,16 +26,15 @@ export default function LeftPanel({ setAlertType, handleHide }) {
 
   const [runLoading, setRunLoading] = useState(false);
   const [terminalOutput, setTerminalOutput] = useState("Terminal ");
-  const [terminalLine, setTerminalLine] = useState("");
   const [panelSelected, setPanelSelected] = useState(
     localStorage.getItem("panelSelected") || EDITOR
   );
-  
-  const [openDownloadModal, setOpenDownloadModal] = useState(false);
 
-  useEffect(() => {
-    setTerminalOutput((oldOutput) => oldOutput + "\n" + terminalLine);
-  }, [terminalLine]); 
+  // Append a line to the terminal — uses functional updater so React never
+  // drops lines even when multiple WebSocket messages arrive in the same batch.
+  const appendLine = useCallback((line) => {
+    setTerminalOutput(prev => prev + "\n" + line);
+  }, []);
 
   // HANDLING BLOCKLY
   const blocklyCodeRef = useRef("");
@@ -65,8 +64,6 @@ export default function LeftPanel({ setAlertType, handleHide }) {
   // porque Monaco pierde sus dimensiones al estar oculto con 'hidden'
   useEffect(() => {
     if (panelSelected === EDITOR && editorRef.current) {
-      // 150ms: debe ser mayor al debounce del ResizeDetector (100ms)
-      // para que este layout() sea el último en ejecutarse
       const timer = setTimeout(() => {
         editorRef.current?.layout();
       }, 150);
@@ -78,14 +75,12 @@ export default function LeftPanel({ setAlertType, handleHide }) {
   const wsRef = useRef(null);
 
   const handleRun = useCallback(() => {
-    // Obtener código: editor tiene prioridad si tiene contenido
     const code = editorRef.current?.getValue()?.trim() || blocklyCodeRef.current?.trim();
     if (!code) {
-      setTerminalLine("⚠️  No hay código para ejecutar.");
+      appendLine("⚠️  No hay código para ejecutar.");
       return;
     }
 
-    // Cerrar WS anterior si existe
     if (wsRef.current) {
       wsRef.current.close();
     }
@@ -98,51 +93,53 @@ export default function LeftPanel({ setAlertType, handleHide }) {
     wsRef.current = ws;
 
     setRunLoading(true);
-    setTerminalLine("🔌 Conectando con el simulador...");
+    appendLine("🔌 Conectando con el simulador...");
 
     ws.onopen = () => {
-      setTerminalLine("✅ Conexión establecida. Enviando código...");
+      appendLine("✅ Conexión establecida. Enviando código...");
       ws.send(JSON.stringify({ type: "run", body: code }));
     };
 
     ws.onmessage = (event) => {
       try {
         const data = JSON.parse(event.data);
-        if (data.type === "log" || data.type === "success" || data.type === "error") {
-          setTerminalLine(data.msg);
+
+        if (data.type === "joint_angles") {
+          onJointAngles?.(data.angles);
+          return;
         }
+
+        if (data.type === "log" || data.type === "success" || data.type === "error") {
+          appendLine(data.msg);
+        }
+
         if (data.type === "success" || data.type === "error") {
           setRunLoading(false);
           ws.close();
         }
       } catch {
-        setTerminalLine(event.data);
+        appendLine(event.data);
       }
     };
 
     ws.onerror = () => {
-      setTerminalLine("❌ Error de conexión WebSocket. ¿Está el backend corriendo?");
+      appendLine("❌ Error de conexión WebSocket. ¿Está el backend corriendo?");
       setRunLoading(false);
     };
 
     ws.onclose = () => {
       setRunLoading(false);
     };
-  }, []);
+  }, [appendLine, onJointAngles]);
 
   const handleStop = useCallback(() => {
     if (wsRef.current) {
       wsRef.current.close();
       wsRef.current = null;
     }
-    setTerminalLine("🛑 Ejecución detenida por el usuario.");
+    appendLine("🛑 Ejecución detenida por el usuario.");
     setRunLoading(false);
-  }, []);
-
-
-  const handleDownload = useCallback(() => {
-      // Mock download
-  }, []);
+  }, [appendLine]);
 
   const handleUpload = useCallback((event) => {
     const file = event.target.files[0];
@@ -166,7 +163,7 @@ export default function LeftPanel({ setAlertType, handleHide }) {
         stopDisabled={false}
         handleRun={handleRun}
         handleStop={handleStop}
-        handleDownload={() => setOpenDownloadModal(true)}
+        handleDownload={() => {}}
         handleUpload={handleUpload}
         handleHide={handleHide}
       />
@@ -205,16 +202,15 @@ export default function LeftPanel({ setAlertType, handleHide }) {
       {/* TABS */}
       <div className="w-full h-12 flex border-t border-gray-700 bg-[#252526] shrink-0">
         {enviromentConfig && enviromentConfig["blockly?"] && (
-          <button 
+          <button
             onClick={() => setPanelSelected(BLOCKLY)}
             className={`flex-1 flex justify-center items-center font-medium focus:outline-none ${panelSelected === BLOCKLY ? 'bg-[#007acc] text-white' : 'text-gray-400 hover:bg-[#2d2d2d] hover:text-white'}`}
           >
             Bloques
           </button>
         )}
-        <button 
+        <button
           onClick={() => {
-            // Si venimos de Bloques, sincronizar el código generado al Editor
             if (panelSelected === BLOCKLY && blocklyCodeRef.current && editorRef.current) {
               editorRef.current.setValue(blocklyCodeRef.current);
             }
@@ -224,7 +220,7 @@ export default function LeftPanel({ setAlertType, handleHide }) {
         >
           Editor
         </button>
-        <button 
+        <button
           onClick={() => setPanelSelected(DOCUMENTATION)}
           className={`flex-1 flex justify-center items-center font-medium focus:outline-none ${panelSelected === DOCUMENTATION ? 'bg-[#007acc] text-white' : 'text-gray-400 hover:bg-[#2d2d2d] hover:text-white'}`}
         >
