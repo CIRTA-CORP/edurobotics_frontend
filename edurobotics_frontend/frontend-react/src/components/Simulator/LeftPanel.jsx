@@ -25,15 +25,45 @@ export default function LeftPanel({ setAlertType, handleHide, onJointAngles }) {
   const runningEnviroment = "python_env";
 
   const [runLoading, setRunLoading] = useState(false);
-  const [terminalOutput, setTerminalOutput] = useState("Terminal ");
+  const [terminalOutput, setTerminalOutput] = useState("");
   const [panelSelected, setPanelSelected] = useState(
     localStorage.getItem("panelSelected") || EDITOR
   );
 
-  // Append a line to the terminal — uses functional updater so React never
-  // drops lines even when multiple WebSocket messages arrive in the same batch.
+  const monacoRef       = useRef(null);
+  const decorationsRef  = useRef([]);
+  const startTimeRef    = useRef(null);
+  // Lines of wrapper code before user code — used to map traceback line → editor line
+  const WRAPPER_OFFSET  = 37;
+
+  const ts = () => {
+    const n = new Date();
+    return `[${String(n.getHours()).padStart(2,"0")}:${String(n.getMinutes()).padStart(2,"0")}:${String(n.getSeconds()).padStart(2,"0")}]`;
+  };
+
   const appendLine = useCallback((line) => {
-    setTerminalOutput(prev => prev + "\n" + line);
+    setTerminalOutput(prev => (prev ? prev + "\n" : "") + ts() + " " + line);
+  }, []);
+
+  const clearTerminal = useCallback(() => setTerminalOutput(""), []);
+
+  const clearDecorations = useCallback(() => {
+    if (editorRef.current && decorationsRef.current.length) {
+      decorationsRef.current = editorRef.current.deltaDecorations(decorationsRef.current, []);
+    }
+  }, []);
+
+  const highlightErrorLine = useCallback((wrapperLine) => {
+    const editor  = editorRef.current;
+    const monaco  = monacoRef.current;
+    if (!editor || !monaco) return;
+    const userLine = wrapperLine - WRAPPER_OFFSET;
+    if (userLine < 1) return;
+    decorationsRef.current = editor.deltaDecorations(decorationsRef.current, [{
+      range: new monaco.Range(userLine, 1, userLine, 1),
+      options: { isWholeLine: true, className: "monaco-error-line" },
+    }]);
+    editor.revealLineInCenter(userLine);
   }, []);
 
   // HANDLING BLOCKLY
@@ -43,7 +73,12 @@ export default function LeftPanel({ setAlertType, handleHide, onJointAngles }) {
   const editorRef = useRef();
 
   const handleEditorDidMount = useCallback((editor, monaco) => {
-    editorRef.current = editor;
+    editorRef.current  = editor;
+    monacoRef.current  = monaco;
+    // Inject CSS for error line highlight
+    const style = document.createElement("style");
+    style.textContent = ".monaco-error-line { background: rgba(255,60,60,0.18) !important; border-left: 3px solid #ff3c3c; }";
+    document.head.appendChild(style);
     const savedCode = localStorage.getItem(`code_${runningEnviroment}`) || null;
     editorRef.current.setValue(
       savedCode !== null && savedCode !== undefined ? savedCode : ARDUINO_TEMPLATE_CODE
@@ -77,9 +112,11 @@ export default function LeftPanel({ setAlertType, handleHide, onJointAngles }) {
   const handleRun = useCallback(() => {
     const code = editorRef.current?.getValue()?.trim() || blocklyCodeRef.current?.trim();
     if (!code) {
-      appendLine("⚠️  No hay código para ejecutar.");
+      appendLine("Error: no hay código para ejecutar.");
       return;
     }
+
+    clearDecorations();
 
     if (wsRef.current) {
       wsRef.current.close();
@@ -93,10 +130,11 @@ export default function LeftPanel({ setAlertType, handleHide, onJointAngles }) {
     wsRef.current = ws;
 
     setRunLoading(true);
-    appendLine("🔌 Conectando con el simulador...");
+    appendLine("Connecting...");
 
     ws.onopen = () => {
-      appendLine("✅ Conexión establecida. Enviando código...");
+      startTimeRef.current = Date.now();
+      appendLine("Connected. Executing...");
       ws.send(JSON.stringify({ type: "run", body: code }));
     };
 
@@ -109,12 +147,28 @@ export default function LeftPanel({ setAlertType, handleHide, onJointAngles }) {
           return;
         }
 
-        if (data.type === "log" || data.type === "success" || data.type === "error") {
+        if (data.type === "log" || data.type === "success" || data.type === "error" || data.type === "done") {
           appendLine(data.msg);
+          // Detect Python traceback and highlight the offending line in the editor
+          if (data.msg) {
+            const m = data.msg.match(/File "<string>", line (\d+)/);
+            if (m) highlightErrorLine(parseInt(m[1]));
+          }
         }
 
+        // On success/error: stop the spinner immediately so the user sees feedback,
+        // but keep the WS open — joint_angles frames arrive AFTER these messages.
         if (data.type === "success" || data.type === "error") {
+          const elapsed = startTimeRef.current
+            ? ((Date.now() - startTimeRef.current) / 1000).toFixed(1)
+            : null;
+          if (elapsed) appendLine(`Execution time: ${elapsed}s`);
           setRunLoading(false);
+          return;
+        }
+
+        // 'done' means the backend has finished sending all animation frames — safe to close
+        if (data.type === "done") {
           ws.close();
         }
       } catch {
@@ -123,21 +177,21 @@ export default function LeftPanel({ setAlertType, handleHide, onJointAngles }) {
     };
 
     ws.onerror = () => {
-      appendLine("❌ Error de conexión WebSocket. ¿Está el backend corriendo?");
+      appendLine("Error: no se pudo conectar. ¿Está el backend corriendo?");
       setRunLoading(false);
     };
 
     ws.onclose = () => {
       setRunLoading(false);
     };
-  }, [appendLine, onJointAngles]);
+  }, [appendLine, onJointAngles, clearDecorations, highlightErrorLine]);
 
   const handleStop = useCallback(() => {
     if (wsRef.current) {
       wsRef.current.close();
       wsRef.current = null;
     }
-    appendLine("🛑 Ejecución detenida por el usuario.");
+    appendLine("Stopped.");
     setRunLoading(false);
   }, [appendLine]);
 
@@ -187,7 +241,7 @@ export default function LeftPanel({ setAlertType, handleHide, onJointAngles }) {
               />
             </div>
             <div id="terminal-container" className="h-[30%] max-h-[250px] overflow-y-auto border-t border-gray-700 bg-black">
-              <Terminal output={terminalOutput} onHide={handleHideTerminal} />
+              <Terminal output={terminalOutput} onHide={handleHideTerminal} onClear={clearTerminal} />
             </div>
           </Panel>
         </div>
