@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   Engine, Scene, ArcRotateCamera,
   HemisphericLight, DirectionalLight,
@@ -28,13 +28,12 @@ async function loadLink(scene, url, parent, pos = Vector3.Zero(), rot = Vector3.
   }
 }
 
-const JOINT_NAMES = [
+const ARM_JOINT_NAMES = [
   "shoulder_pan_joint", "shoulder_lift_joint", "elbow_joint",
   "wrist_1_joint", "wrist_2_joint", "wrist_3_joint",
 ];
 
 // Robotiq 85 gripper — all joints rotate around Y in Babylon.
-// Scales flipped from initial attempt based on observed closing direction.
 const GRIPPER_DEFS = [
   { name: "robotiq_85_left_knuckle_joint",         axis: "y", scale:  1 },
   { name: "robotiq_85_right_knuckle_joint",        axis: "y", scale: -1 },
@@ -43,6 +42,78 @@ const GRIPPER_DEFS = [
   { name: "robotiq_85_left_finger_tip_joint",      axis: "y", scale:  1 },
   { name: "robotiq_85_right_finger_tip_joint",     axis: "y", scale: -1 },
 ];
+
+const ALL_JOINT_NAMES = [...ARM_JOINT_NAMES, ...GRIPPER_DEFS.map(g => g.name)];
+
+// Gripper mounting: tool0 (= j6 + d6 along Y) → gripper_root (with extra mount offset).
+// 0.01125 m comes from the chained fixed offsets in the xacro coupling (0.003 + 0.00825).
+const TOOL0_OFFSET           = new Vector3(0, D.d6, 0);
+const GRIPPER_MOUNT_POSITION = new Vector3(0, 0.01125, 0);
+const GRIPPER_MOUNT_ROTATION = new Vector3(0, 0, Math.PI / 2);
+
+// Joint offsets inside the gripper (URDF xyz → Babylon, with y/z swap).
+const GRIPPER_LINK_OFFSETS = {
+  g_lk:  new Vector3(0.0549, 0, -0.0306),
+  g_rk:  new Vector3(0.0549, 0,  0.0306),
+  g_lik: new Vector3(0.0614, 0, -0.0127),
+  g_rik: new Vector3(0.0614, 0,  0.0127),
+  g_lf:  new Vector3(-0.00409, 0, -0.03149),
+  g_rf:  new Vector3(-0.00409, 0,  0.03149),
+  g_lft: new Vector3(0.04304, 0, -0.03760),
+  g_rft: new Vector3(0.04304, 0,  0.03760),
+};
+
+// Robust joint-name normalization so backend rename/prefix changes don't break animation.
+const JOINT_ALIASES = {
+  shoulder_pan_joint:  ["shoulder_pan",  "shoulder_pan_joint",  "ur5/shoulder_pan_joint"],
+  shoulder_lift_joint: ["shoulder_lift", "shoulder_lift_joint", "ur5/shoulder_lift_joint"],
+  elbow_joint:         ["elbow",         "elbow_joint",         "ur5/elbow_joint"],
+  wrist_1_joint:       ["wrist_1",       "wrist_1_joint",       "ur5/wrist_1_joint"],
+  wrist_2_joint:       ["wrist_2",       "wrist_2_joint",       "ur5/wrist_2_joint"],
+  wrist_3_joint:       ["wrist_3",       "wrist_3_joint",       "ur5/wrist_3_joint"],
+  robotiq_85_left_knuckle_joint:        ["robotiq_85_left_knuckle_joint", "left_knuckle", "finger_joint"],
+  robotiq_85_right_knuckle_joint:       ["robotiq_85_right_knuckle_joint", "right_knuckle"],
+  robotiq_85_left_inner_knuckle_joint:  ["robotiq_85_left_inner_knuckle_joint", "left_inner_knuckle"],
+  robotiq_85_right_inner_knuckle_joint: ["robotiq_85_right_inner_knuckle_joint", "right_inner_knuckle"],
+  robotiq_85_left_finger_tip_joint:     ["robotiq_85_left_finger_tip_joint", "left_finger_tip"],
+  robotiq_85_right_finger_tip_joint:    ["robotiq_85_right_finger_tip_joint", "right_finger_tip"],
+};
+
+function findJointValue(rawAngles, canonicalName) {
+  const aliases = JOINT_ALIASES[canonicalName] || [canonicalName];
+  for (const k of Object.keys(rawAngles)) {
+    const stripped = k.includes("/") ? k.split("/").pop() : k;
+    if (aliases.includes(k) || aliases.includes(stripped)) {
+      return rawAngles[k];
+    }
+  }
+  return undefined;
+}
+
+function normalizeJointAngles(rawAngles, fallback) {
+  if (!rawAngles || typeof rawAngles !== "object") return null;
+  const out = {};
+  for (const name of ALL_JOINT_NAMES) {
+    const v = findJointValue(rawAngles, name);
+    if (typeof v === "number") {
+      out[name] = v;
+    } else if (fallback && typeof fallback[name] === "number") {
+      out[name] = fallback[name];
+    }
+  }
+  return out;
+}
+
+const isGripperDebugEnabled = () => {
+  if (typeof window === "undefined") return false;
+  try {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("debugGripper") === "1") return true;
+  } catch { /* ignore */ }
+  try {
+    return window.localStorage?.getItem("debugGripper") === "true";
+  } catch { return false; }
+};
 
 const FRAME_MS       = 110; // expected ms between backend frames
 const FIRST_FRAME_MS = 500; // longer transition for first frame (avoids jump from visual override)
@@ -59,10 +130,14 @@ export default function BabylonViewer({ jointAngles, cameraView = "free" }) {
   const jointNodesRef   = useRef({});
   const prevAnglesRef   = useRef(null);
   const targetAnglesRef = useRef(null);
+  const latestAnglesRef = useRef(null);
   const frameTimeRef    = useRef(null);
   const frameDurRef     = useRef(FRAME_MS);
   const cameraRef       = useRef(null);
   const gripperNodesRef = useRef([]);
+
+  const debugEnabled = isGripperDebugEnabled();
+  const [debugInfo, setDebugInfo] = useState({ rawKeys: [], mapped: {} });
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -101,111 +176,96 @@ export default function BabylonViewer({ jointAngles, cameraView = "free" }) {
     // Left-side gripper meshes have rpy=(π,0,0) in URDF → Rx(-90°)×Rx(π) = Rx(+90°)
     const ROS_FIX_L = new Vector3( Math.PI / 2, 0, 0);
 
-    // GLB meshes are Z_UP (trimesh export from COLLADA).
-    // After ROS_FIX Rx(-90°): Z→Y, so each link mesh extends in Babylon +Y.
-    // Wrist1/wrist3 extend in original Y → after ROS_FIX become Babylon -Z.
-    //
-    // j1: shoulder_pan height = d1
-    // j2: co-located with j1 (shoulder_lift at xyz=0 in shoulder frame)
-    // j3: upper arm extends +Y → j3 is d|-a2| above j2
-    // j4: forearm extends +Y  → j4 is |a3| above j3
-    // j5: wrist1 extends -Z   → j5 is d4 in -Z from j4
-    // j6: wrist2 extends +Y   → j6 is d5 above j5
-
     const j1 = new TransformNode("j1", scene);
     j1.parent     = root;
-    j1.position.y = D.d1;  // 0.1625
+    j1.position.y = D.d1;
     j1.metadata   = { axis: "y" };
 
     const j2 = new TransformNode("j2", scene);
     j2.parent   = j1;
-    // shoulder_lift joint at xyz=(0,0,0) in shoulder frame — no positional offset
     j2.metadata = { axis: "z" };
 
     const j3 = new TransformNode("j3", scene);
     j3.parent     = j2;
-    j3.position.y = -D.a2;  // +0.425 — upper arm length, arm extends in +Y
+    j3.position.y = -D.a2;
     j3.metadata   = { axis: "z" };
 
     const j4 = new TransformNode("j4", scene);
     j4.parent     = j3;
-    j4.position.y = -D.a3;  // +0.3922 — forearm length
+    j4.position.y = -D.a3;
     j4.metadata   = { axis: "z" };
 
     const j5 = new TransformNode("j5", scene);
     j5.parent     = j4;
-    j5.position.z = -D.d4;  // -0.1333 — wrist1 extends in -Z
+    j5.position.z = -D.d4;
     j5.metadata   = { axis: "y" };
 
     const j6 = new TransformNode("j6", scene);
     j6.parent     = j5;
-    j6.position.y = D.d5;   // +0.0997 — wrist2 extends in +Y
+    j6.position.y = D.d5;
     j6.metadata   = { axis: "z" };
 
     jointNodesRef.current = { j1, j2, j3, j4, j5, j6 };
 
-    // ── Robotiq 85 gripper hierarchy ──────────────────────────────────────────
-    // The gripper base extends in +X after ROS_FIX, but should point +Y (up)
-    // along the arm. Rz(+90°) rotates +X → +Y so the gripper points correctly.
+    // tool0 = end of wrist_3 link (+d6 along Y). Gripper mounts here, not directly on j6.
+    const tool0 = new TransformNode("tool0", scene);
+    tool0.parent   = j6;
+    tool0.position = TOOL0_OFFSET.clone();
+
+    // Robotiq mount: small fixed offset from coupling chain in xacro + Rz(90°) so
+    // the gripper's URDF +X (forward) aligns with the arm's +Y direction.
     const GB = new TransformNode("gripper_root", scene);
-    GB.parent = j6;
-    GB.rotation.z = Math.PI / 2;
+    GB.parent   = tool0;
+    GB.position = GRIPPER_MOUNT_POSITION.clone();
+    GB.rotation = GRIPPER_MOUNT_ROTATION.clone();
 
-    // Knuckle/finger positions in Babylon: URDF xyz converted via (x,y,z)→(x,z,-y)
-    // Left knuckle  (0.0549, 0.0306, 0) → (0.0549, 0, -0.0306)
-    const g_lk = new TransformNode("g_lk", scene);
-    g_lk.parent = GB; g_lk.position.set(0.0549, 0, -0.0306);
+    const makeNode = (name, parent, offset) => {
+      const n = new TransformNode(name, scene);
+      n.parent   = parent;
+      n.position = offset.clone();
+      return n;
+    };
 
-    // Right knuckle (0.0549,-0.0306, 0) → (0.0549, 0,  0.0306)
-    const g_rk = new TransformNode("g_rk", scene);
-    g_rk.parent = GB; g_rk.position.set(0.0549, 0,  0.0306);
+    const g_lk  = makeNode("g_lk",  GB,    GRIPPER_LINK_OFFSETS.g_lk);
+    const g_rk  = makeNode("g_rk",  GB,    GRIPPER_LINK_OFFSETS.g_rk);
+    const g_lik = makeNode("g_lik", GB,    GRIPPER_LINK_OFFSETS.g_lik);
+    const g_rik = makeNode("g_rik", GB,    GRIPPER_LINK_OFFSETS.g_rik);
+    const g_lf  = makeNode("g_lf",  g_lk,  GRIPPER_LINK_OFFSETS.g_lf);
+    const g_rf  = makeNode("g_rf",  g_rk,  GRIPPER_LINK_OFFSETS.g_rf);
+    const g_lft = makeNode("g_lft", g_lik, GRIPPER_LINK_OFFSETS.g_lft);
+    const g_rft = makeNode("g_rft", g_rik, GRIPPER_LINK_OFFSETS.g_rft);
 
-    // Left inner knuckle  (0.0614, 0.0127, 0) → (0.0614, 0, -0.0127)
-    const g_lik = new TransformNode("g_lik", scene);
-    g_lik.parent = GB; g_lik.position.set(0.0614, 0, -0.0127);
-
-    // Right inner knuckle (0.0614,-0.0127, 0) → (0.0614, 0,  0.0127)
-    const g_rik = new TransformNode("g_rik", scene);
-    g_rik.parent = GB; g_rik.position.set(0.0614, 0,  0.0127);
-
-    // Left finger FIXED: joint xyz=(-0.00409,-0.03149,0) in left knuckle frame.
-    // Left knuckle frame has Rx(π) → Y,Z flipped in parent → Z becomes -Z in Babylon.
-    const g_lf = new TransformNode("g_lf", scene);
-    g_lf.parent = g_lk; g_lf.position.set(-0.00409, 0, -0.03149);
-
-    // Right finger FIXED: xyz=(-0.00409,-0.03149,0) in right knuckle frame (no flip).
-    const g_rf = new TransformNode("g_rf", scene);
-    g_rf.parent = g_rk; g_rf.position.set(-0.00409, 0,  0.03149);
-
-    // Left finger tip: xyz=(0.04304,-0.03760,0) in left inner knuckle frame (Rx(π) → flip Z).
-    const g_lft = new TransformNode("g_lft", scene);
-    g_lft.parent = g_lik; g_lft.position.set(0.04304, 0, -0.03760);
-
-    // Right finger tip: same xyz, right inner knuckle frame (no flip).
-    const g_rft = new TransformNode("g_rft", scene);
-    g_rft.parent = g_rik; g_rft.position.set(0.04304, 0,  0.03760);
-
-    // Store gripper nodes aligned with GRIPPER_DEFS order
     gripperNodesRef.current = [g_lk, g_rk, g_lik, g_rik, g_lft, g_rft];
 
-    // DEBUG spheres — remove once positions confirmed correct
-    [
-      { node: g_lk,  color: new Color3(1,0,0) },   // red   = left knuckle
-      { node: g_rk,  color: new Color3(0,1,0) },   // green = right knuckle
-      { node: g_lik, color: new Color3(0,0,1) },   // blue  = left inner knuckle
-      { node: g_rik, color: new Color3(1,1,0) },   // yellow= right inner knuckle
-      { node: g_lft, color: new Color3(1,0,1) },   // magenta= left finger tip
-      { node: g_rft, color: new Color3(0,1,1) },   // cyan  = right finger tip
-    ].forEach(({ node, color }) => {
-      const s = MeshBuilder.CreateSphere("dbg", { diameter: 0.01 }, scene);
-      const m = new StandardMaterial("dbgm", scene);
-      m.diffuseColor = color; m.emissiveColor = color;
-      s.material = m; s.parent = node;
-    });
-
+    if (debugEnabled) {
+      [
+        { node: g_lk,  color: new Color3(1,0,0) },
+        { node: g_rk,  color: new Color3(0,1,0) },
+        { node: g_lik, color: new Color3(0,0,1) },
+        { node: g_rik, color: new Color3(1,1,0) },
+        { node: g_lft, color: new Color3(1,0,1) },
+        { node: g_rft, color: new Color3(0,1,1) },
+      ].forEach(({ node, color }) => {
+        const s = MeshBuilder.CreateSphere("dbg", { diameter: 0.01 }, scene);
+        const m = new StandardMaterial("dbgm", scene);
+        m.diffuseColor = color; m.emissiveColor = color;
+        s.material = m; s.parent = node;
+      });
+    }
 
     const ur5  = "/meshes/ur5/";
     const grip = "/meshes/robotiq/";
+
+    // Semi-transparent base housing so the finger mechanisms inside are visible.
+    const onBaseLoaded = (r) => {
+      if (!r) return;
+      r.getChildMeshes().forEach((m) => {
+        if (m.material) {
+          m.material.alpha = 0.35;
+          m.material.transparencyMode = 2;
+        }
+      });
+    };
 
     Promise.all([
       loadLink(scene, ur5  + "base.glb",                    root, Vector3.Zero(), ROS_FIX),
@@ -216,8 +276,7 @@ export default function BabylonViewer({ jointAngles, cameraView = "free" }) {
       loadLink(scene, ur5  + "wrist2.glb",                  j5,   Vector3.Zero(), ROS_FIX),
       loadLink(scene, ur5  + "wrist3.glb",                  j6,   Vector3.Zero(), ROS_FIX),
       loadLink(scene, grip + "robotiq_gripper_coupling.glb", GB,   Vector3.Zero(), ROS_FIX),
-      loadLink(scene, grip + "robotiq_85_base_link.glb",    GB,   Vector3.Zero(), ROS_FIX),
-      // Left-side meshes use ROS_FIX_L (Rx+90°), right-side use ROS_FIX (Rx-90°)
+      loadLink(scene, grip + "robotiq_85_base_link.glb",    GB,   Vector3.Zero(), ROS_FIX).then(onBaseLoaded),
       loadLink(scene, grip + "robotiq_85_knuckle_link.glb",          g_lk,  Vector3.Zero(), ROS_FIX_L),
       loadLink(scene, grip + "robotiq_85_knuckle_link.glb",          g_rk,  Vector3.Zero(), ROS_FIX),
       loadLink(scene, grip + "robotiq_85_inner_knuckle_link.glb",    g_lik, Vector3.Zero(), ROS_FIX_L),
@@ -228,10 +287,6 @@ export default function BabylonViewer({ jointAngles, cameraView = "free" }) {
       loadLink(scene, grip + "robotiq_85_basic_finger_tip_link.glb", g_rft, Vector3.Zero(), ROS_FIX),
     ]).then(() => console.log("[BabylonViewer] ✅ All meshes loaded"));
 
-    // Time-based linear interpolation between frames at 60fps.
-    // When a frame arrives we snapshot the current displayed angles (prev)
-    // and the new target. In each render frame we compute how far through
-    // the inter-frame interval we are and set the exact linear position.
     engine.runRenderLoop(() => {
       const prev   = prevAnglesRef.current;
       const target = targetAnglesRef.current;
@@ -245,8 +300,8 @@ export default function BabylonViewer({ jointAngles, cameraView = "free" }) {
         ];
         nodes.forEach((node, i) => {
           if (!node) return;
-          const from = prev[JOINT_NAMES[i]] ?? 0;
-          const to   = target[JOINT_NAMES[i]] ?? from;
+          const from = prev[ARM_JOINT_NAMES[i]] ?? 0;
+          const to   = target[ARM_JOINT_NAMES[i]] ?? from;
           const angle = from + (to - from) * t;
           const ax = node.metadata?.axis;
           if      (ax === "y") node.rotation.y = angle;
@@ -254,7 +309,6 @@ export default function BabylonViewer({ jointAngles, cameraView = "free" }) {
           else if (ax === "x") node.rotation.x = angle;
         });
 
-        // Animate gripper fingers
         gripperNodesRef.current.forEach((node, i) => {
           if (!node) return;
           const def   = GRIPPER_DEFS[i];
@@ -272,34 +326,47 @@ export default function BabylonViewer({ jointAngles, cameraView = "free" }) {
     const onResize = () => engine.resize();
     window.addEventListener("resize", onResize);
     return () => { window.removeEventListener("resize", onResize); engine.dispose(); };
-  }, []);
+  }, [debugEnabled]);
 
   useEffect(() => {
     if (!jointAngles) return;
-    // Snapshot current displayed angles as the interpolation start point
+    const normalized = normalizeJointAngles(jointAngles, latestAnglesRef.current);
+    if (!normalized) return;
+    latestAnglesRef.current = normalized;
+
+    // Snapshot current displayed angles (arm + gripper) as the interpolation start.
     const { j1, j2, j3, j4, j5, j6 } = jointNodesRef.current;
     const nodes = [j1, j2, j3, j4, j5, j6];
     const current = {};
     nodes.forEach((node, i) => {
       if (!node) return;
       const ax = node.metadata?.axis;
-      current[JOINT_NAMES[i]] =
+      current[ARM_JOINT_NAMES[i]] =
         ax === "y" ? node.rotation.y :
         ax === "z" ? node.rotation.z : node.rotation.x;
     });
-    const prev = Object.keys(current).length ? current : jointAngles;
-    // If the visual position is far from the incoming frame, use a longer
-    // transition so it looks like a smooth move instead of a jump.
-    const maxDelta = JOINT_NAMES.reduce((acc, name) => {
-      return Math.max(acc, Math.abs((prev[name] ?? 0) - (jointAngles[name] ?? 0)));
-    }, 0);
-    frameDurRef.current   = maxDelta > 0.5 ? FIRST_FRAME_MS : FRAME_MS;
-    prevAnglesRef.current   = prev;
-    targetAnglesRef.current = jointAngles;
-    frameTimeRef.current    = Date.now();
-  }, [jointAngles]);
+    gripperNodesRef.current.forEach((node, i) => {
+      if (!node) return;
+      const def = GRIPPER_DEFS[i];
+      const ax  = def.axis;
+      const r   = ax === "x" ? node.rotation.x : ax === "y" ? node.rotation.y : node.rotation.z;
+      current[def.name] = r / (def.scale || 1);
+    });
 
-  // Smooth camera transition when view changes
+    const prev = Object.keys(current).length ? current : normalized;
+    const maxDelta = ARM_JOINT_NAMES.reduce((acc, name) => {
+      return Math.max(acc, Math.abs((prev[name] ?? 0) - (normalized[name] ?? 0)));
+    }, 0);
+    frameDurRef.current     = maxDelta > 0.5 ? FIRST_FRAME_MS : FRAME_MS;
+    prevAnglesRef.current   = prev;
+    targetAnglesRef.current = normalized;
+    frameTimeRef.current    = Date.now();
+
+    if (debugEnabled) {
+      setDebugInfo({ rawKeys: Object.keys(jointAngles), mapped: normalized });
+    }
+  }, [jointAngles, debugEnabled]);
+
   useEffect(() => {
     const cam = cameraRef.current;
     if (!cam) return;
@@ -324,10 +391,23 @@ export default function BabylonViewer({ jointAngles, cameraView = "free" }) {
   }, [cameraView]);
 
   return (
-    <canvas
-      ref={canvasRef}
-      className="w-full h-full outline-none block"
-      style={{ touchAction: "none" }}
-    />
+    <div className="relative w-full h-full">
+      <canvas
+        ref={canvasRef}
+        className="w-full h-full outline-none block"
+        style={{ touchAction: "none" }}
+      />
+      {debugEnabled && (
+        <div className="absolute top-2 left-2 max-w-[320px] bg-black/70 text-[11px] text-green-300 font-mono p-2 rounded pointer-events-none">
+          <div className="text-white mb-1">gripper debug</div>
+          <div className="text-gray-400">raw keys:</div>
+          <div className="break-all">{debugInfo.rawKeys.join(", ") || "—"}</div>
+          <div className="text-gray-400 mt-1">mapped:</div>
+          {GRIPPER_DEFS.map(({ name }) => (
+            <div key={name}>{name.replace("robotiq_85_", "")}: {debugInfo.mapped?.[name]?.toFixed?.(3) ?? "—"}</div>
+          ))}
+        </div>
+      )}
+    </div>
   );
 }
