@@ -2,23 +2,23 @@ import { lazy, Suspense, useEffect } from 'react'
 import { Routes, Route, Navigate } from 'react-router-dom'
 import { Loader2 } from 'lucide-react'
 import { Toaster } from 'sonner'
-import ProtectedRoute from './components/ProtectedRoute.jsx'
-import { API_BASE } from './config'
+import ProtectedRoute from '@/features/auth/components/ProtectedRoute.jsx'
+import { API_BASE } from '@/config'
 
 // ── Static imports (needed on first load) ──
-import LoginPage from './pages/LoginPage.jsx'
-import RegisterPage from './pages/RegisterPage.jsx'
+import LoginPage from '@/features/auth/pages/LoginPage.jsx'
+import RegisterPage from '@/features/auth/pages/RegisterPage.jsx'
 
 // ── Lazy imports (code-split into separate chunks) ──
-const DashboardPage = lazy(() => import('./pages/DashboardPage.jsx'))
-const CoursePreviewPage = lazy(() => import('./pages/CoursePreviewPage.jsx'))
-const CoursePage = lazy(() => import('./pages/CoursePage.jsx'))
-const RoadmapPage = lazy(() => import('./pages/RoadmapPage.jsx'))
-const AdminDashboardPage = lazy(() => import('./pages/admin/AdminDashboardPage.jsx'))
-const StudentDashboardPage = lazy(() => import('./pages/student/StudentDashboardPage.jsx'))
-const QuizPage = lazy(() => import('./pages/QuizPage.jsx'))
-const UserProfilePage = lazy(() => import('./pages/UserProfilePage.jsx'))
-const SimulatorPage = lazy(() => import('./pages/SimulatorPage.jsx'))
+const DashboardPage = lazy(() => import('@/features/dashboard/pages/DashboardPage.jsx'))
+const CoursePreviewPage = lazy(() => import('@/features/courses/pages/CoursePreviewPage.jsx'))
+const CoursePage = lazy(() => import('@/features/courses/pages/CoursePage.jsx'))
+const RoadmapPage = lazy(() => import('@/features/roadmap/pages/RoadmapPage.jsx'))
+const AdminDashboardPage = lazy(() => import('@/features/admin/pages/AdminDashboardPage.jsx'))
+const StudentDashboardPage = lazy(() => import('@/features/student/pages/StudentDashboardPage.jsx'))
+const QuizPage = lazy(() => import('@/features/quizzes/pages/QuizPage.jsx'))
+const UserProfilePage = lazy(() => import('@/features/profile/pages/UserProfilePage.jsx'))
+const SimulatorPage = lazy(() => import('@/features/simulator/pages/SimulatorPage.jsx'))
 
 // ── Fallback spinner shown while a lazy chunk downloads ──
 const PageLoader = () => (
