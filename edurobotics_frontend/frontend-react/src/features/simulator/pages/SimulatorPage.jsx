@@ -1,25 +1,42 @@
-import React from 'react';
 import Ide from '@/features/simulator/components/Ide';
 import { Link } from 'react-router-dom';
+import { ArrowLeft } from 'lucide-react';
 
 export default function SimulatorPage() {
   return (
-    <div className="h-screen w-full bg-gray-900 overflow-hidden flex flex-col">
+    <div className="h-screen w-full bg-slate-950 overflow-hidden flex flex-col">
       {/* Top Navigation Bar */}
-      <div className="h-16 bg-gray-800 border-b border-gray-700 flex items-center px-6 shrink-0 text-white relative z-10">
-        <h1 className="text-xl font-bold tracking-tight">EduRobotics <span className="font-light text-gray-400 ml-2">| Simulador 3D (Beta)</span></h1>
-        
-        <div className="flex-grow"></div>
-        
-        <Link 
-          to="/dashboard" 
-          className="text-sm px-4 py-2 rounded-md bg-gray-700 hover:bg-gray-600 transition-colors text-white font-medium"
+      <header className="h-16 bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 border-b border-slate-700/50 flex items-center px-6 shrink-0 relative z-20 shadow-lg">
+        <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-blue-500/50 to-transparent" />
+
+        {/* Brand */}
+        <div className="flex items-center gap-3">
+          <img
+            src="/cirtanitido.svg"
+            alt="CIRTA"
+            className="h-8 object-contain"
+            style={{ filter: 'brightness(0) invert(1) drop-shadow(0 0 4px rgba(96, 165, 250, 0.5))' }}
+          />
+          <div className="flex items-center gap-2">
+            <span className="text-slate-600">/</span>
+            <span className="text-sm text-slate-300 font-medium">Simulador 3D</span>
+            <span className="px-2 py-0.5 rounded-md bg-blue-500/10 border border-blue-500/30 text-blue-400 text-[10px] font-semibold uppercase tracking-wider ml-1">
+              Beta
+            </span>
+          </div>
+        </div>
+
+        <div className="flex-grow" />
+
+        <Link
+          to="/dashboard"
+          className="group flex items-center gap-2 text-sm px-4 py-2 rounded-lg bg-slate-800/80 hover:bg-slate-700 border border-slate-700 hover:border-slate-600 transition-all text-slate-300 hover:text-white font-medium"
         >
+          <ArrowLeft className="w-4 h-4 transition-transform group-hover:-translate-x-0.5" />
           Volver al Dashboard
         </Link>
-      </div>
-      
-      {/* IDE Container */}
+      </header>
+
       <div className="flex-grow w-full relative">
         <Ide />
       </div>

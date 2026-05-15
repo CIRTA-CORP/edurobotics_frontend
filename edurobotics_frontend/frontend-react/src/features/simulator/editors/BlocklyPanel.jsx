@@ -21,15 +21,17 @@ robot.initialize()
 const INITIAL_XML =
   '<xml><block type="start" deletable="false" movable="false"></block></xml>';
 
-const PanelBloques = React.memo(({ blocklyCodeRef }) => {
+const PanelBloques = React.memo(({ blocklyCodeRef, onCodeChange }) => {
   const blocklyRef = useRef(null);
 
   const handleOnWorkspaceDidChange = React.useCallback(
     (workspace) => {
       const code = pythonGenerator.workspaceToCode(workspace);
-      blocklyCodeRef.current = PREPEND_CODE + code;
+      const full = PREPEND_CODE + code;
+      blocklyCodeRef.current = full;
+      onCodeChange?.(full);
     },
-    [blocklyCodeRef]
+    [blocklyCodeRef, onCodeChange]
   );
 
   const { xml } = useBlocklyWorkspace({

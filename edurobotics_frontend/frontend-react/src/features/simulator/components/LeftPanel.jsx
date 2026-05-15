@@ -5,11 +5,34 @@ import BlocklyPanel from '@/features/simulator/editors/BlocklyPanel';
 import EditorPanel from '@/features/simulator/editors/EditorPanel';
 import DocumentationPanel from '@/features/simulator/components/DocumentationPanel';
 import Terminal from '@/features/simulator/components/Terminal';
+import { Puzzle, Code2, BookOpen } from "lucide-react";
 import { getToken } from '@/features/auth/services/auth';
 
 const BLOCKLY = "blockly";
 const EDITOR = "editor";
 const DOCUMENTATION = "docs";
+
+/* ── Bottom tab button ──────────────────────────── */
+function TabButton({ label, icon, active, onClick }) {
+  return (
+    <button
+      onClick={onClick}
+      className={`
+        relative flex-1 flex items-center justify-center gap-1.5 h-11
+        text-xs font-semibold tracking-wide transition-all focus:outline-none
+        ${active
+          ? 'text-white bg-slate-900/50'
+          : 'text-slate-500 hover:text-slate-200 hover:bg-slate-800/40'}
+      `}
+    >
+      {icon}
+      {label}
+      {active && (
+        <span className="absolute top-0 left-3 right-3 h-0.5 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-b" />
+      )}
+    </button>
+  );
+}
 
 const ARDUINO_TEMPLATE_CODE = `
 // En este editor debes escribir tu código
@@ -68,6 +91,13 @@ export default function LeftPanel({ setAlertType, handleHide, onJointAngles }) {
 
   // HANDLING BLOCKLY
   const blocklyCodeRef = useRef("");
+  const panelSelectedRef = useRef(panelSelected);
+  useEffect(() => { panelSelectedRef.current = panelSelected; }, [panelSelected]);
+
+  // Blockly just keeps its own ref — never touches the editor.
+  const handleBlocklyChange = useCallback((code) => {
+    blocklyCodeRef.current = code;
+  }, []);
 
   // HANDLING EDITOR
   const editorRef = useRef();
@@ -110,7 +140,9 @@ export default function LeftPanel({ setAlertType, handleHide, onJointAngles }) {
   const wsRef = useRef(null);
 
   const handleRun = useCallback(() => {
-    const code = editorRef.current?.getValue()?.trim() || blocklyCodeRef.current?.trim();
+    const code = panelSelectedRef.current === BLOCKLY
+      ? blocklyCodeRef.current?.trim()
+      : editorRef.current?.getValue()?.trim();
     if (!code) {
       appendLine("Error: no hay código para ejecutar.");
       return;
@@ -226,7 +258,9 @@ export default function LeftPanel({ setAlertType, handleHide, onJointAngles }) {
         {enviromentConfig && enviromentConfig["blockly?"] && (
           <div className={`absolute inset-0 ${panelSelected === BLOCKLY ? 'block' : 'hidden'}`}>
             <Panel selected={panelSelected === BLOCKLY}>
-              {panelSelected === BLOCKLY && <BlocklyPanel blocklyCodeRef={blocklyCodeRef} />}
+              {panelSelected === BLOCKLY && (
+                <BlocklyPanel blocklyCodeRef={blocklyCodeRef} onCodeChange={handleBlocklyChange} />
+              )}
             </Panel>
           </div>
         )}
@@ -254,32 +288,27 @@ export default function LeftPanel({ setAlertType, handleHide, onJointAngles }) {
       </div>
 
       {/* TABS */}
-      <div className="w-full h-12 flex border-t border-gray-700 bg-[#252526] shrink-0">
+      <div className="w-full flex border-t border-slate-800 bg-gradient-to-b from-[#1f1f1f] to-[#181818] shrink-0">
         {enviromentConfig && enviromentConfig["blockly?"] && (
-          <button
+          <TabButton
+            label="Bloques"
+            icon={<Puzzle className="w-3.5 h-3.5" />}
+            active={panelSelected === BLOCKLY}
             onClick={() => setPanelSelected(BLOCKLY)}
-            className={`flex-1 flex justify-center items-center font-medium focus:outline-none ${panelSelected === BLOCKLY ? 'bg-[#007acc] text-white' : 'text-gray-400 hover:bg-[#2d2d2d] hover:text-white'}`}
-          >
-            Bloques
-          </button>
+          />
         )}
-        <button
-          onClick={() => {
-            if (panelSelected === BLOCKLY && blocklyCodeRef.current && editorRef.current) {
-              editorRef.current.setValue(blocklyCodeRef.current);
-            }
-            setPanelSelected(EDITOR);
-          }}
-          className={`flex-1 flex justify-center items-center font-medium focus:outline-none ${panelSelected === EDITOR ? 'bg-[#007acc] text-white' : 'text-gray-400 hover:bg-[#2d2d2d] hover:text-white'}`}
-        >
-          Editor
-        </button>
-        <button
+        <TabButton
+          label="Editor"
+          icon={<Code2 className="w-3.5 h-3.5" />}
+          active={panelSelected === EDITOR}
+          onClick={() => setPanelSelected(EDITOR)}
+        />
+        <TabButton
+          label="Guía"
+          icon={<BookOpen className="w-3.5 h-3.5" />}
+          active={panelSelected === DOCUMENTATION}
           onClick={() => setPanelSelected(DOCUMENTATION)}
-          className={`flex-1 flex justify-center items-center font-medium focus:outline-none ${panelSelected === DOCUMENTATION ? 'bg-[#007acc] text-white' : 'text-gray-400 hover:bg-[#2d2d2d] hover:text-white'}`}
-        >
-          Doc
-        </button>
+        />
       </div>
     </div>
   );
