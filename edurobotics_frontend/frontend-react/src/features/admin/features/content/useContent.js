@@ -55,7 +55,7 @@ export function useContent(adminToken, refreshSelectedCourse) {
     if (!selectedUnit || !selectedCourse) return
 
     const legacyContents = [...(selectedUnit.contents || [])]
-      .filter(c => c.content_type !== 'rich_text')
+      .filter(c => c.content_type !== 'rich_text' && c.content_type !== 'simulator')
       .sort((a, b) => a.order_index - b.order_index)
 
     if (legacyContents.length === 0) return
@@ -141,10 +141,53 @@ export function useContent(adminToken, refreshSelectedCourse) {
     }
   }
 
+  const handleSimulatorToggle = async (selectedUnit, selectedCourse) => {
+    if (!selectedUnit || !selectedCourse) return
+    setSaving(true)
+    try {
+      const existing = selectedUnit.contents?.find(c => c.content_type === 'simulator')
+      if (existing) {
+        await deleteUnitContent(adminToken, existing.id)
+        toast.success('Simulador removido de la unidad')
+      } else {
+        const maxOrder = Math.max(0, ...(selectedUnit.contents || []).map(c => c.order_index ?? 0))
+        await addUnitContent(adminToken, selectedUnit.id, {
+          content_type: 'simulator',
+          content_value: '',
+          order_index: maxOrder + 1,
+        })
+        toast.success('Simulador agregado a la unidad')
+      }
+      await refreshSelectedCourse(selectedCourse.id)
+    } catch (error) {
+      toast.error(error.message)
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const handleSimulatorDescriptionSave = async (description, selectedUnit, selectedCourse) => {
+    if (!selectedUnit || !selectedCourse) return
+    const existing = selectedUnit.contents?.find(c => c.content_type === 'simulator')
+    if (!existing) return
+    setSaving(true)
+    try {
+      await updateUnitContent(adminToken, existing.id, { content_value: description })
+      await refreshSelectedCourse(selectedCourse.id)
+      toast.success('Descripción del simulador guardada')
+    } catch (error) {
+      toast.error(error.message)
+    } finally {
+      setSaving(false)
+    }
+  }
+
   return {
     saving,
     handleRichContentSave,
     handleMigrateLegacy,
     handleContentDelete,
+    handleSimulatorToggle,
+    handleSimulatorDescriptionSave,
   }
 }

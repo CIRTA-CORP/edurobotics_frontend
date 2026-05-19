@@ -664,6 +664,8 @@ function AdminDashboardPage() {
                       onRichContentSave={(html) => contentHooks.handleRichContentSave(html, selectedUnit, selectedCourse)}
                       onContentDelete={handleContentDelete}
                       onMigrateLegacy={() => contentHooks.handleMigrateLegacy(selectedUnit, selectedCourse)}
+                      onSimulatorToggle={() => contentHooks.handleSimulatorToggle(selectedUnit, selectedCourse)}
+                      onSimulatorDescriptionSave={(desc) => contentHooks.handleSimulatorDescriptionSave(desc, selectedUnit, selectedCourse)}
                       saving={contentHooks.saving}
                       expanded={expandedSections.contenido}
                       onToggle={() => toggleSection('contenido')}

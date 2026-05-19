@@ -10,12 +10,12 @@
  * an option to migrate them into the new rich editor.
  */
 
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import { Card, CardContent } from '@/shared/components/card'
 import { Button } from '@/shared/components/button'
 import {
   ChevronDown, ChevronUp, Package, Trash2, Wand2, AlertTriangle,
-  FileText, Video, Link2, ImageIcon, FileDown
+  FileText, Video, Link2, ImageIcon, FileDown, Cpu
 } from 'lucide-react'
 import { RichTextEditor } from './RichTextEditor'
 import { API_BASE } from '@/config'
@@ -33,24 +33,37 @@ export function ContentForm({
   onRichContentSave,
   onContentDelete,
   onMigrateLegacy,
+  onSimulatorToggle,
+  onSimulatorDescriptionSave,
   expanded,
   onToggle,
   saving,
 }) {
   const [showMigrateConfirm, setShowMigrateConfirm] = useState(false)
 
-  // Separate rich_text content from legacy blocks
+  // Separate rich_text, simulator and legacy blocks
   const richContent = useMemo(() => {
     return selectedUnit?.contents?.find(c => c.content_type === 'rich_text')
   }, [selectedUnit?.contents])
 
+  const simulatorContent = useMemo(() => {
+    return selectedUnit?.contents?.find(c => c.content_type === 'simulator')
+  }, [selectedUnit?.contents])
+
   const legacyContents = useMemo(() => {
     return [...(selectedUnit?.contents || [])]
-      .filter(c => c.content_type !== 'rich_text')
+      .filter(c => c.content_type !== 'rich_text' && c.content_type !== 'simulator')
       .sort((a, b) => a.order_index - b.order_index)
   }, [selectedUnit?.contents])
 
   const hasLegacyContent = legacyContents.length > 0
+
+  const [simulatorDesc, setSimulatorDesc] = useState(simulatorContent?.content_value || '')
+  useEffect(() => {
+    setSimulatorDesc(simulatorContent?.content_value || '')
+  }, [simulatorContent?.id, simulatorContent?.content_value])
+
+  const descChanged = (simulatorContent?.content_value || '') !== simulatorDesc
 
   return (
     <Card className="border-gray-200 overflow-hidden">
@@ -85,6 +98,70 @@ export function ContentForm({
             onSave={onRichContentSave}
             saving={saving}
           />
+
+          {/* Simulator block */}
+          <div className="border-t border-gray-100 pt-5">
+            <div className="flex items-start gap-3 p-4 bg-indigo-50/60 border border-indigo-200 rounded-xl">
+              <div className="w-9 h-9 rounded-lg bg-indigo-600 text-white flex items-center justify-center flex-shrink-0">
+                <Cpu className="w-5 h-5" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <h4 className="text-sm font-semibold text-indigo-900">Simulador 3D</h4>
+                    <p className="text-xs text-indigo-700/80 mt-0.5">
+                      {simulatorContent
+                        ? 'Esta unidad incluye un acceso al simulador del robot.'
+                        : 'Agrega un acceso al simulador 3D para que los alumnos practiquen en esta unidad.'}
+                    </p>
+                  </div>
+                  <Button
+                    type="button"
+                    size="sm"
+                    onClick={onSimulatorToggle}
+                    disabled={saving}
+                    className={simulatorContent
+                      ? 'gap-1.5 bg-red-600 hover:bg-red-700 text-white h-8 px-3 text-xs'
+                      : 'gap-1.5 bg-indigo-600 hover:bg-indigo-700 text-white h-8 px-3 text-xs'}
+                  >
+                    {simulatorContent ? (
+                      <><Trash2 className="w-3.5 h-3.5" /> Quitar</>
+                    ) : (
+                      <><Cpu className="w-3.5 h-3.5" /> Agregar simulador</>
+                    )}
+                  </Button>
+                </div>
+
+                {simulatorContent && (
+                  <div className="mt-3 space-y-2">
+                    <label className="text-[11px] font-semibold text-indigo-900 uppercase tracking-wide">
+                      Instrucciones para el alumno (opcional)
+                    </label>
+                    <textarea
+                      value={simulatorDesc}
+                      onChange={(e) => setSimulatorDesc(e.target.value)}
+                      placeholder="Ej: Practica los movimientos del robot UR5 antes de continuar."
+                      rows={2}
+                      className="w-full text-sm px-3 py-2 rounded-lg border border-indigo-200 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/30 resize-none"
+                    />
+                    {descChanged && (
+                      <div className="flex justify-end">
+                        <Button
+                          type="button"
+                          size="sm"
+                          onClick={() => onSimulatorDescriptionSave?.(simulatorDesc)}
+                          disabled={saving}
+                          className="bg-indigo-600 hover:bg-indigo-700 text-white h-7 px-3 text-xs"
+                        >
+                          Guardar descripción
+                        </Button>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
 
           {/* Legacy content migration notice */}
           {hasLegacyContent && (

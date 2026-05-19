@@ -13,7 +13,7 @@ import {
   FileText, FileDown,
   CheckCircle, ChevronRight, ExternalLink,
   ClipboardCheck, ChevronLeft, ArrowUp,
-  ListTree
+  ListTree, Cpu
 } from 'lucide-react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { CourseFeedbackModal } from './CourseFeedbackModal'
@@ -305,9 +305,12 @@ export function ContentViewer({
   const quiz = hasQuiz ? unit.quizzes[0] : null
   const contents = [...(unit?.contents || [])].sort((a, b) => a.order_index - b.order_index)
 
-  // Separate rich_text content from legacy blocks
+  // Separate rich_text, simulator and legacy blocks
   const richContent = contents.find(c => c.content_type === 'rich_text')
-  const legacyContents = contents.filter(c => c.content_type !== 'rich_text')
+  const simulatorContent = contents.find(c => c.content_type === 'simulator')
+  const legacyContents = contents.filter(c =>
+    c.content_type !== 'rich_text' && c.content_type !== 'simulator'
+  )
 
   // Prepare HTML with heading IDs for ToC anchors
   const processedHtml = useMemo(() => injectHeadingIds(richContent?.content_value), [richContent?.content_value])
@@ -435,6 +438,41 @@ export function ContentViewer({
               {legacyContents.map((content) => (
                 <ContentBlock key={content.id} content={content} />
               ))}
+            </div>
+          </div>
+        )}
+
+        {/* ── Simulator section ── */}
+        {simulatorContent && (
+          <div className="rounded-2xl border border-indigo-200 bg-gradient-to-br from-indigo-50 to-blue-50 overflow-hidden">
+            <div className="h-1 bg-indigo-500" />
+            <div className="p-5 md:p-6">
+              <div className="flex items-start justify-between gap-4 flex-wrap">
+                <div className="flex items-start gap-3 min-w-0">
+                  <div className="w-10 h-10 rounded-xl bg-indigo-100 flex items-center justify-center flex-shrink-0">
+                    <Cpu className="w-5 h-5 text-indigo-600" />
+                  </div>
+                  <div className="min-w-0">
+                    <h3 className="text-sm font-bold text-gray-900">Simulador 3D</h3>
+                    <p className="text-xs text-gray-600 mt-0.5">
+                      {simulatorContent.content_value?.trim()
+                        || 'Practica con el robot en el simulador antes de continuar.'}
+                    </p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => {
+                    if (!isContentCompleted?.(simulatorContent.id)) {
+                      markComplete?.(simulatorContent.id)
+                    }
+                    navigate('/simulator')
+                  }}
+                  className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-semibold text-white bg-indigo-600 hover:bg-indigo-700 transition-colors flex-shrink-0"
+                >
+                  Abrir simulador
+                  <ChevronRight className="w-4 h-4" />
+                </button>
+              </div>
             </div>
           </div>
         )}
