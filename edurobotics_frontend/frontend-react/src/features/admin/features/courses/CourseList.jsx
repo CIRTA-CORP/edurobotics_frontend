@@ -6,6 +6,7 @@
  */
 
 import { Card, CardContent } from '@/shared/components/card'
+import { CourseListSkeleton } from '@/shared/components/Skeleton'
 import { BookOpen, GraduationCap, Zap, Trophy, ChevronRight } from 'lucide-react'
 
 const LEVEL_CONFIG = {
@@ -14,7 +15,8 @@ const LEVEL_CONFIG = {
   advanced: { label: 'Avanzado', color: 'text-rose-600 bg-rose-50', icon: Trophy },
 }
 
-export function CourseList({ courses, selectedCourse, onCourseSelect }) {
+export function CourseList({ courses, selectedCourse, onCourseSelect, isLoading = false }) {
+  if (isLoading) return <CourseListSkeleton />
   return (
     <div>
       {/* Header */}

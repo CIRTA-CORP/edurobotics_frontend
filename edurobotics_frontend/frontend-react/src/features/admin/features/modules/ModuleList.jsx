@@ -7,6 +7,7 @@
  */
 
 import { Button } from '@/shared/components/button'
+import { ModuleListSkeleton } from '@/shared/components/Skeleton'
 import { Settings, Trash2, Edit, Layers } from 'lucide-react'
 
 export function ModuleList({
@@ -15,7 +16,10 @@ export function ModuleList({
   onModuleSelect,
   onModuleEdit,
   onModuleDelete,
+  onModuleQuiz,
+  isLoading = false,
 }) {
+  if (isLoading) return <ModuleListSkeleton />
   return (
     <div>
       {modules && modules.length > 0 ? (

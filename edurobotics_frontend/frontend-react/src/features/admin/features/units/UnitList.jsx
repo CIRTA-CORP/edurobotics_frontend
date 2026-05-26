@@ -6,6 +6,7 @@
  */
 
 import { Button } from '@/shared/components/button'
+import { UnitListSkeleton } from '@/shared/components/Skeleton'
 import { FileText, Settings, Trash2, Edit, Package, ClipboardCheck } from 'lucide-react'
 
 export function UnitList({
@@ -14,8 +15,10 @@ export function UnitList({
   onUnitSelect,
   onUnitEdit,
   onUnitDelete,
-  onUnitQuiz
+  onUnitQuiz,
+  isLoading = false,
 }) {
+  if (isLoading) return <UnitListSkeleton />
   return (
     <div>
       {units && units.length > 0 ? (
