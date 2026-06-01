@@ -7,10 +7,23 @@ import {
 } from "@babylonjs/core";
 import "@babylonjs/loaders/glTF";
 
-// UR5 DH parameters (metres)
+// UR5 URDF joint XYZ offsets (metres) — source: universal_robot/ur_description/urdf/ur5.urdf.xacro
+// These are the translations between consecutive joint frames, NOT DH parameters.
 const D = {
-  d1: 0.1625, a2: -0.425, a3: -0.3922,
-  d4: 0.1333, d5: 0.0997, d6: 0.0996,
+  // shoulder_pan  → xyz="0 0 0.089159"  (base height)
+  d1:   0.089159,
+  // shoulder_lift → xyz="0 0.13585 0"   (Y offset in ROS = -Z in Babylon)
+  j2y: -0.13585,
+  // elbow         → xyz="0 -0.1197 0.425" (Y→-Z, Z→Y in Babylon)
+  j3z:  0.1197,  j3y: 0.425,
+  // wrist_1       → xyz="0 0 0.39225"   (Z→Y in Babylon)
+  j4y:  0.39225,
+  // wrist_2       → xyz="0 0.093 0"     (Y→-Z in Babylon)
+  j5z: -0.093,
+  // wrist_3       → xyz="0 0 0.09465"   (Z→Y in Babylon)
+  j6y:  0.09465,
+  // tool0         → xyz="0 0 0.0823"    (flange to tool0 in Z)
+  d6:   0.0823,
 };
 
 async function loadLink(scene, url, parent, pos = Vector3.Zero(), rot = Vector3.Zero()) {
@@ -45,11 +58,14 @@ const GRIPPER_DEFS = [
 
 const ALL_JOINT_NAMES = [...ARM_JOINT_NAMES, ...GRIPPER_DEFS.map(g => g.name)];
 
-// Gripper mounting: tool0 (= j6 + d6 along Y) → gripper_root (with extra mount offset).
-// 0.01125 m comes from the chained fixed offsets in the xacro coupling (0.003 + 0.00825).
-const TOOL0_OFFSET           = new Vector3(0, D.d6, 0);
-const GRIPPER_MOUNT_POSITION = new Vector3(0, 0.01125, 0);
-const GRIPPER_MOUNT_ROTATION = new Vector3(0, 0, Math.PI / 2);
+// Gripper mounts on tool0 (= end of wrist_3 link, at the flange face).
+// TOOL0_OFFSET uses -(D.d6 + 0.020) on Z to position the gripper flush against the flange face.
+// GRIPPER_MOUNT_POSITION is zeroed because the coupling mesh origin
+// already sits at its mounting surface.
+// GRIPPER_MOUNT_ROTATION orients the gripper so fingers point forward.
+const TOOL0_OFFSET           = new Vector3(0, 0, -(D.d6 + 0.020));
+const GRIPPER_MOUNT_POSITION = new Vector3(0, 0, 0);
+const GRIPPER_MOUNT_ROTATION = new Vector3(-Math.PI / 2, 0, Math.PI / 2);
 
 // Joint offsets inside the gripper (URDF xyz → Babylon, with y/z swap).
 const GRIPPER_LINK_OFFSETS = {
@@ -176,33 +192,47 @@ export default function BabylonViewer({ jointAngles, cameraView = "free" }) {
     // Left-side gripper meshes have rpy=(π,0,0) in URDF → Rx(-90°)×Rx(π) = Rx(+90°)
     const ROS_FIX_L = new Vector3( Math.PI / 2, 0, 0);
 
+    // ── Joint frames (URDF XYZ → Babylon, with ROS Z-up → Babylon Y-up conversion)
+    // ROS:     X right, Y forward, Z up
+    // Babylon: X right, Y up,      Z forward (into screen)
+    // Mapping: ros.X→bab.X,  ros.Y→bab.-Z,  ros.Z→bab.Y
+
+    // j1 = shoulder_pan  — sits on top of base at height d1
     const j1 = new TransformNode("j1", scene);
     j1.parent     = root;
-    j1.position.y = D.d1;
+    j1.position.y = D.d1;   // ros xyz=(0,0,0.089159) → bab Y=0.089159
     j1.metadata   = { axis: "y" };
 
+    // j2 = shoulder_lift — offset ros xyz=(0, 0.13585, 0) → bab Z=-0.13585
     const j2 = new TransformNode("j2", scene);
-    j2.parent   = j1;
-    j2.metadata = { axis: "z" };
+    j2.parent     = j1;
+    j2.position.z = D.j2y;  // = -0.13585
+    j2.metadata   = { axis: "z" };
 
+    // j3 = elbow         — offset ros xyz=(0, -0.1197, 0.425) → bab Y=0.425, Z=0.1197
     const j3 = new TransformNode("j3", scene);
     j3.parent     = j2;
-    j3.position.y = -D.a2;
+    j3.position.y = D.j3y;  // = 0.425  (ros Z → bab Y)
+    j3.position.z = D.j3z;  // = 0.1197 (ros Y negated → bab +Z because ros Y was -0.1197)
     j3.metadata   = { axis: "z" };
 
+    // j4 = wrist_1       — offset ros xyz=(0, 0, 0.39225) → bab Y=0.39225
     const j4 = new TransformNode("j4", scene);
     j4.parent     = j3;
-    j4.position.y = -D.a3;
+    j4.position.y = D.j4y;  // = 0.39225
     j4.metadata   = { axis: "z" };
 
+    // j5 = wrist_2 — offset ros xyz=(0, 0.093, 0) → bab Z=-0.093
+    // -0.032 correction pushes wrist_2 toward the front to align its face with wrist_1's face.
     const j5 = new TransformNode("j5", scene);
     j5.parent     = j4;
-    j5.position.z = -D.d4;
+    j5.position.z = D.j5z - 0.032;  // base -0.093 + 32mm front correction
     j5.metadata   = { axis: "y" };
 
+    // j6 = wrist_3       — offset ros xyz=(0, 0, 0.09465) → bab Y=0.09465
     const j6 = new TransformNode("j6", scene);
     j6.parent     = j5;
-    j6.position.y = D.d5;
+    j6.position.y = D.j6y;  // = 0.09465
     j6.metadata   = { axis: "z" };
 
     jointNodesRef.current = { j1, j2, j3, j4, j5, j6 };
@@ -212,8 +242,8 @@ export default function BabylonViewer({ jointAngles, cameraView = "free" }) {
     tool0.parent   = j6;
     tool0.position = TOOL0_OFFSET.clone();
 
-    // Robotiq mount: small fixed offset from coupling chain in xacro + Rz(90°) so
-    // the gripper's URDF +X (forward) aligns with the arm's +Y direction.
+    // Gripper root: combines coupling + gripper chain from URDF as a single node.
+    // Quaternion derived from Rz(π/2)*Ry(-π/2) in ROS, converted to Babylon basis.
     const GB = new TransformNode("gripper_root", scene);
     GB.parent   = tool0;
     GB.position = GRIPPER_MOUNT_POSITION.clone();
@@ -256,17 +286,6 @@ export default function BabylonViewer({ jointAngles, cameraView = "free" }) {
     const ur5  = "/meshes/ur5/";
     const grip = "/meshes/robotiq/";
 
-    // Semi-transparent base housing so the finger mechanisms inside are visible.
-    const onBaseLoaded = (r) => {
-      if (!r) return;
-      r.getChildMeshes().forEach((m) => {
-        if (m.material) {
-          m.material.alpha = 0.35;
-          m.material.transparencyMode = 2;
-        }
-      });
-    };
-
     Promise.all([
       loadLink(scene, ur5  + "base.glb",                    root, Vector3.Zero(), ROS_FIX),
       loadLink(scene, ur5  + "shoulder.glb",                j1,   Vector3.Zero(), ROS_FIX),
@@ -276,7 +295,7 @@ export default function BabylonViewer({ jointAngles, cameraView = "free" }) {
       loadLink(scene, ur5  + "wrist2.glb",                  j5,   Vector3.Zero(), ROS_FIX),
       loadLink(scene, ur5  + "wrist3.glb",                  j6,   Vector3.Zero(), ROS_FIX),
       loadLink(scene, grip + "robotiq_gripper_coupling.glb", GB,   Vector3.Zero(), ROS_FIX),
-      loadLink(scene, grip + "robotiq_85_base_link.glb",    GB,   Vector3.Zero(), ROS_FIX).then(onBaseLoaded),
+      loadLink(scene, grip + "robotiq_85_base_link.glb",    GB,   Vector3.Zero(), ROS_FIX),
       loadLink(scene, grip + "robotiq_85_knuckle_link.glb",          g_lk,  Vector3.Zero(), ROS_FIX_L),
       loadLink(scene, grip + "robotiq_85_knuckle_link.glb",          g_rk,  Vector3.Zero(), ROS_FIX),
       loadLink(scene, grip + "robotiq_85_inner_knuckle_link.glb",    g_lik, Vector3.Zero(), ROS_FIX_L),
