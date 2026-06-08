@@ -10,7 +10,7 @@ import { toast } from 'sonner'
 import { createCourse, updateCourse, deleteCourse, setPrerequisites } from '@/features/courses/services/courses'
 
 export function useCourses(adminToken, refreshCourses, refreshSelectedCourse) {
-  const [courseForm, setCourseForm] = useState({ title: '', description: '', level: 'beginner', version: 1, is_published: true })
+  const [courseForm, setCourseForm] = useState({ title: '', description: '', image_url: '', level: 'beginner', version: 1, is_published: true })
   const [prereqIds, setPrereqIds] = useState([]) // number[]
   const [isSubmitting, setIsSubmitting] = useState(false)
 
@@ -22,7 +22,7 @@ export function useCourses(adminToken, refreshCourses, refreshSelectedCourse) {
       await createCourse(adminToken, courseForm)
       await refreshCourses()
       toast.success('Curso creado')
-      setCourseForm({ title: '', description: '', level: 'beginner', version: 1, is_published: true })
+      setCourseForm({ title: '', description: '', image_url: '', level: 'beginner', version: 1, is_published: true })
     } catch (error) {
       toast.error(error.message)
     } finally {

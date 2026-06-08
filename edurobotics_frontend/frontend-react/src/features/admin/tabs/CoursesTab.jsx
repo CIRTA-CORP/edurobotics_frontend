@@ -3,6 +3,7 @@ import { Button } from '@/shared/components/button'
 import { Modal } from '@/shared/components/Modal'
 import { CourseForm } from '@/features/admin/features/courses/CourseForm'
 import { CourseFeedbackSummary } from '@/features/admin/features/courses/CourseFeedbackSummary'
+import { CourseTimeMetrics } from '@/features/admin/features/courses/CourseTimeMetrics'
 import { useAdmin } from '@/features/admin/context/AdminContext'
 
 export function CoursesTab() {
@@ -55,6 +56,10 @@ export function CoursesTab() {
           expanded={expandedSections.editar}
           onToggle={() => toggleSection('editar')}
         />
+      )}
+
+      {selectedCourse && (
+        <CourseTimeMetrics courseId={selectedCourse.id} />
       )}
 
       {selectedCourse && (

@@ -11,7 +11,7 @@ import { Eye, Layout, LogOut, Shield, Terminal } from 'lucide-react'
 
 export function AdminHeader({ adminView, onViewChange, onLogout, onLogoClick }) {
   return (
-    <header className="bg-white/80 backdrop-blur-md border-b border-gray-200 sticky top-0 z-50">
+    <header className="bg-white/80 backdrop-blur-md border-b border-gray-200 shadow-sm sticky top-0 z-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
         <div className="flex items-center justify-between">
           {/* Logo */}
@@ -23,10 +23,10 @@ export function AdminHeader({ adminView, onViewChange, onLogout, onLogoClick }) 
             >
               <img src="/cirtaimagen.jpg" alt="CIRTA" className="h-10 mix-blend-multiply" />
             </button>
-            <div>
+            <div className="border-l border-gray-200 pl-3">
               <div className="flex items-center gap-2">
-                <h1 className="text-lg font-bold text-gray-900 leading-tight">EduRobotics</h1>
-                <span className="inline-flex items-center gap-1 text-[10px] font-semibold px-1.5 py-0.5 rounded bg-slate-800 text-white">
+                <h1 className="text-lg font-bold tracking-tight text-gray-900 leading-tight">EduRobotics</h1>
+                <span className="inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full bg-slate-900 text-white ring-1 ring-inset ring-white/10">
                   <Shield className="w-2.5 h-2.5" />
                   ADMIN
                 </span>

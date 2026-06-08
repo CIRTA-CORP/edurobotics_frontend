@@ -19,6 +19,7 @@ const StudentDashboardPage = lazy(() => import('@/features/student/pages/Student
 const QuizPage = lazy(() => import('@/features/quizzes/pages/QuizPage.jsx'))
 const UserProfilePage = lazy(() => import('@/features/profile/pages/UserProfilePage.jsx'))
 const SimulatorPage = lazy(() => import('@/features/simulator/pages/SimulatorPage.jsx'))
+const LandingPage = lazy(() => import('@/features/landing/pages/LandingPage.jsx'))
 
 // ── Fallback spinner shown while a lazy chunk downloads ──
 const PageLoader = () => (
@@ -28,10 +29,12 @@ const PageLoader = () => (
 )
 
 function App() {
-  // Warm-up ping: wake Railway backend on app mount so it's ready
+  // Warm-up ping: wake the Fly.io backend on app mount so it's ready
   // when the user actually needs data. Fire-and-forget, no await.
+  // Hits the lightweight "/" health route (just returns {status:ok})
+  // instead of "/docs", which would generate the whole Swagger UI.
   useEffect(() => {
-    fetch(`${API_BASE}/docs`, { method: 'HEAD' }).catch(() => { })
+    fetch(`${API_BASE}/`, { method: 'GET' }).catch(() => { })
   }, [])
 
   return (
@@ -39,7 +42,7 @@ function App() {
       <Toaster position="top-right" richColors closeButton duration={3000} />
       <Suspense fallback={<PageLoader />}>
         <Routes>
-          <Route path="/" element={<Navigate to="/login" replace />} />
+          <Route path="/" element={<LandingPage />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
 

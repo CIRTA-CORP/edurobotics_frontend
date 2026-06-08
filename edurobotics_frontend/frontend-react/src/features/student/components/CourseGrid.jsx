@@ -10,8 +10,6 @@
 
 import { useCallback } from 'react'
 import { Card, CardContent } from '@/shared/components/card'
-import { Badge } from '@/shared/components/badge'
-import { Button } from '@/shared/components/button'
 import {
   BookOpen, ArrowRight, Check, Clock, PlayCircle,
   GraduationCap, Zap, Trophy
@@ -62,84 +60,84 @@ export function CourseGrid({ courses, onCourseClick }) {
         const LevelIcon = levelConfig.icon
         const StateIcon = stateConfig.icon
 
+        const ctaLabel = completed ? 'Revisar' : state === 'in_progress' ? 'Continuar' : 'Ver curso'
+
         return (
           <article
             key={course.id}
-            className="group cursor-pointer"
+            className={`group relative cursor-pointer overflow-hidden rounded-2xl border shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-xl ${completed ? 'border-emerald-200' : 'border-gray-200'}`}
             onClick={() => onCourseClick(course.id)}
             onMouseEnter={() => handlePrefetch(course.id)}
           >
-            <Card className={`h-full transition-all duration-300 hover:shadow-lg hover:-translate-y-1 border ${completed ? 'border-emerald-200' : 'border-gray-200 hover:border-gray-300'}`}>
-              {/* Color accent bar */}
-              <div className={`h-1 rounded-t-lg ${completed ? 'bg-emerald-500' : state === 'in_progress' ? 'bg-blue-500' : 'bg-gray-200'}`} />
-
-              <CardContent className="p-5">
-                {/* Header: badges */}
-                <div className="flex items-center justify-between mb-3">
-                  <div className="flex items-center gap-2">
-                    <span className={`inline-flex items-center gap-1 text-xs font-medium px-2 py-0.5 rounded-full ${levelConfig.color}`}>
-                      <LevelIcon className="w-3 h-3" />
-                      {levelConfig.label}
-                    </span>
-                  </div>
-                  <span className="text-xs text-gray-400 font-mono">CR-{course.id}</span>
+            <div className="relative aspect-[4/3] w-full">
+              {/* Background image (issue #30), or gradient fallback */}
+              {course.image_url ? (
+                <img
+                  src={course.image_url}
+                  alt={course.title}
+                  className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                />
+              ) : (
+                <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-slate-700 to-slate-900">
+                  <BookOpen className="h-12 w-12 text-blue-300" strokeWidth={1.5} />
                 </div>
+              )}
 
-                {/* Title */}
-                <h3 className="font-semibold text-gray-900 text-base mb-2 group-hover:text-blue-600 transition-colors line-clamp-2">
+              {/* Gradient scrim for text legibility */}
+              <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-transparent" />
+
+              {/* Top row: level badge + course code */}
+              <div className="absolute inset-x-0 top-0 flex items-center justify-between p-3">
+                <span className="inline-flex items-center gap-1 rounded-full bg-white/90 px-2.5 py-1 text-xs font-medium text-gray-800 shadow-sm backdrop-blur-sm">
+                  <LevelIcon className="h-3 w-3" />
+                  {levelConfig.label}
+                </span>
+                <span className="rounded-full bg-black/40 px-2 py-1 font-mono text-[10px] text-white/90 backdrop-blur-sm">
+                  CR-{course.id}
+                </span>
+              </div>
+
+              {/* Bottom content */}
+              <div className="absolute inset-x-0 bottom-0 p-4">
+                {/* Title — always visible */}
+                <h3 className="text-lg font-bold leading-tight text-white line-clamp-2 drop-shadow-md">
                   {course.title}
                 </h3>
 
-                {/* Description (if available) */}
-                {course.description && (
-                  <p className="text-sm text-gray-500 mb-4 line-clamp-2">{course.description}</p>
-                )}
-
-                {/* Progress bar */}
+                {/* Thin progress bar — always visible */}
                 {percentage !== null && (
-                  <div className="mb-4">
-                    <div className="flex items-center justify-between text-xs mb-1.5">
-                      <div className="flex items-center gap-1.5">
-                        <StateIcon className={`w-3.5 h-3.5 ${stateConfig.color}`} />
-                        <span className={`font-medium ${stateConfig.color}`}>{stateConfig.label}</span>
-                      </div>
-                      <span className="font-semibold text-gray-700">{percentage}%</span>
-                    </div>
-                    <div className="w-full bg-gray-100 rounded-full h-2 overflow-hidden">
-                      <div
-                        className={`h-2 rounded-full transition-all duration-700 ease-out ${stateConfig.barColor}`}
-                        style={{ width: `${Math.max(percentage, 2)}%` }}
-                      />
-                    </div>
+                  <div className="mt-2.5 h-1.5 w-full overflow-hidden rounded-full bg-white/25">
+                    <div
+                      className={`h-full rounded-full transition-all duration-700 ease-out ${stateConfig.barColor}`}
+                      style={{ width: `${Math.max(percentage, 2)}%` }}
+                    />
                   </div>
                 )}
 
-                {/* No progress data */}
-                {percentage === null && (
-                  <div className="flex items-center gap-1.5 text-xs text-gray-400 mb-4">
-                    <Clock className="w-3.5 h-3.5" />
-                    <span>Sin iniciar</span>
-                  </div>
-                )}
+                {/* Reveal on hover: state + % + CTA */}
+                <div className="max-h-0 overflow-hidden opacity-0 transition-all duration-300 ease-out group-hover:mt-3 group-hover:max-h-40 group-hover:opacity-100">
+                  {percentage !== null ? (
+                    <div className="mb-3 flex items-center justify-between text-xs text-white/85">
+                      <span className="flex items-center gap-1.5 font-medium">
+                        <StateIcon className="h-3.5 w-3.5" />
+                        {stateConfig.label}
+                      </span>
+                      <span className="font-semibold">{percentage}%</span>
+                    </div>
+                  ) : (
+                    <div className="mb-3 flex items-center gap-1.5 text-xs text-white/70">
+                      <Clock className="h-3.5 w-3.5" />
+                      <span>Sin iniciar</span>
+                    </div>
+                  )}
 
-                {/* CTA */}
-                <Button
-                  className={`w-full group/btn ${completed
-                    ? 'bg-emerald-600 hover:bg-emerald-700'
-                    : state === 'in_progress'
-                      ? 'bg-blue-600 hover:bg-blue-700'
-                      : ''
-                    }`}
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    onCourseClick(course.id)
-                  }}
-                >
-                  <span>{completed ? 'Revisar' : state === 'in_progress' ? 'Continuar' : 'Ver curso'}</span>
-                  <ArrowRight className="w-4 h-4 ml-2 transition-transform group-hover/btn:translate-x-0.5" />
-                </Button>
-              </CardContent>
-            </Card>
+                  <span className="flex w-full items-center justify-center gap-2 rounded-lg bg-white px-4 py-2.5 text-sm font-semibold text-slate-900 shadow-sm transition-colors group-hover:bg-white/95">
+                    {ctaLabel}
+                    <ArrowRight className="h-4 w-4" />
+                  </span>
+                </div>
+              </div>
+            </div>
           </article>
         )
       })}

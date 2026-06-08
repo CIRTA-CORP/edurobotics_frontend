@@ -6,12 +6,16 @@
  * Redesigned with modern styling, clear labels, and visual hierarchy.
  */
 
+import { useState } from 'react'
+import { toast } from 'sonner'
 import { Card, CardContent } from '@/shared/components/card'
 import { Button } from '@/shared/components/button'
 import { Input } from '@/shared/components/input'
+import { apiUploadFile } from '@/shared/services/api'
 import {
   Plus, Settings, Save, Trash2, ChevronDown, ChevronUp,
-  GitBranch, GraduationCap, Zap, Trophy, BookOpen, Eye, EyeOff
+  GitBranch, GraduationCap, Zap, Trophy, BookOpen, Eye, EyeOff,
+  ImageIcon, Upload, X, Loader2
 } from 'lucide-react'
 
 const LEVEL_OPTIONS = [
@@ -36,6 +40,23 @@ export function CourseForm({
   onToggle
 }) {
   const isCreateMode = mode === 'create'
+  const [uploadingImage, setUploadingImage] = useState(false)
+
+  const handleImageUpload = async (event) => {
+    const file = event.target.files?.[0]
+    if (!file) return
+    setUploadingImage(true)
+    try {
+      const result = await apiUploadFile('/api/uploads', file)
+      setCourseForm({ ...courseForm, image_url: result.url })
+      toast.success('Imagen subida')
+    } catch (error) {
+      toast.error(error.message || 'Error al subir la imagen')
+    } finally {
+      setUploadingImage(false)
+      event.target.value = '' // allow re-selecting the same file
+    }
+  }
 
   // Courses that can be selected as prerequisites (exclude self)
   const eligibleCourses = allCourses.filter(c => c.id !== selectedCourse?.id)
@@ -108,6 +129,55 @@ export function CourseForm({
                 rows={3}
                 className="flex min-h-[80px] w-full rounded-lg border border-gray-200 bg-white px-3 py-2.5 text-sm placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-colors resize-none"
               />
+            </div>
+
+            {/* Cover image */}
+            <div className="space-y-1.5">
+              <label className="text-xs font-semibold text-gray-600 uppercase tracking-wide">
+                Imagen de portada
+              </label>
+              {courseForm.image_url ? (
+                <div className="relative overflow-hidden rounded-lg border border-gray-200">
+                  <img
+                    src={courseForm.image_url}
+                    alt="Portada del curso"
+                    className="h-36 w-full object-cover"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setCourseForm({ ...courseForm, image_url: '' })}
+                    className="absolute right-2 top-2 inline-flex h-7 w-7 items-center justify-center rounded-full bg-black/60 text-white transition-colors hover:bg-black/80"
+                    title="Quitar imagen"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                </div>
+              ) : (
+                <label className="flex h-36 cursor-pointer flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed border-gray-200 bg-gray-50/50 text-gray-400 transition-colors hover:border-blue-300 hover:bg-blue-50/40 hover:text-blue-500">
+                  {uploadingImage ? (
+                    <>
+                      <Loader2 className="h-6 w-6 animate-spin" />
+                      <span className="text-xs font-medium">Subiendo...</span>
+                    </>
+                  ) : (
+                    <>
+                      <div className="flex items-center gap-1.5">
+                        <ImageIcon className="h-5 w-5" />
+                        <Upload className="h-4 w-4" />
+                      </div>
+                      <span className="text-xs font-medium">Haz clic para subir una imagen</span>
+                      <span className="text-[10px] text-gray-400">PNG, JPG, WEBP · máx 5 MB</span>
+                    </>
+                  )}
+                  <input
+                    type="file"
+                    accept="image/png,image/jpeg,image/webp,image/gif,image/svg+xml"
+                    className="hidden"
+                    onChange={handleImageUpload}
+                    disabled={uploadingImage}
+                  />
+                </label>
+              )}
             </div>
 
             {/* Level selector */}

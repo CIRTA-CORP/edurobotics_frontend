@@ -36,3 +36,8 @@ export const getRoadmap = async (userId, courseId = null) => {
 export const getLastAccessedContent = async (userId) => {
   return apiGetCached(`/api/progress/${userId}/last-accessed`, { ttl: 15_000 })
 }
+
+/** Admin: métricas de tiempo (promedio/min/máx) para completar un curso. */
+export const getCourseTimeMetrics = async (courseId) => {
+  return apiGetCached(`/api/progress/metrics/course/${courseId}/time`, { ttl: 30_000 })
+}

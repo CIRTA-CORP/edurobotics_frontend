@@ -90,12 +90,19 @@ function StudentDashboardPage({ userOverride = null, hideLogout = false, hideHea
       )}
 
       {/* Main Content */}
-      <main className={hideHeader ? "p-6" : "max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8"}>
-        <div className="mb-6">
-          <h2 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-            <BookOpen className="w-6 h-6" />
-            Cursos activos
-          </h2>
+      <main className={hideHeader ? "max-w-7xl mx-auto p-6" : "max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8"}>
+        <div className="mb-6 flex items-end justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-slate-900 text-white">
+              <BookOpen className="w-5 h-5" />
+            </div>
+            <div>
+              <h2 className="text-2xl font-bold tracking-tight text-gray-900">Cursos activos</h2>
+              <p className="text-sm text-gray-500">
+                {loading ? 'Cargando…' : `${courses.length} ${courses.length === 1 ? 'curso disponible' : 'cursos disponibles'}`}
+              </p>
+            </div>
+          </div>
         </div>
 
         {loading && (

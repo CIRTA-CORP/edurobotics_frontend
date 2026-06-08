@@ -187,6 +187,7 @@ export function AdminProvider({ children }) {
       courseHooks.setCourseForm({
         title: detail.title || '',
         description: detail.description || '',
+        image_url: detail.image_url || '',
         level: detail.level || 'beginner',
         is_published: detail.is_published !== false
       })
