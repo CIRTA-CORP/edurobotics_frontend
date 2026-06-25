@@ -9,6 +9,10 @@ import { API_BASE } from '@/config'
 import LoginPage from '@/features/auth/pages/LoginPage.jsx'
 import RegisterPage from '@/features/auth/pages/RegisterPage.jsx'
 
+// ── Lazy auth pages (rarely hit) ──
+const ForgotPasswordPage = lazy(() => import('@/features/auth/pages/ForgotPasswordPage.jsx'))
+const ResetPasswordPage = lazy(() => import('@/features/auth/pages/ResetPasswordPage.jsx'))
+
 // ── Lazy imports (code-split into separate chunks) ──
 const DashboardPage = lazy(() => import('@/features/dashboard/pages/DashboardPage.jsx'))
 const CoursePreviewPage = lazy(() => import('@/features/courses/pages/CoursePreviewPage.jsx'))
@@ -20,6 +24,9 @@ const QuizPage = lazy(() => import('@/features/quizzes/pages/QuizPage.jsx'))
 const UserProfilePage = lazy(() => import('@/features/profile/pages/UserProfilePage.jsx'))
 const SimulatorPage = lazy(() => import('@/features/simulator/pages/SimulatorPage.jsx'))
 const LandingPage = lazy(() => import('@/features/landing/pages/LandingPage.jsx'))
+const SpecializationDetailPage = lazy(() => import('@/features/specializations/pages/SpecializationDetailPage.jsx'))
+const PrintCoursePage = lazy(() => import('@/features/courses/pages/PrintCoursePage.jsx'))
+const LegalPage = lazy(() => import('@/features/legal/pages/LegalPage.jsx'))
 
 // ── Fallback spinner shown while a lazy chunk downloads ──
 const PageLoader = () => (
@@ -45,6 +52,11 @@ function App() {
           <Route path="/" element={<LandingPage />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
+          <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+          <Route path="/reset-password" element={<ResetPasswordPage />} />
+          <Route path="/legal" element={<LegalPage type="terminos" />} />
+          <Route path="/privacidad" element={<LegalPage type="privacidad" />} />
+          <Route path="/cookies" element={<LegalPage type="cookies" />} />
 
           {/* Rutas protegidas - requieren autenticación */}
           <Route
@@ -72,12 +84,15 @@ function App() {
             }
           />
 
-          {/* Course preview (landing page before study mode) */}
+          {/* Course preview / outline — PUBLIC (visitors can see the temario) */}
+          <Route path="/courses/:courseId" element={<CoursePreviewPage />} />
+
+          {/* Printable course export (admin → PDF) */}
           <Route
-            path="/courses/:courseId"
+            path="/courses/:courseId/print"
             element={
-              <ProtectedRoute>
-                <CoursePreviewPage />
+              <ProtectedRoute requiredRole="admin">
+                <PrintCoursePage />
               </ProtectedRoute>
             }
           />
@@ -92,15 +107,8 @@ function App() {
             }
           />
 
-          {/* Visual roadmap (dependency graph) */}
-          <Route
-            path="/roadmap"
-            element={
-              <ProtectedRoute>
-                <RoadmapPage />
-              </ProtectedRoute>
-            }
-          />
+          {/* Visual roadmap (dependency graph) — PUBLIC */}
+          <Route path="/roadmap" element={<RoadmapPage />} />
 
           {/* Dedicated Quiz Page */}
           <Route
@@ -118,6 +126,16 @@ function App() {
             element={
               <ProtectedRoute>
                 <UserProfilePage />
+              </ProtectedRoute>
+            }
+          />
+
+          {/* Specialization detail (learning path) */}
+          <Route
+            path="/specializations/:id"
+            element={
+              <ProtectedRoute>
+                <SpecializationDetailPage />
               </ProtectedRoute>
             }
           />

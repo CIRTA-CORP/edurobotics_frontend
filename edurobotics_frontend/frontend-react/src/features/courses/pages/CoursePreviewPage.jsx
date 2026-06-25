@@ -17,9 +17,13 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
-import { getStoredUser } from '@/features/auth/services/auth'
+import { clearStoredUser, getStoredUser } from '@/features/auth/services/auth'
 import { getCourseDetail, checkPrerequisites, getCoursesRoadmap } from '@/features/courses/services/courses'
 import { getRoadmap } from '@/features/progress/services/progress'
+import { StudentHeader } from '@/features/student/components/StudentHeader'
+import { PublicNav } from '@/shared/components/PublicNav'
+import { LogoutModal } from '@/shared/components/LogoutModal'
+import { HeroBand } from '@/shared/components/HeroBand'
 import {
     ArrowLeft, BookOpen, ChevronDown, ChevronRight,
     PlayCircle, FileText, Link2, Loader2, CheckCircle,
@@ -321,12 +325,11 @@ function CoursePreviewPage() {
     const { courseId } = useParams()
     const navigate = useNavigate()
     const [user] = useState(() => getStoredUser())
+    const [showLogout, setShowLogout] = useState(false)
     const numericCourseId = Number.parseInt(courseId, 10)
 
-    // Load user
-    useEffect(() => {
-        if (!user) { navigate('/login'); return }
-    }, [navigate, user])
+    // Public access: visitors without an account can browse the course OUTLINE
+    // (modules/units) and the roadmap. Entering study mode still requires login.
 
     const {
         data: course,
@@ -387,6 +390,8 @@ function CoursePreviewPage() {
     const prereqCheck = prereqData || { allowed: true, details: [], missing: [] }
 
     const handleStartStudy = () => {
+        // Reading the lessons requires an account.
+        if (!user) { navigate('/login'); return }
         navigate(`/courses/${courseId}/study`)
     }
 
@@ -439,8 +444,8 @@ function CoursePreviewPage() {
                     <BookOpen className="w-6 h-6 text-red-500" />
                 </div>
                 <p className="text-red-600 mb-4 text-sm">{courseError?.message || 'Curso no encontrado'}</p>
-                <button onClick={() => navigate('/dashboard')} className="text-blue-600 hover:underline text-sm">
-                    ← Volver al dashboard
+                <button onClick={() => navigate(user ? '/dashboard' : '/')} className="text-blue-600 hover:underline text-sm">
+                    {user ? '← Volver al dashboard' : '← Volver al inicio'}
                 </button>
             </div>
         </div>
@@ -464,40 +469,28 @@ function CoursePreviewPage() {
     const isBlocked = prereqCheck?.allowed === false
     const hasPrereqs = prereqCheck?.details?.length > 0
 
-    const ctaLabel = state === 'completed'
-        ? 'Revisar curso'
-        : state === 'in_progress'
-            ? 'Continuar curso'
-            : 'Comenzar curso'
+    const ctaLabel = !user
+        ? 'Inicia sesión para empezar'
+        : state === 'completed'
+            ? 'Revisar curso'
+            : state === 'in_progress'
+                ? 'Continuar curso'
+                : 'Comenzar curso'
 
     return (
         <div className="min-h-screen bg-gray-50">
-            {/* ── Top nav ── */}
-            <header className="bg-white/80 backdrop-blur-md border-b border-gray-200 px-6 py-2.5 flex items-center justify-between sticky top-0 z-40">
-                <button
-                    onClick={() => navigate('/dashboard')}
-                    className="flex items-center gap-1.5 text-sm text-gray-400 hover:text-gray-700 transition-colors"
-                >
-                    <ArrowLeft className="w-4 h-4" />
-                    <span className="hidden sm:inline">Volver a cursos</span>
-                </button>
-                {user && (
-                    <div className="flex items-center gap-2">
-                        <div className="w-7 h-7 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white text-[10px] font-bold">
-                            {(user.first_name?.[0] || '') + (user.last_name?.[0] || '')}
-                        </div>
-                        {user.role === 'admin' && (
-                            <span className="inline-flex items-center gap-0.5 text-[9px] font-semibold px-1.5 py-0.5 rounded bg-slate-800 text-white">
-                                <Shield className="w-2 h-2" />
-                                ADMIN
-                            </span>
-                        )}
-                    </div>
-                )}
-            </header>
+            <LogoutModal
+                isOpen={showLogout}
+                onConfirm={() => { clearStoredUser(); navigate('/') }}
+                onCancel={() => setShowLogout(false)}
+            />
+            {/* Logged-in: app shell. Public visitor: sign-in bar. */}
+            {user
+                ? <StudentHeader user={user} onLogout={() => setShowLogout(true)} />
+                : <PublicNav />}
 
             {/* ── Hero ── */}
-            <div className="bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 text-white">
+            <HeroBand>
                 <div className="max-w-5xl mx-auto px-6 py-12">
                     {/* Badges */}
                     <div className="flex items-center gap-2 mb-4">
@@ -620,7 +613,7 @@ function CoursePreviewPage() {
                         </div>
                     )}
                 </div>
-            </div>
+            </HeroBand>
 
             {/* ── Module list ── */}
             <div className="max-w-5xl mx-auto px-6 py-10">

@@ -75,6 +75,8 @@ export function CourseGrid({ courses, onCourseClick }) {
                 <img
                   src={course.image_url}
                   alt={course.title}
+                  loading="lazy"
+                  decoding="async"
                   className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
                 />
               ) : (

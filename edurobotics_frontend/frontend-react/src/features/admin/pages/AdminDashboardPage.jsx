@@ -1,21 +1,32 @@
-import { useEffect } from 'react'
+import { lazy, Suspense, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { Loader2 } from 'lucide-react'
 import { clearStoredUser, getStoredUser } from '@/features/auth/services/auth'
-import StudentDashboardPage from '@/features/student/pages/StudentDashboardPage'
 import { AdminHeader } from '@/features/admin/components/AdminHeader'
 import { LogoutModal } from '@/shared/components/LogoutModal'
 import { ErrorBoundary } from '@/shared/components/ErrorBoundary'
 import { AdminProvider, useAdmin } from '@/features/admin/context/AdminContext'
 import { AdminBreadcrumbs } from '@/features/admin/components/AdminBreadcrumbs'
 import { AdminSidebarNav } from '@/features/admin/components/AdminSidebarNav'
-import { DashboardTab } from '@/features/admin/tabs/DashboardTab'
-import { CoursesTab } from '@/features/admin/tabs/CoursesTab'
-import { ModulesTab } from '@/features/admin/tabs/ModulesTab'
-import { UnitsTab } from '@/features/admin/tabs/UnitsTab'
-import { ContentTab } from '@/features/admin/tabs/ContentTab'
-import { EvaluationsTab } from '@/features/admin/tabs/EvaluationsTab'
-import { LandingTab } from '@/features/admin/tabs/LandingTab'
-import { SpecializationsTab } from '@/features/admin/tabs/SpecializationsTab'
+
+// Lazy-load each tab so the admin shell stays light. The heavy Content tab
+// (TipTap editor) and the student preview only download when actually opened.
+const named = (p, name) => lazy(() => p().then((m) => ({ default: m[name] })))
+const StudentDashboardPage = lazy(() => import('@/features/student/pages/StudentDashboardPage'))
+const DashboardTab = named(() => import('@/features/admin/tabs/DashboardTab'), 'DashboardTab')
+const CoursesTab = named(() => import('@/features/admin/tabs/CoursesTab'), 'CoursesTab')
+const ModulesTab = named(() => import('@/features/admin/tabs/ModulesTab'), 'ModulesTab')
+const UnitsTab = named(() => import('@/features/admin/tabs/UnitsTab'), 'UnitsTab')
+const ContentTab = named(() => import('@/features/admin/tabs/ContentTab'), 'ContentTab')
+const EvaluationsTab = named(() => import('@/features/admin/tabs/EvaluationsTab'), 'EvaluationsTab')
+const LandingTab = named(() => import('@/features/admin/tabs/LandingTab'), 'LandingTab')
+const SpecializationsTab = named(() => import('@/features/admin/tabs/SpecializationsTab'), 'SpecializationsTab')
+
+const TabLoader = () => (
+  <div className="flex justify-center py-16">
+    <Loader2 className="h-6 w-6 animate-spin text-gray-400" />
+  </div>
+)
 
 function AdminDashboardLayout() {
   const {
@@ -42,7 +53,7 @@ function AdminDashboardLayout() {
 
   const handleConfirmLogout = () => {
     clearStoredUser()
-    navigate('/login')
+    navigate('/')
   }
 
   return (
@@ -52,21 +63,25 @@ function AdminDashboardLayout() {
         onConfirm={handleConfirmLogout}
         onCancel={() => setShowLogoutModal(false)}
       />
-      <AdminHeader
-        adminView={adminView}
-        onViewChange={setAdminView}
-        onLogout={handleLogout}
-      />
-
+      {/* Student preview: show the REAL student header (with an "Admin" button
+          to switch back) so the admin sees exactly what students see. */}
       {adminView === 'student' && (
-        <StudentDashboardPage
-          userOverride={user}
-          hideHeader={true}
-          hideLogout={true}
-        />
+        <Suspense fallback={<TabLoader />}>
+          <StudentDashboardPage
+            userOverride={user}
+            adminView={adminView}
+            setAdminView={setAdminView}
+          />
+        </Suspense>
       )}
 
-      {adminView === 'admin' && (
+      {adminView !== 'student' && (
+        <>
+        <AdminHeader
+          adminView={adminView}
+          onViewChange={setAdminView}
+          onLogout={handleLogout}
+        />
         <div className="max-w-7xl mx-auto p-3 lg:p-6">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 lg:gap-6">
             <aside className="lg:col-span-3">
@@ -77,18 +92,21 @@ function AdminDashboardLayout() {
               <AdminBreadcrumbs />
 
               <div className="space-y-6">
-                {activeTab === 'dashboard' && <DashboardTab />}
-                {activeTab === 'cursos' && <CoursesTab />}
-                {activeTab === 'modulos' && <ModulesTab />}
-                {activeTab === 'unidades' && <UnitsTab />}
-                {activeTab === 'contenido' && <ContentTab />}
-                {activeTab === 'evaluaciones' && <EvaluationsTab />}
-                {activeTab === 'especializaciones' && <SpecializationsTab />}
-                {activeTab === 'landing' && <LandingTab />}
+                <Suspense fallback={<TabLoader />}>
+                  {activeTab === 'dashboard' && <DashboardTab />}
+                  {activeTab === 'cursos' && <CoursesTab />}
+                  {activeTab === 'modulos' && <ModulesTab />}
+                  {activeTab === 'unidades' && <UnitsTab />}
+                  {activeTab === 'contenido' && <ContentTab />}
+                  {activeTab === 'evaluaciones' && <EvaluationsTab />}
+                  {activeTab === 'especializaciones' && <SpecializationsTab />}
+                  {activeTab === 'landing' && <LandingTab />}
+                </Suspense>
               </div>
             </main>
           </div>
         </div>
+        </>
       )}
     </div>
   )

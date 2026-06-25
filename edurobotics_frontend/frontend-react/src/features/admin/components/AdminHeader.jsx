@@ -21,7 +21,7 @@ export function AdminHeader({ adminView, onViewChange, onLogout, onLogoClick }) 
               className="cursor-pointer hover:opacity-75 transition-opacity"
               title="Volver al inicio"
             >
-              <img src="/cirtaimagen.jpg" alt="CIRTA" className="h-10 mix-blend-multiply" />
+              <img src="/cirtanitido.svg" alt="CIRTA" className="h-8" />
             </button>
             <div className="border-l border-gray-200 pl-3">
               <div className="flex items-center gap-2">

@@ -15,6 +15,7 @@ import { BookOpen, Loader2 } from 'lucide-react'
 import { StudentHeader } from '@/features/student/components/StudentHeader'
 import { HeroSection } from '@/features/student/components/HeroSection'
 import { CourseGrid } from '@/features/student/components/CourseGrid'
+import { SpecializationsSection } from '@/features/specializations/components/SpecializationsSection'
 import { LogoutModal } from '@/shared/components/LogoutModal'
 
 function StudentDashboardPage({ userOverride = null, hideLogout = false, hideHeader = false, adminView = null, setAdminView = null }) {
@@ -60,7 +61,7 @@ function StudentDashboardPage({ userOverride = null, hideLogout = false, hideHea
 
   const confirmLogout = () => {
     clearStoredUser()
-    navigate('/login')
+    navigate('/')
   }
 
   if (!user) return (
@@ -91,6 +92,9 @@ function StudentDashboardPage({ userOverride = null, hideLogout = false, hideHea
 
       {/* Main Content */}
       <main className={hideHeader ? "max-w-7xl mx-auto p-6" : "max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8"}>
+        {/* Specializations (issue #24) — only renders if there are any */}
+        <SpecializationsSection />
+
         <div className="mb-6 flex items-end justify-between gap-4">
           <div className="flex items-center gap-3">
             <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-slate-900 text-white">

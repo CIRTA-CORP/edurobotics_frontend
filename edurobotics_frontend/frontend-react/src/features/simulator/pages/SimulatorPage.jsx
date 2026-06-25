@@ -1,8 +1,24 @@
+import { useEffect } from 'react';
 import Ide from '@/features/simulator/components/Ide';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
+import { getStoredUser } from '@/features/auth/services/auth';
 
 export default function SimulatorPage() {
+  const navigate = useNavigate();
+
+  // Access guard: the simulator is only reachable from inside a course unit
+  // that includes a "Simulador 3D" block (which sets sim_access). Admins can
+  // always open it for testing. Anyone else is sent back to their dashboard.
+  useEffect(() => {
+    const user = getStoredUser();
+    const isAdmin = user?.role === 'admin';
+    const granted = sessionStorage.getItem('sim_access') === '1';
+    if (!isAdmin && !granted) {
+      navigate('/student', { replace: true });
+    }
+  }, [navigate]);
+
   return (
     <div className="h-screen w-full bg-slate-950 overflow-hidden flex flex-col">
       {/* Top Navigation Bar */}

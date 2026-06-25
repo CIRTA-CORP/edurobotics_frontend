@@ -18,6 +18,7 @@ import {
 import { useNavigate, useParams } from 'react-router-dom'
 import { CourseFeedbackModal } from './CourseFeedbackModal'
 import { API_BASE } from '@/config'
+import { sanitizeHtml } from '@/shared/lib/sanitizeHtml'
 
 const isVideoUrl = (url) => {
   return url?.includes('youtube.com') || url?.includes('youtu.be') || url?.includes('vimeo.com')
@@ -58,7 +59,7 @@ function ContentBlock({ content }) {
       return (
         <div
           className="rich-content prose prose-sm md:prose-base max-w-none w-full overflow-hidden text-gray-700 leading-relaxed break-words"
-          dangerouslySetInnerHTML={{ __html: content.content_value }}
+          dangerouslySetInnerHTML={{ __html: sanitizeHtml(content.content_value) }}
         />
       )
     }
@@ -170,7 +171,7 @@ function ContentBlock({ content }) {
       href={content.content_value}
       target="_blank"
       rel="noopener noreferrer"
-      className="flex items-center gap-4 px-5 py-4 bg-gradient-to-r from-blue-50 to-indigo-50 hover:from-blue-100 hover:to-indigo-100 rounded-xl border border-blue-200/60 transition-all group"
+      className="flex items-center gap-4 px-5 py-4 bg-gradient-to-r from-blue-50 to-blue-50 hover:from-blue-100 hover:to-blue-100 rounded-xl border border-blue-200/60 transition-all group"
     >
       <div className="w-11 h-11 rounded-lg bg-white shadow-sm flex items-center justify-center border border-blue-200/50 flex-shrink-0">
         <ExternalLink className="w-5 h-5 text-blue-500 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
@@ -219,7 +220,7 @@ function TableOfContents({ headings }) {
   return (
     <nav className="mb-8 px-5 py-4 bg-gray-50/80 rounded-xl border border-gray-100">
       <div className="flex items-center gap-2 mb-3">
-        <ListTree className="w-4 h-4 text-indigo-500" />
+        <ListTree className="w-4 h-4 text-blue-500" />
         <span className="text-xs font-bold text-gray-600 uppercase tracking-wide">Contenido</span>
       </div>
       <ul className="space-y-1">
@@ -312,9 +313,17 @@ export function ContentViewer({
     c.content_type !== 'rich_text' && c.content_type !== 'simulator'
   )
 
-  // Prepare HTML with heading IDs for ToC anchors
-  const processedHtml = useMemo(() => injectHeadingIds(richContent?.content_value), [richContent?.content_value])
+  // Prepare HTML with heading IDs for ToC anchors. Sanitize AFTER injecting
+  // ids so any malicious markup is stripped before it reaches the DOM.
+  const processedHtml = useMemo(
+    () => sanitizeHtml(injectHeadingIds(richContent?.content_value)),
+    [richContent?.content_value]
+  )
   const headings = useMemo(() => extractHeadings(richContent?.content_value), [richContent?.content_value])
+
+  // Whether the rich editor actually has written content (an empty TipTap doc
+  // serializes to '<p></p>'). Used to avoid rendering a blank white card.
+  const hasRichBody = !!processedHtml && processedHtml !== '<p></p>'
 
   // Find current module for breadcrumbs
   const currentModule = useMemo(() => {
@@ -420,15 +429,20 @@ export function ContentViewer({
           )}
         </div>
 
+        {/* ── Lesson title ── */}
+        <h1 className="px-1 text-2xl md:text-3xl font-bold tracking-tight text-gray-900">
+          {unit.title}
+        </h1>
+
         {/* ── Lesson content card — everything flows together ── */}
-        {(richContent || legacyContents.length > 0) && (
+        {(hasRichBody || legacyContents.length > 0) && (
           <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
             <div className="p-6 md:p-8 lg:p-12 space-y-8 max-w-[800px] mx-auto">
               {/* Table of Contents */}
-              {richContent && <TableOfContents headings={headings} />}
+              {hasRichBody && <TableOfContents headings={headings} />}
 
               {/* Rich text content (new TipTap format) — single unified document */}
-              {richContent && (
+              {hasRichBody && (
                 <div
                   className="rich-content prose prose-sm md:prose-base max-w-none w-full overflow-hidden text-gray-700 leading-relaxed break-words"
                   dangerouslySetInnerHTML={{ __html: processedHtml }}
@@ -442,15 +456,26 @@ export function ContentViewer({
           </div>
         )}
 
+        {/* ── Empty state — nothing to show in this unit ── */}
+        {!hasRichBody && legacyContents.length === 0 && !simulatorContent && !hasQuiz && (
+          <div className="rounded-2xl border border-dashed border-gray-200 bg-white px-6 py-16 text-center">
+            <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-gray-100">
+              <FileText className="h-6 w-6 text-gray-400" />
+            </div>
+            <p className="font-medium text-gray-600">Esta unidad aún no tiene contenido</p>
+            <p className="mt-1 text-sm text-gray-400">El material aparecerá aquí cuando se agregue.</p>
+          </div>
+        )}
+
         {/* ── Simulator section ── */}
         {simulatorContent && (
-          <div className="rounded-2xl border border-indigo-200 bg-gradient-to-br from-indigo-50 to-blue-50 overflow-hidden">
-            <div className="h-1 bg-indigo-500" />
+          <div className="rounded-2xl border border-blue-200 bg-gradient-to-br from-blue-50 to-blue-50 overflow-hidden">
+            <div className="h-1 bg-blue-500" />
             <div className="p-5 md:p-6">
               <div className="flex items-start justify-between gap-4 flex-wrap">
                 <div className="flex items-start gap-3 min-w-0">
-                  <div className="w-10 h-10 rounded-xl bg-indigo-100 flex items-center justify-center flex-shrink-0">
-                    <Cpu className="w-5 h-5 text-indigo-600" />
+                  <div className="w-10 h-10 rounded-xl bg-blue-100 flex items-center justify-center flex-shrink-0">
+                    <Cpu className="w-5 h-5 text-blue-600" />
                   </div>
                   <div className="min-w-0">
                     <h3 className="text-sm font-bold text-gray-900">Simulador 3D</h3>
@@ -465,9 +490,12 @@ export function ContentViewer({
                     if (!isContentCompleted?.(simulatorContent.id)) {
                       markComplete?.(simulatorContent.id)
                     }
+                    // Grant simulator access for this session: the /simulator
+                    // route only opens when entered from a unit that includes it.
+                    sessionStorage.setItem('sim_access', '1')
                     navigate('/simulator')
                   }}
-                  className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-semibold text-white bg-indigo-600 hover:bg-indigo-700 transition-colors flex-shrink-0"
+                  className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 transition-colors flex-shrink-0"
                 >
                   Abrir simulador
                   <ChevronRight className="w-4 h-4" />

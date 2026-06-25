@@ -8,28 +8,44 @@
  * Route: /roadmap
  */
 
-import { useEffect, useState } from 'react'
+import { useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
-import { getStoredUser } from '@/features/auth/services/auth'
+import { clearStoredUser, getStoredUser } from '@/features/auth/services/auth'
 import { getCoursesRoadmap } from '@/features/courses/services/courses'
 import { getRoadmap } from '@/features/progress/services/progress'
-import { ArrowLeft, Map, Loader2, Shield } from 'lucide-react'
+import { getSpecializations } from '@/features/specializations/services/specializations'
+import {
+    Map, Loader2, Layers,
+    CheckCircle, Clock, Unlock, Lock,
+} from 'lucide-react'
 import RoadmapGraph from '@/features/roadmap/pages/RoadmapGraph'
+import { StudentHeader } from '@/features/student/components/StudentHeader'
+import { PublicNav } from '@/shared/components/PublicNav'
+import { LogoutModal } from '@/shared/components/LogoutModal'
+import { HeroBand } from '@/shared/components/HeroBand'
 
 function RoadmapPage() {
     const navigate = useNavigate()
-    const [user, setUser] = useState(() => getStoredUser())
+    const [user] = useState(() => getStoredUser())
+    const [showLogout, setShowLogout] = useState(false)
+    // null = "Todas" (full malla). Otherwise the id of the specialization whose
+    // sub-malla is highlighted.
+    const [selectedSpecId, setSelectedSpecId] = useState(null)
 
-    // Load user
-    useEffect(() => {
-        if (!user) { navigate('/login'); return }
-    }, [navigate, user])
+    // Public access: visitors without an account can view the roadmap (without
+    // personal progress). Logged-in users also see their progress overlaid.
 
     const { data: coursesResp, isLoading: coursesLoading, error: coursesError } = useQuery({
         queryKey: ['courses-roadmap'],
         queryFn: getCoursesRoadmap,
-        enabled: !!user,
+        staleTime: 60_000,
+    })
+
+    // Specializations are public; shared cache key with the dashboard section.
+    const { data: specializations = [] } = useQuery({
+        queryKey: ['specializations-public'],
+        queryFn: getSpecializations,
         staleTime: 60_000,
     })
 
@@ -48,6 +64,14 @@ function RoadmapPage() {
     const loading = coursesLoading
     const error = coursesError?.message || null
 
+    // Set of course ids belonging to the selected specialization (its sub-malla).
+    const highlightIds = useMemo(() => {
+        if (!selectedSpecId) return null
+        const spec = specializations.find(s => s.id === selectedSpecId)
+        if (!spec) return null
+        return new Set((spec.courses || []).map(c => c.id))
+    }, [selectedSpecId, specializations])
+
     // ── Loading ──────────────────────────────────────────────────────────────
     if (loading) return (
         <div className="min-h-screen flex items-center justify-center bg-gray-50">
@@ -65,8 +89,8 @@ function RoadmapPage() {
                     <Map className="w-6 h-6 text-red-500" />
                 </div>
                 <p className="text-sm text-red-600 mb-4">{error}</p>
-                <button onClick={() => navigate('/dashboard')} className="text-blue-600 hover:underline text-sm">
-                    ← Volver al dashboard
+                <button onClick={() => navigate(user ? '/dashboard' : '/')} className="text-blue-600 hover:underline text-sm">
+                    {user ? '← Volver al dashboard' : '← Volver al inicio'}
                 </button>
             </div>
         </div>
@@ -74,84 +98,81 @@ function RoadmapPage() {
 
     return (
         <div className="min-h-screen bg-gray-50">
-            {/* ── Header ── */}
-            <header className="bg-white/80 backdrop-blur-md border-b border-gray-200 px-6 py-2.5 flex items-center justify-between sticky top-0 z-40">
-                <div className="flex items-center gap-4">
-                    <button
-                        onClick={() => navigate('/dashboard')}
-                        className="flex items-center gap-1.5 text-sm text-gray-400 hover:text-gray-700 transition-colors"
-                    >
-                        <ArrowLeft className="w-4 h-4" />
-                        <span className="hidden sm:inline">Volver</span>
-                    </button>
-
-                    <div className="h-5 w-px bg-gray-200" />
-
-                    <div className="flex items-center gap-2">
-                        <Map className="w-4 h-4 text-blue-500" />
-                        <h1 className="text-sm font-semibold text-gray-900">Hoja de Ruta</h1>
-                    </div>
-                </div>
-
-                {user && (
-                    <div className="flex items-center gap-2">
-                        <div className="w-7 h-7 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white text-[10px] font-bold">
-                            {(user.first_name?.[0] || '') + (user.last_name?.[0] || '')}
-                        </div>
-                        {user.role === 'admin' && (
-                            <span className="inline-flex items-center gap-0.5 text-[9px] font-semibold px-1.5 py-0.5 rounded bg-slate-800 text-white">
-                                <Shield className="w-2 h-2" />
-                                ADMIN
-                            </span>
-                        )}
-                    </div>
-                )}
-            </header>
+            <LogoutModal
+                isOpen={showLogout}
+                onConfirm={() => { clearStoredUser(); navigate('/') }}
+                onCancel={() => setShowLogout(false)}
+            />
+            {/* Logged-in: app shell. Public visitor: sign-in bar. */}
+            {user
+                ? <StudentHeader user={user} onLogout={() => setShowLogout(true)} />
+                : <PublicNav />}
 
             {/* ── Hero banner ── */}
-            <div className="bg-gradient-to-r from-slate-900 via-blue-950 to-slate-900 text-white px-6 py-8">
-                <div className="max-w-5xl mx-auto">
+            <HeroBand>
+                <div className="max-w-5xl mx-auto px-6 py-12">
                     <h2 className="text-2xl md:text-3xl font-bold mb-2">Malla de Cursos</h2>
-                    <p className="text-white/60 text-sm max-w-xl">
+                    <p className="text-slate-300 text-sm max-w-xl">
                         Visualiza tu progreso y las dependencias entre cursos.
                         Los cursos bloqueados requieren completar prerequisitos primero.
                     </p>
                 </div>
-            </div>
+            </HeroBand>
+
+            {/* ── Specialization filter chips ── */}
+            {specializations.length > 0 && (
+                <div className="max-w-5xl mx-auto px-6 pt-6">
+                    <div className="flex items-center gap-2 mb-2 text-xs font-semibold uppercase tracking-wide text-gray-400">
+                        <Layers className="w-3.5 h-3.5" />
+                        Filtrar por especialización
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                        <button
+                            onClick={() => setSelectedSpecId(null)}
+                            className={`rounded-full px-3.5 py-1.5 text-sm font-medium transition-colors ${
+                                selectedSpecId === null
+                                    ? 'bg-slate-900 text-white'
+                                    : 'bg-white text-gray-600 border border-gray-200 hover:border-gray-300'
+                            }`}
+                        >
+                            Todas
+                        </button>
+                        {specializations.map(spec => (
+                            <button
+                                key={spec.id}
+                                onClick={() => setSelectedSpecId(spec.id)}
+                                className={`inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-sm font-medium transition-colors ${
+                                    selectedSpecId === spec.id
+                                        ? 'bg-slate-900 text-white'
+                                        : 'bg-white text-gray-600 border border-gray-200 hover:border-gray-300'
+                                }`}
+                            >
+                                {spec.title}
+                                <span className={`text-[11px] ${selectedSpecId === spec.id ? 'text-slate-300' : 'text-gray-400'}`}>
+                                    {spec.course_count ?? spec.courses?.length ?? 0}
+                                </span>
+                            </button>
+                        ))}
+                    </div>
+                </div>
+            )}
 
             {/* ── Graph ── */}
             <div className="max-w-5xl mx-auto px-6 py-6">
-                <RoadmapGraph courses={courses} roadmapData={roadmapData} />
+                <RoadmapGraph courses={courses} roadmapData={roadmapData} highlightIds={highlightIds} />
             </div>
 
             {/* ── Legend ── */}
             <div className="max-w-5xl mx-auto px-6 pb-10">
-                <div className="bg-white rounded-xl border border-gray-200 p-4">
-                    <h3 className="text-xs font-bold uppercase tracking-wider text-gray-500 mb-3">Leyenda</h3>
-                    <div className="flex flex-wrap gap-4 text-xs">
-                        <div className="flex items-center gap-1.5">
-                            <div className="w-3 h-3 rounded-full bg-emerald-400 ring-2 ring-emerald-200" />
-                            <span className="text-gray-600">Completado</span>
-                        </div>
-                        <div className="flex items-center gap-1.5">
-                            <div className="w-3 h-3 rounded-full bg-blue-400 ring-2 ring-blue-200" />
-                            <span className="text-gray-600">En progreso</span>
-                        </div>
-                        <div className="flex items-center gap-1.5">
-                            <div className="w-3 h-3 rounded-full bg-gray-300 ring-1 ring-gray-200" />
-                            <span className="text-gray-600">Desbloqueado</span>
-                        </div>
-                        <div className="flex items-center gap-1.5">
-                            <div className="w-3 h-3 rounded-full bg-gray-200 ring-1 ring-gray-100" />
-                            <span className="text-gray-600">Bloqueado</span>
-                        </div>
-                        <div className="flex items-center gap-1.5">
-                            <svg width="24" height="12">
-                                <line x1="0" y1="6" x2="24" y2="6" stroke="#cbd5e1" strokeWidth="2" strokeDasharray="4 2" />
-                            </svg>
-                            <span className="text-gray-600">Dependencia</span>
-                        </div>
-                    </div>
+                <div className="flex flex-wrap items-center gap-x-5 gap-y-2 text-xs text-gray-500">
+                    <span className="flex items-center gap-1.5"><CheckCircle className="h-3.5 w-3.5 text-emerald-500" /> Completado</span>
+                    <span className="flex items-center gap-1.5"><Clock className="h-3.5 w-3.5 text-blue-500" /> En progreso</span>
+                    <span className="flex items-center gap-1.5"><Unlock className="h-3.5 w-3.5 text-gray-400" /> Disponible</span>
+                    <span className="flex items-center gap-1.5"><Lock className="h-3.5 w-3.5 text-gray-300" /> Bloqueado</span>
+                    <span className="flex items-center gap-1.5">
+                        <svg width="22" height="10"><line x1="0" y1="5" x2="22" y2="5" stroke="#cbd5e1" strokeWidth="2" strokeDasharray="4 2" /></svg>
+                        Prerequisito
+                    </span>
                 </div>
             </div>
         </div>

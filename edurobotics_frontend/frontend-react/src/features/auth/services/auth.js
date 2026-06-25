@@ -54,6 +54,31 @@ export const loginUser = async (payload) => {
 }
 
 /**
+ * Request a password reset email. Always resolves (the backend returns the
+ * same response whether or not the email exists, to avoid enumeration).
+ */
+export const forgotPassword = async (email) => {
+  const response = await fetch(`${API_BASE}/api/auth/forgot-password`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email }),
+  })
+  if (!response.ok) throw new Error(await parseError(response))
+  return response.json()
+}
+
+/** Complete a password reset with the token from the email link. */
+export const resetPassword = async ({ token, new_password, new_password_confirm }) => {
+  const response = await fetch(`${API_BASE}/api/auth/reset-password`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ token, new_password, new_password_confirm }),
+  })
+  if (!response.ok) throw new Error(await parseError(response))
+  return response.json()
+}
+
+/**
  * Decode JWT token payload (without verification - just for reading data)
  */
 const decodeToken = (token) => {

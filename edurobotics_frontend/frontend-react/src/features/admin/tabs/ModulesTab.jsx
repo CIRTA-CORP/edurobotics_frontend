@@ -1,6 +1,6 @@
 import { Plus } from 'lucide-react'
 import { Button } from '@/shared/components/button'
-import { Modal } from '@/shared/components/Modal'
+import { Drawer } from '@/shared/components/Drawer'
 import { ModuleForm } from '@/features/admin/features/modules/ModuleForm'
 import { ModuleList } from '@/features/admin/features/modules/ModuleList'
 import { useAdmin } from '@/features/admin/context/AdminContext'
@@ -25,6 +25,14 @@ export function ModulesTab() {
 
   if (!selectedCourse) return null
 
+  const drawerOpen = isModuleModalOpen || isModuleEditModalOpen
+  const drawerMode = isModuleEditModalOpen ? 'edit' : 'create'
+  const closeDrawer = () => {
+    setIsModuleModalOpen(false)
+    setIsModuleEditModalOpen(false)
+    setEditingModule(null)
+  }
+
   const handleCreateModule = async (e) => {
     const newModule = await moduleHooks.handleModuleCreate(e, selectedCourse)
     if (newModule) handleModuleSelect(newModule)
@@ -47,22 +55,6 @@ export function ModulesTab() {
         </Button>
       </div>
 
-      <Modal
-        isOpen={isModuleModalOpen}
-        onClose={() => setIsModuleModalOpen(false)}
-        title="Crear Nuevo Módulo"
-      >
-        <ModuleForm
-          mode="create"
-          isSubmitting={moduleHooks.isSubmitting}
-          moduleForm={moduleHooks.moduleForm}
-          setModuleForm={moduleHooks.setModuleForm}
-          onSubmit={handleCreateModule}
-          expanded={true}
-          onToggle={() => { }}
-        />
-      </Modal>
-
       <ModuleList
         modules={selectedCourse.modules || []}
         selectedModuleId={selectedModule?.id}
@@ -73,24 +65,21 @@ export function ModulesTab() {
         isLoading={isSelectedCourseLoading}
       />
 
-      <Modal
-        isOpen={isModuleEditModalOpen}
-        onClose={() => {
-          setIsModuleEditModalOpen(false)
-          setEditingModule(null)
-        }}
-        title="Editar Módulo"
+      {/* Create / edit module — slide-over drawer */}
+      <Drawer
+        open={drawerOpen}
+        onClose={closeDrawer}
+        title={drawerMode === 'create' ? 'Crear nuevo módulo' : 'Editar módulo'}
+        width="max-w-md"
       >
         <ModuleForm
-          mode="edit"
+          mode={drawerMode}
           isSubmitting={moduleHooks.isSubmitting}
           moduleForm={moduleHooks.moduleForm}
           setModuleForm={moduleHooks.setModuleForm}
-          onSubmit={handleEditModule}
-          expanded={true}
-          onToggle={() => { }}
+          onSubmit={drawerMode === 'create' ? handleCreateModule : handleEditModule}
         />
-      </Modal>
+      </Drawer>
     </div>
   )
 }

@@ -37,7 +37,8 @@ export function CourseForm({
   isSubmitting = false,
   allCourses = [],    // all courses for the checkbox list
   expanded,
-  onToggle
+  onToggle,
+  bare = false,       // when true, render just the fields (e.g. inside a Drawer)
 }) {
   const isCreateMode = mode === 'create'
   const [uploadingImage, setUploadingImage] = useState(false)
@@ -69,38 +70,8 @@ export function CourseForm({
     }
   }
 
-  return (
-    <Card className="border-gray-200 overflow-hidden">
-      {/* Header */}
-      <button
-        type="button"
-        className="w-full flex items-center justify-between px-5 py-4 hover:bg-gray-50/80 transition-colors"
-        onClick={onToggle}
-      >
-        <div className="flex items-center gap-3">
-          <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${isCreateMode ? 'bg-blue-100 text-blue-600' : 'bg-slate-100 text-slate-600'
-            }`}>
-            {isCreateMode ? <Plus className="w-4 h-4" /> : <Settings className="w-4 h-4" />}
-          </div>
-          <div className="text-left">
-            <h3 className="text-sm font-semibold text-gray-900">
-              {isCreateMode ? 'Crear Nuevo Curso' : 'Editar Curso'}
-            </h3>
-            {!isCreateMode && selectedCourse && (
-              <p className="text-xs text-gray-500 mt-0.5">
-                {selectedCourse.title} · <span className="font-mono">CR-{selectedCourse.id}</span>
-              </p>
-            )}
-          </div>
-        </div>
-        {expanded
-          ? <ChevronUp className="w-4 h-4 text-gray-400" />
-          : <ChevronDown className="w-4 h-4 text-gray-400" />
-        }
-      </button>
-
-      {expanded && (
-        <CardContent className="pt-0 px-5 pb-5 space-y-6">
+  const content = (
+    <>
           {/* ── Course details form ── */}
           <form onSubmit={onSubmit} className="space-y-4">
             {/* Title */}
@@ -171,7 +142,7 @@ export function CourseForm({
                   )}
                   <input
                     type="file"
-                    accept="image/png,image/jpeg,image/webp,image/gif,image/svg+xml"
+                    accept="image/png,image/jpeg,image/webp,image/gif"
                     className="hidden"
                     onChange={handleImageUpload}
                     disabled={uploadingImage}
@@ -323,7 +294,42 @@ export function CourseForm({
               </Button>
             </div>
           )}
-        </CardContent>
+    </>
+  )
+
+  // Inside a Drawer: just the fields, no collapsible card chrome.
+  if (bare) return <div className="space-y-6">{content}</div>
+
+  return (
+    <Card className="border-gray-200 overflow-hidden">
+      {/* Header */}
+      <button
+        type="button"
+        className="w-full flex items-center justify-between px-5 py-4 hover:bg-gray-50/80 transition-colors"
+        onClick={onToggle}
+      >
+        <div className="flex items-center gap-3">
+          <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${isCreateMode ? 'bg-blue-100 text-blue-600' : 'bg-slate-100 text-slate-600'}`}>
+            {isCreateMode ? <Plus className="w-4 h-4" /> : <Settings className="w-4 h-4" />}
+          </div>
+          <div className="text-left">
+            <h3 className="text-sm font-semibold text-gray-900">
+              {isCreateMode ? 'Crear Nuevo Curso' : 'Editar Curso'}
+            </h3>
+            {!isCreateMode && selectedCourse && (
+              <p className="text-xs text-gray-500 mt-0.5">
+                {selectedCourse.title} · <span className="font-mono">CR-{selectedCourse.id}</span>
+              </p>
+            )}
+          </div>
+        </div>
+        {expanded
+          ? <ChevronUp className="w-4 h-4 text-gray-400" />
+          : <ChevronDown className="w-4 h-4 text-gray-400" />}
+      </button>
+
+      {expanded && (
+        <CardContent className="pt-0 px-5 pb-5 space-y-6">{content}</CardContent>
       )}
     </Card>
   )

@@ -8,6 +8,11 @@ export const getSpecializations = async () => {
   return res?.specializations || []
 }
 
+/** Public: a single specialization with its ordered courses. */
+export const getSpecialization = async (id) => {
+  return apiGetCached(`/api/specializations/${id}`, { ttl: 30_000 })
+}
+
 /** Admin: all specializations (including unpublished). */
 export const getAllSpecializations = async () => {
   const res = await apiGetCached('/api/specializations/admin/all', { ttl: 15_000 })

@@ -1,6 +1,6 @@
 import { Plus } from 'lucide-react'
 import { Button } from '@/shared/components/button'
-import { Modal } from '@/shared/components/Modal'
+import { Drawer } from '@/shared/components/Drawer'
 import { UnitForm } from '@/features/admin/features/units/UnitForm'
 import { UnitList } from '@/features/admin/features/units/UnitList'
 import { useAdmin } from '@/features/admin/context/AdminContext'
@@ -26,6 +26,14 @@ export function UnitsTab() {
 
   if (!selectedModule) return null
 
+  const drawerOpen = isUnitModalOpen || isUnitEditModalOpen
+  const drawerMode = isUnitEditModalOpen ? 'edit' : 'create'
+  const closeDrawer = () => {
+    setIsUnitModalOpen(false)
+    setIsUnitEditModalOpen(false)
+    setEditingUnit(null)
+  }
+
   const handleCreateUnit = async (e) => {
     const newUnit = await unitHooks.handleUnitCreate(e, selectedModule, selectedCourse)
     if (newUnit) handleUnitSelect(newUnit)
@@ -48,22 +56,6 @@ export function UnitsTab() {
         </Button>
       </div>
 
-      <Modal
-        isOpen={isUnitModalOpen}
-        onClose={() => setIsUnitModalOpen(false)}
-        title="Crear Nueva Unidad"
-      >
-        <UnitForm
-          mode="create"
-          isSubmitting={unitHooks.isSubmitting}
-          unitForm={unitHooks.unitForm}
-          setUnitForm={unitHooks.setUnitForm}
-          onSubmit={handleCreateUnit}
-          expanded={true}
-          onToggle={() => { }}
-        />
-      </Modal>
-
       <UnitList
         units={selectedModule.units || []}
         selectedUnitId={selectedUnit?.id}
@@ -74,24 +66,21 @@ export function UnitsTab() {
         isLoading={isSelectedCourseLoading}
       />
 
-      <Modal
-        isOpen={isUnitEditModalOpen}
-        onClose={() => {
-          setIsUnitEditModalOpen(false)
-          setEditingUnit(null)
-        }}
-        title="Editar Unidad"
+      {/* Create / edit unit — slide-over drawer */}
+      <Drawer
+        open={drawerOpen}
+        onClose={closeDrawer}
+        title={drawerMode === 'create' ? 'Crear nueva unidad' : 'Editar unidad'}
+        width="max-w-md"
       >
         <UnitForm
-          mode="edit"
+          mode={drawerMode}
           isSubmitting={unitHooks.isSubmitting}
           unitForm={unitHooks.unitForm}
           setUnitForm={unitHooks.setUnitForm}
-          onSubmit={handleEditUnit}
-          expanded={true}
-          onToggle={() => { }}
+          onSubmit={drawerMode === 'create' ? handleCreateUnit : handleEditUnit}
         />
-      </Modal>
+      </Drawer>
     </div>
   )
 }

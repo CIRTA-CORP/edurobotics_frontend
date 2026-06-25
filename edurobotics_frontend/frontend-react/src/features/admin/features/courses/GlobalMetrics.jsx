@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query'
-import { Users, BookOpen, CheckCircle, ClipboardCheck, Star, TrendingUp, UserPlus, BarChart3 } from 'lucide-react'
+import { Users, BookOpen, CheckCircle, ClipboardCheck, Star, UserPlus, BarChart3 } from 'lucide-react'
 import { getAdminMetrics } from '@/features/courses/services/courses'
 
 function MetricCard({ icon: Icon, label, value, sub, color, bgColor }) {
@@ -51,7 +51,6 @@ export function GlobalMetrics() {
             icon: Users,
             label: 'Estudiantes Registrados',
             value: metrics.students.total,
-            sub: `${metrics.students.active} activos`,
             color: 'text-blue-600',
             bgColor: 'bg-blue-50',
         },
@@ -67,8 +66,8 @@ export function GlobalMetrics() {
             label: 'Cursos Publicados',
             value: metrics.courses.published,
             sub: `${metrics.courses.total} totales`,
-            color: 'text-violet-600',
-            bgColor: 'bg-violet-50',
+            color: 'text-blue-600',
+            bgColor: 'bg-blue-50',
         },
         {
             icon: CheckCircle,
@@ -79,33 +78,19 @@ export function GlobalMetrics() {
         },
         {
             icon: ClipboardCheck,
-            label: 'Evaluaciones Aprobadas',
-            value: metrics.quizzes.passed,
-            sub: `${metrics.quizzes.pass_rate}% aprobación`,
+            label: 'Aprobación de Evaluaciones',
+            value: `${metrics.quizzes.pass_rate}%`,
+            sub: `${metrics.quizzes.passed}/${metrics.quizzes.total_attempts} aprobadas`,
             color: 'text-amber-600',
             bgColor: 'bg-amber-50',
         },
         {
-            icon: BarChart3,
-            label: 'Intentos de Evaluación',
-            value: metrics.quizzes.total_attempts,
-            color: 'text-orange-600',
-            bgColor: 'bg-orange-50',
-        },
-        {
             icon: Star,
-            label: 'Utilidad Promedio',
+            label: 'Feedback (utilidad)',
             value: `${metrics.feedback.avg_usefulness}/5`,
-            sub: `${metrics.feedback.total} feedback`,
+            sub: `dificultad ${metrics.feedback.avg_difficulty}/5 · ${metrics.feedback.total} respuestas`,
             color: 'text-yellow-600',
             bgColor: 'bg-yellow-50',
-        },
-        {
-            icon: TrendingUp,
-            label: 'Dificultad Promedio',
-            value: `${metrics.feedback.avg_difficulty}/5`,
-            color: 'text-rose-600',
-            bgColor: 'bg-rose-50',
         },
     ]
 

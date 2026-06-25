@@ -7,14 +7,18 @@
 
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { useQuery } from '@tanstack/react-query'
-import { getStoredUser } from '@/features/auth/services/auth'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
+import { clearStoredUser, getStoredUser } from '@/features/auth/services/auth'
 import { getUserProfile } from '@/features/courses/services/courses'
 import { Button } from '@/shared/components/button'
+import { StudentHeader } from '@/features/student/components/StudentHeader'
+import { LogoutModal } from '@/shared/components/LogoutModal'
+import { ProfileSettings } from '@/features/profile/components/ProfileSettings'
+import { CourseGrid } from '@/features/student/components/CourseGrid'
 import {
-    User, BookOpen, CheckCircle, Clock, ArrowLeft,
+    BookOpen, CheckCircle, Clock,
     GraduationCap, Zap, Trophy, Shield, Mail, Calendar,
-    Loader2, TrendingUp, BarChart3
+    Loader2, LayoutGrid, Settings
 } from 'lucide-react'
 
 const LEVEL_CONFIG = {
@@ -25,11 +29,19 @@ const LEVEL_CONFIG = {
 
 function UserProfilePage() {
     const navigate = useNavigate()
+    const queryClient = useQueryClient()
     const [user, setUser] = useState(() => getStoredUser())
+    const [showLogout, setShowLogout] = useState(false)
+    const [activeTab, setActiveTab] = useState('resumen')
 
     useEffect(() => {
         if (!user) { navigate('/login'); return }
     }, [navigate, user])
+
+    const handleProfileUpdated = () => {
+        setUser(getStoredUser())  // re-read updated name from the fresh token
+        queryClient.invalidateQueries({ queryKey: ['user-profile', user?.id] })
+    }
 
     const { data: profileData, isLoading: loading } = useQuery({
         queryKey: ['user-profile', user?.id],
@@ -49,33 +61,59 @@ function UserProfilePage() {
     const profile = profileData?.profile
     const courses = profileData?.courses || []
     const stats = profileData?.stats || {}
-    const completedCourses = courses.filter(c => c.state === 'completed')
-    const inProgressCourses = courses.filter(c => c.state === 'in_progress')
+    // Map to the shape CourseGrid expects, so course cards look identical to the dashboard.
+    const toGridCourse = (c) => ({ ...c, roadmapSummary: { state: c.state, percentage: c.percentage } })
+    const completedCourses = courses.filter(c => c.state === 'completed').map(toGridCourse)
+    const inProgressCourses = courses.filter(c => c.state === 'in_progress').map(toGridCourse)
 
     const initials = ((profile?.first_name?.[0] || '') + (profile?.last_name?.[0] || '')).toUpperCase()
 
     return (
         <div className="min-h-screen bg-gray-50">
-            {/* Header */}
-            <header className="bg-white border-b border-gray-200 px-6 py-4">
-                <div className="max-w-5xl mx-auto flex items-center justify-between">
-                    <button
-                        onClick={() => navigate('/dashboard')}
-                        className="flex items-center gap-2 text-sm text-gray-500 hover:text-gray-700 transition-colors"
-                    >
-                        <ArrowLeft className="w-4 h-4" />
-                        Volver al Dashboard
-                    </button>
-                    <h1 className="text-sm font-semibold text-gray-700">Mi Perfil</h1>
-                </div>
-            </header>
+            <LogoutModal
+                isOpen={showLogout}
+                onConfirm={() => { clearStoredUser(); navigate('/') }}
+                onCancel={() => setShowLogout(false)}
+            />
+            {/* Persistent app shell (same header as the rest of the student area) */}
+            <StudentHeader user={user} onLogout={() => setShowLogout(true)} />
 
             <div className="max-w-5xl mx-auto p-6">
+                {/* Tabs */}
+                <div className="mb-6 inline-flex rounded-xl border border-gray-200 bg-white p-1">
+                    {[
+                        { id: 'resumen', label: 'Resumen', icon: LayoutGrid },
+                        { id: 'configuracion', label: 'Configuración', icon: Settings },
+                    ].map((tab) => {
+                        const Icon = tab.icon
+                        const active = activeTab === tab.id
+                        return (
+                            <button
+                                key={tab.id}
+                                onClick={() => setActiveTab(tab.id)}
+                                className={`flex items-center gap-1.5 rounded-lg px-4 py-2 text-sm font-medium transition-colors ${
+                                    active ? 'bg-blue-600 text-white shadow-sm' : 'text-gray-500 hover:text-gray-700'
+                                }`}
+                            >
+                                <Icon className="h-4 w-4" />
+                                {tab.label}
+                            </button>
+                        )
+                    })}
+                </div>
+
+                {activeTab === 'configuracion' && (
+                    <div className="max-w-2xl">
+                        <ProfileSettings profile={profile} onUpdated={handleProfileUpdated} />
+                    </div>
+                )}
+
+                {activeTab === 'resumen' && (
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                     {/* Left Column – Profile Card */}
                     <div className="lg:col-span-1 space-y-4">
                         <div className="bg-white rounded-2xl border border-gray-200 p-6 text-center">
-                            <div className="w-20 h-20 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white text-2xl font-bold mx-auto mb-4">
+                            <div className="w-20 h-20 rounded-full bg-gradient-to-br from-slate-700 to-slate-900 flex items-center justify-center text-white text-2xl font-bold mx-auto mb-4">
                                 {initials}
                             </div>
                             <h2 className="text-lg font-bold text-gray-900">
@@ -143,11 +181,7 @@ function UserProfilePage() {
                                         Cursos en Progreso ({inProgressCourses.length})
                                     </h3>
                                 </div>
-                                <div className="space-y-3">
-                                    {inProgressCourses.map(course => (
-                                        <CourseCard key={course.id} course={course} navigate={navigate} />
-                                    ))}
-                                </div>
+                                <CourseGrid courses={inProgressCourses} onCourseClick={(id) => navigate(`/courses/${id}`)} />
                             </div>
                         )}
 
@@ -160,11 +194,7 @@ function UserProfilePage() {
                                         Cursos Completados ({completedCourses.length})
                                     </h3>
                                 </div>
-                                <div className="space-y-3">
-                                    {completedCourses.map(course => (
-                                        <CourseCard key={course.id} course={course} navigate={navigate} completed />
-                                    ))}
-                                </div>
+                                <CourseGrid courses={completedCourses} onCourseClick={(id) => navigate(`/courses/${id}`)} />
                             </div>
                         )}
 
@@ -183,48 +213,7 @@ function UserProfilePage() {
                         )}
                     </div>
                 </div>
-            </div>
-        </div>
-    )
-}
-
-function CourseCard({ course, navigate, completed = false }) {
-    const level = LEVEL_CONFIG[course.level] || LEVEL_CONFIG.beginner
-    const LevelIcon = level.icon
-
-    return (
-        <div
-            onClick={() => navigate(`/courses/${course.id}`)}
-            className="bg-white rounded-xl border border-gray-200 p-4 hover:shadow-md hover:border-gray-300 transition-all cursor-pointer group"
-        >
-            <div className="flex items-center justify-between mb-2">
-                <div className="flex items-center gap-2">
-                    <h4 className="text-sm font-semibold text-gray-900 group-hover:text-blue-600 transition-colors">
-                        {course.title}
-                    </h4>
-                    <span className={`inline-flex items-center gap-0.5 text-[10px] font-medium px-1.5 py-0.5 rounded-full ${level.color}`}>
-                        <LevelIcon className="w-2.5 h-2.5" />
-                        {level.label}
-                    </span>
-                </div>
-                {completed && (
-                    <CheckCircle className="w-5 h-5 text-emerald-500 flex-shrink-0" />
                 )}
-            </div>
-            <div className="flex items-center gap-3">
-                <div className="flex-1 h-2 bg-gray-100 rounded-full overflow-hidden">
-                    <div
-                        className={`h-full rounded-full transition-all duration-500 ${completed ? 'bg-emerald-500' : 'bg-blue-500'
-                            }`}
-                        style={{ width: `${course.percentage}%` }}
-                    />
-                </div>
-                <span className={`text-xs font-bold ${completed ? 'text-emerald-600' : 'text-blue-600'}`}>
-                    {course.percentage}%
-                </span>
-            </div>
-            <div className="text-[10px] text-gray-400 mt-1.5">
-                {course.completed_contents}/{course.total_contents} contenidos completados
             </div>
         </div>
     )

@@ -14,7 +14,7 @@ import { Input } from '@/shared/components/input'
 import { apiUploadFile } from '@/shared/services/api'
 import { getLandingContent, saveLandingContent } from '@/features/landing/services/landing'
 import { mergeLandingContent } from '@/features/landing/landingContent'
-import { Save, Eye, EyeOff, ImageIcon, Upload, X, Loader2, ExternalLink } from 'lucide-react'
+import { Save, Eye, EyeOff, ImageIcon, Upload, X, Loader2, ExternalLink, Plus, Trash2, ChevronDown } from 'lucide-react'
 
 function Toggle({ value, onChange }) {
   return (
@@ -28,19 +28,31 @@ function Toggle({ value, onChange }) {
   )
 }
 
-function SectionCard({ title, visible, onVisibleChange, children }) {
+function SectionCard({ title, visible, onVisibleChange, children, hideToggle, defaultOpen = false }) {
+  const [open, setOpen] = useState(defaultOpen)
   return (
     <Card className="border-gray-200">
-      <CardContent className="p-5 space-y-4">
-        <div className="flex items-center justify-between">
-          <h3 className="text-sm font-semibold text-gray-900">{title}</h3>
-          <div className="flex items-center gap-2">
-            {visible ? <Eye className="h-4 w-4 text-emerald-600" /> : <EyeOff className="h-4 w-4 text-gray-400" />}
-            <span className="text-xs text-gray-500">{visible ? 'Visible' : 'Oculta'}</span>
-            <Toggle value={visible} onChange={onVisibleChange} />
-          </div>
+      <CardContent className="p-0">
+        <div className="flex items-center justify-between px-5 py-4">
+          <button
+            type="button"
+            onClick={() => setOpen((o) => !o)}
+            className="flex min-w-0 items-center gap-2 text-left"
+          >
+            <ChevronDown className={`h-4 w-4 flex-shrink-0 text-gray-400 transition-transform ${open ? '' : '-rotate-90'}`} />
+            <h3 className="truncate text-sm font-semibold text-gray-900">{title}</h3>
+            {!hideToggle && !visible && (
+              <span className="rounded-full bg-gray-100 px-2 py-0.5 text-[10px] text-gray-500">oculta</span>
+            )}
+          </button>
+          {!hideToggle && (
+            <div className="flex flex-shrink-0 items-center gap-2">
+              {visible ? <Eye className="h-4 w-4 text-emerald-600" /> : <EyeOff className="h-4 w-4 text-gray-400" />}
+              <Toggle value={visible} onChange={onVisibleChange} />
+            </div>
+          )}
         </div>
-        {children}
+        {open && <div className="space-y-4 px-5 pb-5">{children}</div>}
       </CardContent>
     </Card>
   )
@@ -83,6 +95,21 @@ export function LandingTab() {
 
   const update = (section, field, value) =>
     setForm((prev) => ({ ...prev, [section]: { ...prev[section], [field]: value } }))
+
+  // ── FAQ item helpers ──
+  const faqItems = form.faq?.items || []
+  const setFaqItems = (items) => update('faq', 'items', items)
+  const updateFaqItem = (i, field, value) =>
+    setFaqItems(faqItems.map((it, idx) => (idx === i ? { ...it, [field]: value } : it)))
+  const addFaqItem = () => setFaqItems([...faqItems, { question: '', answer: '' }])
+  const removeFaqItem = (i) => setFaqItems(faqItems.filter((_, idx) => idx !== i))
+
+  // ── Legal docs helper ──
+  const updateLegal = (docKey, field, value) =>
+    setForm((prev) => ({
+      ...prev,
+      legal: { ...prev.legal, [docKey]: { ...prev.legal?.[docKey], [field]: value } },
+    }))
 
   const handleHeroImage = async (event) => {
     const file = event.target.files?.[0]
@@ -140,12 +167,15 @@ export function LandingTab() {
       </div>
 
       {/* Hero */}
-      <SectionCard title="Hero (sección principal)" visible={form.hero.visible} onVisibleChange={(v) => update('hero', 'visible', v)}>
+      <SectionCard title="Hero (sección principal)" defaultOpen visible={form.hero.visible} onVisibleChange={(v) => update('hero', 'visible', v)}>
         <Field label="Etiqueta superior">
           <Input value={form.hero.badge} onChange={(e) => update('hero', 'badge', e.target.value)} />
         </Field>
         <Field label="Título principal">
           <Input value={form.hero.title} onChange={(e) => update('hero', 'title', e.target.value)} />
+          <p className="text-[11px] text-gray-400">
+            Envuelve una palabra con asteriscos para resaltarla en una cajita, ej. <code>*robótica*</code>.
+          </p>
         </Field>
         <Field label="Subtítulo">
           <TextArea value={form.hero.subtitle} onChange={(e) => update('hero', 'subtitle', e.target.value)} />
@@ -223,6 +253,50 @@ export function LandingTab() {
         <p className="text-xs text-gray-400">Tarjetas para estudiantes y universidades. Por ahora solo puedes mostrarla u ocultarla.</p>
       </SectionCard>
 
+      {/* Preguntas frecuentes */}
+      <SectionCard title="Preguntas frecuentes (FAQ)" visible={form.faq.visible} onVisibleChange={(v) => update('faq', 'visible', v)}>
+        <Field label="Título">
+          <Input value={form.faq.title} onChange={(e) => update('faq', 'title', e.target.value)} />
+        </Field>
+        <Field label="Subtítulo">
+          <TextArea value={form.faq.subtitle} onChange={(e) => update('faq', 'subtitle', e.target.value)} />
+        </Field>
+
+        <Field label={`Preguntas (${faqItems.length})`}>
+          <div className="space-y-3">
+            {faqItems.map((it, i) => (
+              <div key={i} className="rounded-lg border border-gray-200 bg-gray-50/60 p-3">
+                <div className="mb-2 flex items-center justify-between">
+                  <span className="text-[11px] font-semibold uppercase tracking-wide text-gray-400">Pregunta {i + 1}</span>
+                  <button
+                    type="button"
+                    onClick={() => removeFaqItem(i)}
+                    className="rounded p-1 text-gray-400 hover:bg-red-50 hover:text-red-600"
+                    title="Eliminar"
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                  </button>
+                </div>
+                <Input
+                  value={it.question}
+                  onChange={(e) => updateFaqItem(i, 'question', e.target.value)}
+                  placeholder="Pregunta"
+                  className="mb-2"
+                />
+                <TextArea
+                  value={it.answer}
+                  onChange={(e) => updateFaqItem(i, 'answer', e.target.value)}
+                  placeholder="Respuesta"
+                />
+              </div>
+            ))}
+            <Button type="button" variant="outline" size="sm" onClick={addFaqItem} className="gap-1.5">
+              <Plus className="h-4 w-4" /> Agregar pregunta
+            </Button>
+          </div>
+        </Field>
+      </SectionCard>
+
       {/* CTA final */}
       <SectionCard title="Llamado a la acción final" visible={form.finalCta.visible} onVisibleChange={(v) => update('finalCta', 'visible', v)}>
         <Field label="Título">
@@ -231,6 +305,38 @@ export function LandingTab() {
         <Field label="Subtítulo">
           <TextArea value={form.finalCta.subtitle} onChange={(e) => update('finalCta', 'subtitle', e.target.value)} />
         </Field>
+      </SectionCard>
+
+      {/* Páginas legales */}
+      <SectionCard title="Páginas legales (Términos / Privacidad / Cookies)" hideToggle>
+        <p className="rounded-lg bg-amber-50 px-3 py-2 text-xs text-amber-700">
+          Rellena los datos entre corchetes (ej. <strong>[RUT]</strong>, <strong>[DIRECCIÓN]</strong>, <strong>[CORREO DE CONTACTO]</strong>).
+          En el texto, una línea que empieza con <strong>## </strong> se muestra como título de sección.
+          Sugerencia: que un abogado revise el texto antes de publicarlo.
+        </p>
+
+        {[
+          { key: 'terminos', label: 'Términos y Condiciones' },
+          { key: 'privacidad', label: 'Política de Privacidad' },
+          { key: 'cookies', label: 'Política de Cookies' },
+        ].map((doc) => (
+          <div key={doc.key} className="rounded-lg border border-gray-200 p-3 space-y-3">
+            <p className="text-[11px] font-semibold uppercase tracking-wide text-gray-400">{doc.label}</p>
+            <Field label="Título">
+              <Input
+                value={form.legal?.[doc.key]?.title || ''}
+                onChange={(e) => updateLegal(doc.key, 'title', e.target.value)}
+              />
+            </Field>
+            <Field label="Contenido">
+              <TextArea
+                rows={12}
+                value={form.legal?.[doc.key]?.body || ''}
+                onChange={(e) => updateLegal(doc.key, 'body', e.target.value)}
+              />
+            </Field>
+          </div>
+        ))}
       </SectionCard>
     </div>
   )

@@ -19,6 +19,31 @@ export const getCourseDetail = async (courseId) => {
   return apiGetCached(`/api/courses/${courseId}`, { ttl: 60_000 })
 }
 
+/** Admin: full structured backup of a course (modules/units/contents/quizzes). */
+export const exportCourse = async (courseId) => {
+  return apiGet(`/api/courses/${courseId}/export`)
+}
+
+/** Admin: recreate a course from an exported backup JSON. */
+export const importCourse = async (data) => {
+  return apiPost('/api/courses/import', data)
+}
+
+/** Admin: download the course backup as a JSON file. */
+export const downloadCourseBackup = async (courseId, courseTitle) => {
+  const data = await exportCourse(courseId)
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  const safe = (courseTitle || `curso-${courseId}`).replace(/[^\w-]+/g, '_').slice(0, 60)
+  a.download = `${safe}-respaldo.json`
+  document.body.appendChild(a)
+  a.click()
+  a.remove()
+  URL.revokeObjectURL(url)
+}
+
 // === COURSES (Admin - JWT Protected) ===
 
 /**
@@ -158,9 +183,7 @@ export const submitCourseFeedback = async (courseId, userId, data) => {
 }
 
 export const getCourseFeedback = async (courseId, userId) => {
-  const response = await fetch(`${API_BASE}/api/courses/${courseId}/feedback?user_id=${userId}`)
-  if (!response.ok) throw new Error(await parseError(response))
-  return response.json()
+  return apiGet(`/api/courses/${courseId}/feedback?user_id=${userId}`)
 }
 
 export const getCourseFeedbackSummary = async (courseId) => {
@@ -171,6 +194,11 @@ export const getCourseFeedbackSummary = async (courseId) => {
 
 export const getAdminMetrics = async () => {
   return apiGet('/api/admin/metrics')
+}
+
+/** Real session/activity data from recorded logins (admin only). */
+export const getAdminSessions = async () => {
+  return apiGet('/api/admin/sessions')
 }
 
 // === USER PROFILE ===

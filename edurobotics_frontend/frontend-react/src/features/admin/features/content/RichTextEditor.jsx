@@ -17,13 +17,15 @@ import TextAlign from '@tiptap/extension-text-align'
 import Underline from '@tiptap/extension-underline'
 import { useRef, useCallback, useEffect, useState } from 'react'
 import { apiUploadFile } from '@/shared/services/api'
+import { sanitizeHtml } from '@/shared/lib/sanitizeHtml'
 import {
   Bold, Italic, Underline as UnderlineIcon, Strikethrough,
   Heading1, Heading2, Heading3,
   List, ListOrdered, Quote,
   ImageIcon, Youtube as YoutubeIcon, FileDown, LinkIcon,
   AlignLeft, AlignCenter, AlignRight,
-  Undo, Redo, Minus, Loader2
+  Undo, Redo, Minus, Loader2,
+  PenLine, Eye, Columns2
 } from 'lucide-react'
 
 // ── Resizable Image Node View ──
@@ -250,12 +252,41 @@ function EditorToolbar({ editor, onImageUpload, onFileUpload, uploading }) {
 }
 
 // ── Main Editor Component ──
+// Renders the editor HTML exactly as a student sees it in the lesson page.
+// Mirrors ContentViewer's wrapper classes + the same sanitization, so the
+// preview is faithful ("what you see is what they get").
+function LivePreview({ html }) {
+  const clean = sanitizeHtml(html)
+  const isEmpty = !clean || clean === '<p></p>'
+  return (
+    <div className="min-h-[400px] overflow-auto px-6 py-5">
+      {isEmpty ? (
+        <p className="text-sm text-gray-400">La vista previa aparecerá aquí a medida que escribas…</p>
+      ) : (
+        <div
+          className="rich-content prose prose-sm md:prose-base max-w-none w-full overflow-hidden text-gray-700 leading-relaxed break-words"
+          dangerouslySetInnerHTML={{ __html: clean }}
+        />
+      )}
+    </div>
+  )
+}
+
+const VIEW_MODES = [
+  { id: 'edit', label: 'Editar', icon: PenLine },
+  { id: 'split', label: 'Dividir', icon: Columns2 },
+  { id: 'preview', label: 'Vista previa', icon: Eye },
+]
+
 export function RichTextEditor({ content, onSave, saving }) {
   const imageInputRef = useRef(null)
   const fileInputRef = useRef(null)
   const [uploading, setUploading] = useState(false)
+  const [viewMode, setViewMode] = useState('edit')
+  const [liveHtml, setLiveHtml] = useState(content || '')
 
   const editor = useEditor({
+    onUpdate: ({ editor }) => setLiveHtml(editor.getHTML()),
     extensions: [
       StarterKit.configure({
         paragraph: {
@@ -323,6 +354,7 @@ export function RichTextEditor({ content, onSave, saving }) {
       // Only update if content actually changed (avoid cursor reset)
       if (currentContent !== content && !(currentContent === '<p></p>' && content === '')) {
         editor.commands.setContent(content || '')
+        setLiveHtml(content || '')
       }
     }
   }, [content, editor])
@@ -396,7 +428,7 @@ export function RichTextEditor({ content, onSave, saving }) {
       <input
         ref={imageInputRef}
         type="file"
-        accept="image/png,image/jpeg,image/gif,image/webp,image/svg+xml"
+        accept="image/png,image/jpeg,image/gif,image/webp"
         onChange={handleImageFileChange}
         className="hidden"
       />
@@ -408,15 +440,55 @@ export function RichTextEditor({ content, onSave, saving }) {
         className="hidden"
       />
 
-      {/* Editor */}
-      <div className="rounded-xl border border-gray-200 bg-white overflow-hidden shadow-sm">
-        <EditorToolbar
-          editor={editor}
-          onImageUpload={handleImageUpload}
-          onFileUpload={handleFileUpload}
-          uploading={uploading}
-        />
-        <EditorContent editor={editor} />
+      {/* View mode switch (midudev-style live preview) */}
+      <div className="flex items-center justify-between">
+        <div className="inline-flex rounded-lg border border-gray-200 bg-gray-50 p-0.5">
+          {VIEW_MODES.map((mode) => {
+            const Icon = mode.icon
+            const active = viewMode === mode.id
+            return (
+              <button
+                key={mode.id}
+                type="button"
+                onClick={() => setViewMode(mode.id)}
+                className={`flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${
+                  active ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'
+                }`}
+                title={mode.label}
+              >
+                <Icon className="h-3.5 w-3.5" />
+                <span className="hidden sm:inline">{mode.label}</span>
+              </button>
+            )
+          })}
+        </div>
+        {viewMode !== 'edit' && (
+          <span className="text-[11px] text-gray-400">Así lo verá el alumno</span>
+        )}
+      </div>
+
+      {/* Editor + live preview */}
+      <div className={viewMode === 'split' ? 'grid gap-4 lg:grid-cols-2' : ''}>
+        {/* Editor pane — kept mounted (just hidden) so TipTap state survives */}
+        <div className={`rounded-xl border border-gray-200 bg-white overflow-hidden shadow-sm ${viewMode === 'preview' ? 'hidden' : ''}`}>
+          <EditorToolbar
+            editor={editor}
+            onImageUpload={handleImageUpload}
+            onFileUpload={handleFileUpload}
+            uploading={uploading}
+          />
+          <EditorContent editor={editor} />
+        </div>
+
+        {/* Preview pane */}
+        {viewMode !== 'edit' && (
+          <div className="rounded-xl border border-gray-200 bg-white overflow-hidden shadow-sm">
+            <div className="border-b border-gray-200 bg-gray-50/80 px-3 py-2 text-[11px] font-semibold uppercase tracking-wide text-gray-400">
+              Vista previa
+            </div>
+            <LivePreview html={liveHtml} />
+          </div>
+        )}
       </div>
 
       {/* Save button */}

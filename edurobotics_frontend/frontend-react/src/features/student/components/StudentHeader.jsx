@@ -14,10 +14,12 @@ import {
 } from 'lucide-react'
 
 /* ── Navigation links ───────────────────────────── */
+// NOTE: the simulator is intentionally NOT a top-level link. Students can only
+// reach it from inside a course unit that the admin marked with a "Simulador 3D"
+// block (see ContentViewer's "Abrir simulador" button + the /simulator guard).
 const NAV_LINKS = [
   { label: 'Inicio', path: '/student' },
   { label: 'Malla', path: '/roadmap' },
-  { label: 'Simulador', path: '/simulator' },
 ]
 
 /* ── User Avatar ────────────────────────────────── */
@@ -26,7 +28,7 @@ function UserAvatar({ user, compact = false }) {
 
   return (
     <div className="flex items-center gap-2.5">
-      <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white text-xs font-bold shadow-sm ring-2 ring-white">
+      <div className="w-8 h-8 rounded-full bg-gradient-to-br from-slate-700 to-slate-900 flex items-center justify-center text-white text-xs font-bold shadow-sm ring-2 ring-white">
         {initials || '?'}
       </div>
       {!compact && (
@@ -106,7 +108,7 @@ export function StudentHeader({ user, hideLogout, onLogout, adminView, setAdminV
             className="flex items-center gap-2.5 cursor-pointer select-none"
             onClick={() => handleNav('/student')}
           >
-            <img src="/cirtaimagen.jpg" alt="CIRTA" className="h-9 mix-blend-multiply" />
+            <img src="/cirtanitido.svg" alt="CIRTA" className="h-8" />
             <div className="hidden sm:block">
               <h1 className="text-base font-bold text-gray-900 leading-tight">EduRobotics</h1>
               <p className="text-[10px] text-gray-400 leading-tight tracking-wide">Plataforma de cursos</p>

@@ -149,11 +149,13 @@ export function AdminSidebarNav() {
         </div>
       )}
 
-      {/* ── Sitio ── */}
-      <SectionLabel>Sitio</SectionLabel>
+      {/* Especializaciones es contenido (agrupa cursos) */}
       <NavButton active={activeTab === 'especializaciones'} onClick={() => setActiveTab('especializaciones')} icon={GraduationCap}>
         Especializaciones
       </NavButton>
+
+      {/* ── Sitio ── */}
+      <SectionLabel>Sitio</SectionLabel>
       <NavButton active={activeTab === 'landing'} onClick={() => setActiveTab('landing')} icon={Globe}>
         Landing
       </NavButton>

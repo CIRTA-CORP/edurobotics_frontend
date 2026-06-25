@@ -3,11 +3,13 @@ import { Link } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import {
   Bot, Blocks, Code2, Play, ArrowRight, GraduationCap,
-  Building2, BookOpen, Cpu, CheckCircle2, Menu,
+  Building2, BookOpen, Cpu, CheckCircle2, ChevronDown,
 } from 'lucide-react'
 import { Button } from '@/shared/components/button'
 import { Card, CardContent } from '@/shared/components/card'
 import { Badge } from '@/shared/components/badge'
+import { PublicNav } from '@/shared/components/PublicNav'
+import { HeroBand } from '@/shared/components/HeroBand'
 import { getCourses } from '@/features/courses/services/courses'
 import { getStoredUser } from '@/features/auth/services/auth'
 import { AuthModal } from '@/features/auth/components/AuthModal'
@@ -25,54 +27,28 @@ import { mergeLandingContent } from '@/features/landing/landingContent'
  */
 
 // ─────────────────────────────────────────────────────────────
-// Nav
-// ─────────────────────────────────────────────────────────────
-function LandingNav({ onAuth, user }) {
-  return (
-    <header className="sticky top-0 z-50 w-full border-b border-gray-200 bg-white/80 backdrop-blur-md">
-      <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4">
-        <Link to="/" className="flex items-center gap-2.5">
-          <img src="/cirtanitido.svg" alt="CIRTA" className="h-7" />
-          <span className="h-5 w-px bg-gray-300" />
-          <span className="text-lg font-bold tracking-tight">EduRobotics</span>
-        </Link>
-
-        <nav className="hidden items-center gap-8 text-sm font-medium text-muted-foreground md:flex">
-          <a href="#simulador" className="transition-colors hover:text-foreground">Simulador</a>
-          <a href="#cursos" className="transition-colors hover:text-foreground">Cursos</a>
-          <a href="#como-funciona" className="transition-colors hover:text-foreground">Cómo funciona</a>
-          <a href="#universidades" className="transition-colors hover:text-foreground">Universidades</a>
-        </nav>
-
-        <div className="flex items-center gap-2">
-          {user ? (
-            <Link to="/dashboard">
-              <Button size="sm" className="gap-2">
-                Ir a mi dashboard <ArrowRight className="h-4 w-4" />
-              </Button>
-            </Link>
-          ) : (
-            <>
-              <Button variant="ghost" size="sm" onClick={() => onAuth('login')}>
-                Iniciar sesión
-              </Button>
-              <Button size="sm" className="hidden sm:inline-flex" onClick={() => onAuth('register')}>
-                Empezar gratis
-              </Button>
-            </>
-          )}
-          <button className="md:hidden p-2" aria-label="Menú">
-            <Menu className="h-5 w-5" />
-          </button>
-        </div>
-      </div>
-    </header>
-  )
-}
-
-// ─────────────────────────────────────────────────────────────
 // Hero
 // ─────────────────────────────────────────────────────────────
+
+// Renders a title where words wrapped in *asterisks* get a highlighted chip,
+// like midu's boxed "IA". Editable from the CMS (the director moves the *).
+function renderHeroTitle(title) {
+  const parts = (title || '').split(/(\*[^*]+\*)/g)
+  return parts.map((part, i) => {
+    if (part.length > 2 && part.startsWith('*') && part.endsWith('*')) {
+      return (
+        <span
+          key={i}
+          className="mx-1 inline-block rounded-2xl border border-blue-200 bg-blue-100/70 px-3 py-0.5 text-blue-700"
+        >
+          {part.slice(1, -1)}
+        </span>
+      )
+    }
+    return <span key={i}>{part}</span>
+  })
+}
+
 function Hero({ onAuth, user, data }) {
   return (
     <section className="relative overflow-hidden bg-gradient-to-b from-gray-50 to-white">
@@ -87,7 +63,7 @@ function Hero({ onAuth, user, data }) {
             </Badge>
           </div>
           <h1 className="text-4xl font-bold leading-tight tracking-tight sm:text-5xl lg:text-6xl">
-            {data.title}
+            {renderHeroTitle(data.title)}
           </h1>
           <p className="mt-6 max-w-lg text-lg text-muted-foreground">
             {data.subtitle}
@@ -234,10 +210,10 @@ function SimulatorSection({ data }) {
 // Tarjeta de curso estilo midu: imagen full-bleed, info superpuesta,
 // descripción + CTA que se revelan al pasar el mouse.
 // ─────────────────────────────────────────────────────────────
-function CourseCard({ title, level, description, imageUrl }) {
+function CourseCard({ title, level, description, imageUrl, courseId }) {
   return (
     <Link
-      to="/register"
+      to={courseId ? `/courses/${courseId}` : '/register'}
       className="group relative block aspect-[4/3] overflow-hidden rounded-2xl border border-gray-200 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-xl"
     >
       {imageUrl ? (
@@ -306,6 +282,7 @@ function CoursesPreview({ data }) {
             courses.map((c) => (
               <CourseCard
                 key={c.id}
+                courseId={c.id}
                 title={c.title}
                 level={c.level || 'beginner'}
                 description={c.description || 'Curso interactivo de robótica con simulador integrado.'}
@@ -325,10 +302,15 @@ function CoursesPreview({ data }) {
           )}
         </div>
 
-        <div className="mt-12 text-center">
-          <Link to="/register">
+        <div className="mt-12 flex flex-wrap items-center justify-center gap-3">
+          <Link to="/roadmap">
             <Button size="lg" variant="outline" className="gap-2">
-              Ver todos los cursos <ArrowRight className="h-4 w-4" />
+              Ver la malla de cursos <ArrowRight className="h-4 w-4" />
+            </Button>
+          </Link>
+          <Link to="/register">
+            <Button size="lg" className="gap-2">
+              Empezar gratis <ArrowRight className="h-4 w-4" />
             </Button>
           </Link>
         </div>
@@ -347,25 +329,27 @@ function HowItWorks({ data }) {
     { n: '3', title: 'Ejecuta y aprende', text: 'Corre tu programa y observa al robot 3D moverse. Itera y mejora al instante.' },
   ]
   return (
-    <section id="como-funciona" className="bg-slate-900 py-20 text-white lg:py-28">
-      <div className="mx-auto max-w-6xl px-4">
-        <div className="mx-auto max-w-2xl text-center">
-          <Badge className="mb-4 bg-white/10 text-white">Cómo funciona</Badge>
-          <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">{data.title}</h2>
-        </div>
-        <div className="mt-14 grid gap-8 md:grid-cols-3">
-          {steps.map((s) => (
-            <div key={s.n} className="text-center">
-              <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-blue-600 text-lg font-bold">
-                {s.n}
+    <HeroBand>
+      <section id="como-funciona" className="py-20 lg:py-28">
+        <div className="mx-auto max-w-6xl px-4">
+          <div className="mx-auto max-w-2xl text-center">
+            <Badge className="mb-4 bg-white/10 text-white">Cómo funciona</Badge>
+            <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">{data.title}</h2>
+          </div>
+          <div className="mt-14 grid gap-8 md:grid-cols-3">
+            {steps.map((s) => (
+              <div key={s.n} className="text-center">
+                <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-white text-black text-lg font-bold">
+                  {s.n}
+                </div>
+                <h3 className="mt-5 text-xl font-semibold">{s.title}</h3>
+                <p className="mt-2 text-sm text-white/70">{s.text}</p>
               </div>
-              <h3 className="mt-5 text-xl font-semibold">{s.title}</h3>
-              <p className="mt-2 text-sm text-white/70">{s.text}</p>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
-      </div>
-    </section>
+      </section>
+    </HeroBand>
   )
 }
 
@@ -444,23 +428,69 @@ function FinalCTA({ onAuth, user, data }) {
 }
 
 // ─────────────────────────────────────────────────────────────
+// Preguntas frecuentes (editable desde el admin)
+// ─────────────────────────────────────────────────────────────
+function FAQ({ data }) {
+  const [open, setOpen] = useState(null)
+  const items = data.items || []
+  if (items.length === 0) return null
+
+  return (
+    <section id="faq" className="bg-gray-50 py-20 lg:py-28">
+      <div className="mx-auto max-w-3xl px-4">
+        <div className="mx-auto max-w-2xl text-center">
+          <Badge variant="secondary" className="mb-4">Dudas frecuentes</Badge>
+          <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">{data.title}</h2>
+          {data.subtitle && <p className="mt-4 text-lg text-muted-foreground">{data.subtitle}</p>}
+        </div>
+
+        <div className="mt-12 space-y-3">
+          {items.map((it, i) => {
+            const isOpen = open === i
+            return (
+              <div key={i} className="overflow-hidden rounded-xl border border-gray-200 bg-white">
+                <button
+                  onClick={() => setOpen(isOpen ? null : i)}
+                  className="flex w-full items-center justify-between gap-4 px-5 py-4 text-left transition-colors hover:bg-gray-50"
+                >
+                  <span className="font-medium text-gray-900">{it.question}</span>
+                  <ChevronDown className={`h-5 w-5 flex-shrink-0 text-gray-400 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+                </button>
+                {isOpen && (
+                  <div className="border-t border-gray-100 px-5 py-4 leading-relaxed text-gray-600">{it.answer}</div>
+                )}
+              </div>
+            )
+          })}
+        </div>
+      </div>
+    </section>
+  )
+}
+
+// ─────────────────────────────────────────────────────────────
 // Footer
 // ─────────────────────────────────────────────────────────────
 function LandingFooter() {
   return (
     <footer className="border-t border-gray-200 bg-white">
-      <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-4 px-4 py-10 sm:flex-row">
-        <div className="flex items-center gap-2">
-          <img src="/cirtanitido.svg" alt="CIRTA" className="h-6" />
-          <span className="font-semibold">EduRobotics</span>
+      <div className="mx-auto max-w-6xl px-4 py-10">
+        <div className="flex flex-col items-center justify-between gap-4 sm:flex-row">
+          <div className="flex items-center gap-2">
+            <img src="/cirtanitido.svg" alt="CIRTA" className="h-6" />
+            <span className="font-semibold">EduRobotics</span>
+          </div>
+          <div className="flex flex-wrap items-center justify-center gap-4 text-sm text-muted-foreground">
+            <Link to="/login" className="hover:text-foreground">Iniciar sesión</Link>
+            <Link to="/register" className="hover:text-foreground">Registro</Link>
+            <Link to="/legal" className="hover:text-foreground">Términos</Link>
+            <Link to="/privacidad" className="hover:text-foreground">Privacidad</Link>
+            <Link to="/cookies" className="hover:text-foreground">Cookies</Link>
+          </div>
         </div>
-        <p className="text-sm text-muted-foreground">
+        <p className="mt-6 text-center text-sm text-muted-foreground sm:text-left">
           © {new Date().getFullYear()} CIRTA CORP · Plataforma educativa de robótica
         </p>
-        <div className="flex gap-4 text-sm text-muted-foreground">
-          <Link to="/login" className="hover:text-foreground">Iniciar sesión</Link>
-          <Link to="/register" className="hover:text-foreground">Registro</Link>
-        </div>
       </div>
     </footer>
   )
@@ -487,7 +517,7 @@ export default function LandingPage() {
 
   return (
     <div className="min-h-screen bg-white text-foreground">
-      <LandingNav onAuth={openAuth} user={user} />
+      <PublicNav onAuth={openAuth} />
       <main>
         {content.hero.visible && <Hero onAuth={openAuth} user={user} data={content.hero} />}
         {content.stats.visible && <Stats />}
@@ -495,6 +525,7 @@ export default function LandingPage() {
         {content.courses.visible && <CoursesPreview data={content.courses} />}
         {content.howItWorks.visible && <HowItWorks data={content.howItWorks} />}
         {content.forWho.visible && <ForWho />}
+        {content.faq.visible && <FAQ data={content.faq} />}
         {content.finalCta.visible && <FinalCTA onAuth={openAuth} user={user} data={content.finalCta} />}
       </main>
       <LandingFooter />

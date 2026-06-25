@@ -9,10 +9,14 @@ import { Card, CardContent } from '@/shared/components/card'
 import { getCourseTimeMetrics } from '@/features/progress/services/progress'
 import { Clock, TrendingUp } from 'lucide-react'
 
-/** Formatea minutos a "Xh Ym" / "Ym" / "—". */
+/** Formatea minutos a "Xh Ym" / "Y min" / "Z s" / "—". */
 function fmt(minutes) {
   if (minutes === null || minutes === undefined) return '—'
-  if (minutes < 1) return '<1 min'
+  if (minutes < 1) {
+    // Sub-minuto: mostrar segundos reales en vez de un genérico "<1 min".
+    const seconds = Math.max(1, Math.round(minutes * 60))
+    return `${seconds} s`
+  }
   if (minutes < 60) return `${Math.round(minutes)} min`
   const h = Math.floor(minutes / 60)
   const m = Math.round(minutes % 60)
@@ -33,12 +37,17 @@ function MetricRow({ label, sub, data }) {
         <div className="flex items-center gap-4 text-right text-xs">
           <div>
             <p className="font-semibold text-gray-900">{fmt(data.avg_minutes)}</p>
-            <p className="text-[10px] text-gray-400">promedio</p>
+            <p className="text-[10px] text-gray-400">
+              {data.sample < 2 ? 'tiempo' : 'promedio'}
+            </p>
           </div>
-          <div className="hidden sm:block">
-            <p className="text-gray-600">{fmt(data.min_minutes)} – {fmt(data.max_minutes)}</p>
-            <p className="text-[10px] text-gray-400">mín – máx</p>
-          </div>
+          {/* mín – máx solo aporta con ≥2 alumnos (con 1, es idéntico al promedio). */}
+          {data.sample >= 2 && (
+            <div className="hidden sm:block">
+              <p className="text-gray-600">{fmt(data.min_minutes)} – {fmt(data.max_minutes)}</p>
+              <p className="text-[10px] text-gray-400">mín – máx</p>
+            </div>
+          )}
           <span className="rounded-full bg-gray-100 px-2 py-0.5 text-[10px] text-gray-500">
             {data.sample} {data.sample === 1 ? 'alumno' : 'alumnos'}
           </span>
