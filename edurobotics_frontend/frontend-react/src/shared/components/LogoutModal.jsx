@@ -1,61 +1,45 @@
-import { LogOut, X } from 'lucide-react'
+import { LogOut } from 'lucide-react'
+import { Dialog, DialogContent, DialogTitle, DialogDescription } from '@/shared/components/dialog'
 
 /**
- * Custom Logout Confirmation Modal
- * Styled modal that replaces the native window.confirm for logout.
+ * Logout confirmation modal.
+ *
+ * Now built on the accessible Dialog (Radix): closing via Esc, backdrop click
+ * or the X all route through `onOpenChange` → `onCancel`. Public API unchanged
+ * (isOpen / onConfirm / onCancel) so existing callers keep working.
  */
 export function LogoutModal({ isOpen, onConfirm, onCancel }) {
-    if (!isOpen) return null
-
     return (
-        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
-            {/* Backdrop */}
-            <div
-                className="absolute inset-0 bg-black/40 backdrop-blur-sm animate-fade-in"
-                onClick={onCancel}
-            />
-
-            {/* Modal */}
-            <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden animate-scale-in">
-                {/* Close button */}
-                <button
-                    onClick={onCancel}
-                    className="absolute top-3 right-3 p-1.5 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors"
-                >
-                    <X className="w-4 h-4" />
-                </button>
-
-                {/* Content */}
+        <Dialog open={isOpen} onOpenChange={(open) => { if (!open) onCancel() }}>
+            <DialogContent>
                 <div className="p-6 pt-8 text-center">
                     {/* Icon */}
-                    <div className="mx-auto w-14 h-14 rounded-full bg-red-50 flex items-center justify-center mb-4">
-                        <LogOut className="w-6 h-6 text-red-500" />
+                    <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-red-50">
+                        <LogOut className="h-6 w-6 text-red-500" />
                     </div>
 
-                    <h3 className="text-lg font-semibold text-gray-900 mb-1">
-                        ¿Cerrar sesión?
-                    </h3>
-                    <p className="text-sm text-gray-500 mb-6">
+                    <DialogTitle className="mb-1 text-center">¿Cerrar sesión?</DialogTitle>
+                    <DialogDescription className="mb-6 text-center">
                         Tendrás que volver a iniciar sesión para acceder a la plataforma.
-                    </p>
+                    </DialogDescription>
 
                     {/* Buttons */}
                     <div className="flex gap-3">
                         <button
                             onClick={onCancel}
-                            className="flex-1 px-4 py-2.5 rounded-xl text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 transition-colors"
+                            className="flex-1 rounded-xl bg-gray-100 px-4 py-2.5 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-200"
                         >
                             Cancelar
                         </button>
                         <button
                             onClick={onConfirm}
-                            className="flex-1 px-4 py-2.5 rounded-xl text-sm font-medium text-white bg-red-500 hover:bg-red-600 transition-colors shadow-sm"
+                            className="flex-1 rounded-xl bg-red-500 px-4 py-2.5 text-sm font-medium text-white shadow-sm transition-colors hover:bg-red-600"
                         >
                             Cerrar sesión
                         </button>
                     </div>
                 </div>
-            </div>
-        </div>
+            </DialogContent>
+        </Dialog>
     )
 }
