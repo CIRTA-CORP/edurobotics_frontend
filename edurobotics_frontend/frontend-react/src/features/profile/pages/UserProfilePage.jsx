@@ -11,6 +11,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { clearStoredUser, getStoredUser } from '@/features/auth/services/auth'
 import { getUserProfile } from '@/features/courses/services/courses'
 import { Button } from '@/shared/components/button'
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/shared/components/tabs'
 import { StudentHeader } from '@/features/student/components/StudentHeader'
 import { LogoutModal } from '@/shared/components/LogoutModal'
 import { ProfileSettings } from '@/features/profile/components/ProfileSettings'
@@ -78,37 +79,19 @@ function UserProfilePage() {
             {/* Persistent app shell (same header as the rest of the student area) */}
             <StudentHeader user={user} onLogout={() => setShowLogout(true)} />
 
-            <div className="max-w-5xl mx-auto p-6">
-                {/* Tabs */}
-                <div className="mb-6 inline-flex rounded-xl border border-gray-200 bg-white p-1">
-                    {[
-                        { id: 'resumen', label: 'Resumen', icon: LayoutGrid },
-                        { id: 'configuracion', label: 'Configuración', icon: Settings },
-                    ].map((tab) => {
-                        const Icon = tab.icon
-                        const active = activeTab === tab.id
-                        return (
-                            <button
-                                key={tab.id}
-                                onClick={() => setActiveTab(tab.id)}
-                                className={`flex items-center gap-1.5 rounded-lg px-4 py-2 text-sm font-medium transition-colors ${
-                                    active ? 'bg-blue-600 text-white shadow-sm' : 'text-gray-500 hover:text-gray-700'
-                                }`}
-                            >
-                                <Icon className="h-4 w-4" />
-                                {tab.label}
-                            </button>
-                        )
-                    })}
-                </div>
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="max-w-5xl mx-auto p-6">
+                <TabsList className="mb-6">
+                    <TabsTrigger value="resumen"><LayoutGrid className="h-4 w-4" /> Resumen</TabsTrigger>
+                    <TabsTrigger value="configuracion"><Settings className="h-4 w-4" /> Configuración</TabsTrigger>
+                </TabsList>
 
-                {activeTab === 'configuracion' && (
+                <TabsContent value="configuracion">
                     <div className="max-w-2xl">
                         <ProfileSettings profile={profile} onUpdated={handleProfileUpdated} />
                     </div>
-                )}
+                </TabsContent>
 
-                {activeTab === 'resumen' && (
+                <TabsContent value="resumen">
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                     {/* Left Column – Profile Card */}
                     <div className="lg:col-span-1 space-y-4">
@@ -213,8 +196,8 @@ function UserProfilePage() {
                         )}
                     </div>
                 </div>
-                )}
-            </div>
+                </TabsContent>
+            </Tabs>
         </div>
     )
 }

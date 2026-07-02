@@ -9,6 +9,7 @@
 import { useState } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { Button } from '@/shared/components/button'
+import { Tooltip } from '@/shared/components/tooltip'
 import {
   LogOut, Layout, Menu, X
 } from 'lucide-react'
@@ -44,7 +45,7 @@ function UserAvatar({ user, compact = false }) {
 }
 
 /* ── Nav Link ───────────────────────────────────── */
-function NavLink({ label, path, isActive, onClick }) {
+function NavLink({ label, isActive, onClick }) {
   return (
     <button
       onClick={onClick}
@@ -65,7 +66,7 @@ function NavLink({ label, path, isActive, onClick }) {
 }
 
 /* ── Mobile Nav Link ────────────────────────────── */
-function MobileNavLink({ label, path, isActive, onClick }) {
+function MobileNavLink({ label, isActive, onClick }) {
   return (
     <button
       onClick={onClick}
@@ -143,25 +144,27 @@ export function StudentHeader({ user, hideLogout, onLogout, adminView, setAdminV
             )}
 
             {/* User avatar — click to open profile */}
-            <div
-              onClick={() => handleNav('/profile')}
-              className="cursor-pointer hover:opacity-80 transition-opacity"
-              title="Mi Perfil"
-            >
-              <UserAvatar user={user} />
-            </div>
+            <Tooltip content="Mi perfil">
+              <div
+                onClick={() => handleNav('/profile')}
+                className="cursor-pointer hover:opacity-80 transition-opacity"
+              >
+                <UserAvatar user={user} />
+              </div>
+            </Tooltip>
 
             {/* Logout (desktop) */}
             {!hideLogout && (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={onLogout}
-                className="hidden sm:inline-flex text-gray-400 hover:text-red-600 hover:bg-red-50"
-                title="Cerrar sesión"
-              >
-                <LogOut className="w-4 h-4" />
-              </Button>
+              <Tooltip content="Cerrar sesión">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={onLogout}
+                  className="hidden sm:inline-flex text-gray-400 hover:text-red-600 hover:bg-red-50"
+                >
+                  <LogOut className="w-4 h-4" />
+                </Button>
+              </Tooltip>
             )}
 
             {/* Mobile menu toggle */}

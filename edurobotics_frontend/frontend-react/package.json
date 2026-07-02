@@ -15,6 +15,8 @@
     "@blockly/theme-dark": "^8.0.3",
     "@monaco-editor/react": "^4.7.0",
     "@radix-ui/react-dialog": "^1.1.18",
+    "@radix-ui/react-tabs": "^1.1.16",
+    "@radix-ui/react-tooltip": "^1.2.11",
     "@tanstack/react-query": "^5.90.21",
     "@tanstack/react-query-devtools": "^5.91.3",
     "@tiptap/extension-heading": "^3.20.2",
