@@ -1,19 +1,21 @@
 /**
- * CourseTimeMetrics — métricas de tiempo de completado (issue #22).
+ * CourseTimeMetrics — time-spent metrics for a course (issue #22).
  *
- * Muestra el tiempo promedio / mínimo / máximo para completar el curso, sus
- * módulos y unidades, calculado a partir del progreso real de los estudiantes.
+ * Shows the estimated *active* time learners spend on the course, its modules
+ * and units. Completion time (avg/min/max) is measured over learners who
+ * finished a scope; learners still in progress are reflected via the
+ * "invested so far" figure and the started/completed counts, so the panel is
+ * useful before anyone completes the course.
  */
 import { useQuery } from '@tanstack/react-query'
 import { Card, CardContent } from '@/shared/components/card'
 import { getCourseTimeMetrics } from '@/features/progress/services/progress'
-import { Clock, TrendingUp } from 'lucide-react'
+import { Clock } from 'lucide-react'
 
 /** Formatea minutos a "Xh Ym" / "Y min" / "Z s" / "—". */
 function fmt(minutes) {
   if (minutes === null || minutes === undefined) return '—'
   if (minutes < 1) {
-    // Sub-minuto: mostrar segundos reales en vez de un genérico "<1 min".
     const seconds = Math.max(1, Math.round(minutes * 60))
     return `${seconds} s`
   }
@@ -23,34 +25,36 @@ function fmt(minutes) {
   return m ? `${h}h ${m}m` : `${h}h`
 }
 
+/** Picks the headline figure for a scope: completion avg, else time invested. */
+function headline(data) {
+  if (!data || (data.learners ?? 0) === 0) return null
+  if (data.sample > 0) {
+    return { value: data.avg_minutes, label: 'promedio al completar', inProgress: false }
+  }
+  return { value: data.invested_avg_minutes, label: 'invertido hasta ahora', inProgress: true }
+}
+
 function MetricRow({ label, sub, data }) {
-  const empty = !data || data.sample === 0
+  const h = headline(data)
   return (
     <div className="flex items-center justify-between gap-3 border-b border-gray-100 py-2.5 last:border-0">
       <div className="min-w-0">
         <p className="truncate text-sm font-medium text-gray-800">{label}</p>
         {sub && <p className="text-xs text-gray-400">{sub}</p>}
       </div>
-      {empty ? (
-        <span className="text-xs text-gray-400">Sin datos aún</span>
+      {!h ? (
+        <span className="text-xs text-gray-300">Sin actividad</span>
       ) : (
-        <div className="flex items-center gap-4 text-right text-xs">
+        <div className="flex items-center gap-4 text-right">
           <div>
-            <p className="font-semibold text-gray-900">{fmt(data.avg_minutes)}</p>
-            <p className="text-[10px] text-gray-400">
-              {data.sample < 2 ? 'tiempo' : 'promedio'}
-            </p>
+            <p className="text-sm font-semibold text-gray-900">{fmt(h.value)}</p>
+            <p className="text-[10px] text-gray-400">{h.inProgress ? 'en progreso' : 'promedio'}</p>
           </div>
-          {/* mín – máx solo aporta con ≥2 alumnos (con 1, es idéntico al promedio). */}
-          {data.sample >= 2 && (
-            <div className="hidden sm:block">
-              <p className="text-gray-600">{fmt(data.min_minutes)} – {fmt(data.max_minutes)}</p>
-              <p className="text-[10px] text-gray-400">mín – máx</p>
-            </div>
-          )}
-          <span className="rounded-full bg-gray-100 px-2 py-0.5 text-[10px] text-gray-500">
-            {data.sample} {data.sample === 1 ? 'alumno' : 'alumnos'}
-          </span>
+          <p className="w-20 text-[11px] text-gray-400">
+            {data.completed > 0
+              ? `${data.completed} de ${data.learners} completó`
+              : `${data.learners} iniciaron`}
+          </p>
         </div>
       )}
     </div>
@@ -70,6 +74,9 @@ export function CourseTimeMetrics({ courseId }) {
   }
   if (!data || data.error) return null
 
+  const course = data.course
+  const h = headline(course)
+
   return (
     <Card className="border-gray-200">
       <CardContent className="p-5">
@@ -78,17 +85,39 @@ export function CourseTimeMetrics({ courseId }) {
             <Clock className="h-4 w-4" />
           </div>
           <div>
-            <h3 className="text-sm font-semibold text-gray-900">Tiempo de completado</h3>
-            <p className="text-xs text-gray-400">Promedio, mínimo y máximo según el progreso real</p>
+            <h3 className="text-sm font-semibold text-gray-900">Tiempo de dedicación</h3>
+            <p className="text-xs text-gray-400">Tiempo activo estimado por alumno, descontando inactividad</p>
           </div>
         </div>
 
-        {/* Curso completo */}
-        <div className="mb-2 rounded-lg bg-indigo-50/60 px-3">
-          <MetricRow label={<span className="flex items-center gap-1.5"><TrendingUp className="h-3.5 w-3.5 text-indigo-500" /> {data.course?.title || 'Curso completo'}</span>} data={data.course} />
+        {/* Course summary */}
+        <div className="mb-4 rounded-lg border border-gray-100 bg-gray-50/60 p-4">
+          {!h ? (
+            <p className="text-sm text-gray-400">Aún no hay actividad en este curso.</p>
+          ) : (
+            <div className="flex flex-wrap items-end gap-x-8 gap-y-3">
+              <div>
+                <p className="text-2xl font-bold text-gray-900">{fmt(h.value)}</p>
+                <p className="text-xs text-gray-500">{h.label}</p>
+              </div>
+              {course.sample >= 2 && (
+                <div>
+                  <p className="text-sm font-medium text-gray-700">{fmt(course.min_minutes)} – {fmt(course.max_minutes)}</p>
+                  <p className="text-xs text-gray-400">rango mín – máx</p>
+                </div>
+              )}
+              <div>
+                <p className="text-sm font-medium text-gray-700">
+                  {course.learners} {course.learners === 1 ? 'inició' : 'iniciaron'}
+                  {course.completed > 0 && <span className="text-gray-400"> · {course.completed} completaron</span>}
+                </p>
+                <p className="text-xs text-gray-400">alumnos</p>
+              </div>
+            </div>
+          )}
         </div>
 
-        {/* Módulos */}
+        {/* Modules */}
         {data.modules?.length > 0 && (
           <div className="mt-3">
             <p className="mb-1 text-[11px] font-semibold uppercase tracking-wide text-gray-400">Por módulo</p>
@@ -96,7 +125,7 @@ export function CourseTimeMetrics({ courseId }) {
           </div>
         )}
 
-        {/* Unidades */}
+        {/* Units */}
         {data.units?.length > 0 && (
           <div className="mt-3">
             <p className="mb-1 text-[11px] font-semibold uppercase tracking-wide text-gray-400">Por unidad</p>
@@ -105,7 +134,7 @@ export function CourseTimeMetrics({ courseId }) {
         )}
 
         <p className="mt-4 text-[11px] text-gray-400">
-          Las métricas se basan en alumnos que completaron cada parte. Se llenan a medida que hay actividad.
+          El "promedio al completar" usa solo a quienes terminaron cada parte; el resto cuenta como tiempo invertido en progreso.
         </p>
       </CardContent>
     </Card>
