@@ -17,9 +17,6 @@ export function CoursesTab() {
     courses,
     isCourseModalOpen,
     setIsCourseModalOpen,
-    expandedSections,
-    toggleSection,
-    handleCourseSelect,
     courseHooks,
   } = useAdmin()
 
@@ -81,7 +78,7 @@ export function CoursesTab() {
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <h3 className="text-lg font-semibold text-gray-900">Gestión de Cursos</h3>
-        <div className="flex items-center gap-2">
+        <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center">
           <input
             ref={importInputRef}
             type="file"
@@ -93,12 +90,12 @@ export function CoursesTab() {
             variant="outline"
             onClick={() => importInputRef.current?.click()}
             disabled={importing}
-            className="gap-1.5"
+            className="w-full justify-center gap-1.5 sm:w-auto"
           >
             <Upload className="w-4 h-4" />
             {importing ? 'Importando…' : 'Importar respaldo'}
           </Button>
-          <Button onClick={() => setIsCourseModalOpen(true)} className="gap-1.5">
+          <Button onClick={() => setIsCourseModalOpen(true)} className="w-full justify-center gap-1.5 sm:w-auto">
             <Plus className="w-4 h-4" />
             Crear Curso
           </Button>
