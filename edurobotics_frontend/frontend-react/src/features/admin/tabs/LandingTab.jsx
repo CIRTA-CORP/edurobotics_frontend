@@ -148,18 +148,18 @@ export function LandingTab() {
   return (
     <div className="space-y-5">
       {/* Encabezado */}
-      <div className="flex items-center justify-between gap-4">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h2 className="text-lg font-bold text-gray-900">Página de inicio (Landing)</h2>
           <p className="text-sm text-gray-500">Edita los textos, muestra u oculta secciones y cambia la imagen del hero.</p>
         </div>
-        <div className="flex items-center gap-2">
-          <a href="/" target="_blank" rel="noopener noreferrer">
-            <Button variant="outline" size="sm" className="gap-1.5">
+        <div className="flex flex-wrap items-center gap-2">
+          <a href="/" target="_blank" rel="noopener noreferrer" className="flex-1 sm:flex-none">
+            <Button variant="outline" size="sm" className="w-full justify-center gap-1.5 sm:w-auto">
               <ExternalLink className="h-4 w-4" /> Ver landing
             </Button>
           </a>
-          <Button onClick={handleSave} disabled={saving} className="gap-1.5 bg-blue-600 hover:bg-blue-700">
+          <Button onClick={handleSave} disabled={saving} className="flex-1 justify-center gap-1.5 bg-blue-600 hover:bg-blue-700 sm:flex-none">
             <Save className="h-4 w-4" />
             {saving ? 'Guardando…' : 'Guardar cambios'}
           </Button>
