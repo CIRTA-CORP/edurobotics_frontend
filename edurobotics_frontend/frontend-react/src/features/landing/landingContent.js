@@ -78,17 +78,17 @@ Procuramos mantener el servicio disponible, pero puede haber interrupciones por 
 En la medida que la ley lo permita, CIRTA CORP no será responsable por daños indirectos derivados del uso de la plataforma.
 
 ## 7. Ley aplicable
-Estos términos se rigen por las leyes de [PAÍS / JURISDICCIÓN], y cualquier disputa se someterá a los tribunales de [CIUDAD].
+Estos términos se rigen por las leyes de Chile, y cualquier disputa se someterá a los tribunales ordinarios de justicia de Chile.
 
 ## 8. Contacto
-Para consultas sobre estos términos, escríbenos a [CORREO DE CONTACTO].`,
+Para consultas sobre estos términos, escríbenos a cirta.contacto@gmail.com.`,
     },
     privacidad: {
       title: 'Política de Privacidad',
       body: `En EduRobotics (operada por CIRTA CORP) respetamos tu privacidad. Esta política explica qué datos recopilamos y cómo los usamos.
 
 ## 1. Responsable del tratamiento
-CIRTA CORP, [RAZÓN SOCIAL], RUT [RUT], domicilio en [DIRECCIÓN], [CIUDAD], [PAÍS]. Contacto: [CORREO DE CONTACTO].
+CIRTA CORP (razón social por completar), RUT por completar, con domicilio en Chile (dirección por completar). Representante legal: por completar. Contacto: cirta.contacto@gmail.com.
 
 ## 2. Datos que recopilamos
 Datos de registro (nombre, usuario, correo), datos de uso (progreso, evaluaciones, inicios de sesión) y datos técnicos básicos necesarios para el funcionamiento.
@@ -103,7 +103,7 @@ No vendemos tus datos. Usamos proveedores que nos ayudan a operar (alojamiento, 
 Conservamos tus datos mientras tu cuenta esté activa o según lo requiera la ley. Puedes solicitar la eliminación de tu cuenta.
 
 ## 6. Tus derechos
-Puedes acceder, rectificar o eliminar tus datos escribiendo a [CORREO DE CONTACTO].
+Puedes acceder, rectificar o eliminar tus datos escribiendo a cirta.contacto@gmail.com.
 
 ## 7. Seguridad
 Aplicamos medidas razonables para proteger tus datos (contraseñas cifradas, accesos restringidos). Ningún sistema es 100% infalible.`,
@@ -125,7 +125,7 @@ Actualmente no usamos cookies de publicidad ni de seguimiento de terceros. Si es
 Puedes borrar o bloquear el almacenamiento desde tu navegador. Deshabilitar el almacenamiento esencial puede impedir iniciar sesión.
 
 ## 5. Contacto
-Si tienes dudas, escríbenos a [CORREO DE CONTACTO].`,
+Si tienes dudas, escríbenos a cirta.contacto@gmail.com.`,
     },
   },
 }

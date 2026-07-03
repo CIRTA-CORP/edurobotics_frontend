@@ -310,9 +310,8 @@ export function LandingTab() {
       {/* Páginas legales */}
       <SectionCard title="Páginas legales (Términos / Privacidad / Cookies)" hideToggle>
         <p className="rounded-lg bg-amber-50 px-3 py-2 text-xs text-amber-700">
-          Rellena los datos entre corchetes (ej. <strong>[RUT]</strong>, <strong>[DIRECCIÓN]</strong>, <strong>[CORREO DE CONTACTO]</strong>).
+          Completa los datos marcados como <strong>por completar</strong> (razón social, RUT, dirección, representante legal).
           En el texto, una línea que empieza con <strong>## </strong> se muestra como título de sección.
-          Sugerencia: que un abogado revise el texto antes de publicarlo.
         </p>
 
         {[

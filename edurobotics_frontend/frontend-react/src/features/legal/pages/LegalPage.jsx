@@ -9,8 +9,6 @@ import { PublicNav } from '@/shared/components/PublicNav'
 import { getLandingContent } from '@/features/landing/services/landing'
 import { mergeLandingContent } from '@/features/landing/landingContent'
 
-const UPDATED = 'junio de 2026'
-
 // Parse the editable body: a line starting with "## " is a section heading,
 // blank lines separate paragraphs.
 function parseBody(body) {
@@ -53,7 +51,6 @@ export default function LegalPage({ type = 'terminos' }) {
         ) : (
           <>
             <h1 className="text-3xl font-bold text-gray-900">{doc.title}</h1>
-            <p className="mt-1 text-sm text-gray-400">Última actualización: {UPDATED}</p>
 
             <div className="mt-8 space-y-4">
               {blocks.map((b, i) =>
