@@ -12,7 +12,7 @@ import { Card, CardContent } from '@/shared/components/card'
 import { getCourseTimeMetrics } from '@/features/progress/services/progress'
 import { Clock } from 'lucide-react'
 
-/** Formatea minutos a "Xh Ym" / "Y min" / "Z s" / "—". */
+/** Formatea minutos a "Xd Yh" / "Xh Ym" / "Y min" / "Z s" / "—". */
 function fmt(minutes) {
   if (minutes === null || minutes === undefined) return '—'
   if (minutes < 1) {
@@ -20,16 +20,21 @@ function fmt(minutes) {
     return `${seconds} s`
   }
   if (minutes < 60) return `${Math.round(minutes)} min`
-  const h = Math.floor(minutes / 60)
-  const m = Math.round(minutes % 60)
-  return m ? `${h}h ${m}m` : `${h}h`
+  if (minutes < 1440) {
+    const h = Math.floor(minutes / 60)
+    const m = Math.round(minutes % 60)
+    return m ? `${h}h ${m}m` : `${h}h`
+  }
+  const d = Math.floor(minutes / 1440)
+  const h = Math.round((minutes % 1440) / 60)
+  return h ? `${d}d ${h}h` : `${d} d`
 }
 
-/** Picks the headline figure for a scope: completion avg, else time invested. */
+/** Picks the headline figure for a scope: median completion time, else invested. */
 function headline(data) {
   if (!data || (data.learners ?? 0) === 0) return null
   if (data.sample > 0) {
-    return { value: data.avg_minutes, label: 'promedio al completar', inProgress: false }
+    return { value: data.median_minutes, label: 'habitual al completar', inProgress: false }
   }
   return { value: data.invested_avg_minutes, label: 'invertido hasta ahora', inProgress: true }
 }
@@ -48,7 +53,7 @@ function MetricRow({ label, sub, data }) {
         <div className="flex items-center gap-4 text-right">
           <div>
             <p className="text-sm font-semibold text-gray-900">{fmt(h.value)}</p>
-            <p className="text-[10px] text-gray-400">{h.inProgress ? 'en progreso' : 'promedio'}</p>
+            <p className="text-[10px] text-gray-400">{h.inProgress ? 'en progreso' : 'habitual'}</p>
           </div>
           <p className="w-20 text-[11px] text-gray-400">
             {data.completed > 0
@@ -86,7 +91,7 @@ export function CourseTimeMetrics({ courseId }) {
           </div>
           <div>
             <h3 className="text-sm font-semibold text-gray-900">Tiempo de dedicación</h3>
-            <p className="text-xs text-gray-400">Tiempo activo estimado por alumno, descontando inactividad</p>
+            <p className="text-xs text-gray-400">Desde que inician hasta que completan (incluye pausas entre sesiones)</p>
           </div>
         </div>
 
@@ -134,7 +139,7 @@ export function CourseTimeMetrics({ courseId }) {
         )}
 
         <p className="mt-4 text-[11px] text-gray-400">
-          El "promedio al completar" usa solo a quienes terminaron cada parte; el resto cuenta como tiempo invertido en progreso.
+          "Habitual" = mediana del tiempo entre iniciar y completar, de quienes terminaron cada parte (robusta ante casos que quedaron pausados mucho tiempo). Las unidades de un solo contenido tienden a ~0.
         </p>
       </CardContent>
     </Card>

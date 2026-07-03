@@ -49,7 +49,7 @@ function renderHeroTitle(title) {
   })
 }
 
-function Hero({ onAuth, user, data }) {
+function Hero({ onAuth, user, data, loading }) {
   return (
     <section className="relative overflow-hidden bg-gradient-to-b from-gray-50 to-white">
       <div className="mx-auto grid max-w-6xl items-center gap-12 px-4 py-20 lg:grid-cols-2 lg:py-28">
@@ -89,13 +89,13 @@ function Hero({ onAuth, user, data }) {
         </div>
 
         {/* Mockup del simulador; su panel derecho usa la foto subida por la directora */}
-        <SimulatorMockup imageUrl={data.imageUrl} />
+        <SimulatorMockup imageUrl={data.imageUrl} loading={loading} />
       </div>
     </section>
   )
 }
 
-function SimulatorMockup({ imageUrl }) {
+function SimulatorMockup({ imageUrl, loading }) {
   return (
     <div className="relative">
       <div className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-2xl">
@@ -123,7 +123,11 @@ function SimulatorMockup({ imageUrl }) {
             </div>
           </div>
           <div className="col-span-3 bg-gradient-to-br from-slate-800 to-slate-900">
-            {imageUrl ? (
+            {loading ? (
+              // Mientras llega el contenido del backend, no mostramos el robot
+              // (evita el parpadeo robot→foto); solo un panel oscuro con pulso.
+              <div className="h-full w-full animate-pulse bg-slate-700/30" />
+            ) : imageUrl ? (
               <img src={imageUrl} alt="Simulador EduRobotics" className="h-full w-full object-cover" />
             ) : (
               <div className="flex h-full items-center justify-center p-8">
@@ -502,7 +506,7 @@ export default function LandingPage() {
   const user = getStoredUser()
 
   // Contenido editable de la landing (lo gestiona la directora desde el admin)
-  const { data: stored } = useQuery({
+  const { data: stored, isLoading: landingLoading } = useQuery({
     queryKey: ['landing-content'],
     queryFn: getLandingContent,
     staleTime: 60_000,
@@ -514,7 +518,7 @@ export default function LandingPage() {
     <div className="min-h-screen bg-white text-foreground">
       <PublicNav onAuth={openAuth} />
       <main>
-        {content.hero.visible && <Hero onAuth={openAuth} user={user} data={content.hero} />}
+        {content.hero.visible && <Hero onAuth={openAuth} user={user} data={content.hero} loading={landingLoading} />}
         {content.stats.visible && <Stats />}
         {content.simulator.visible && <SimulatorSection data={content.simulator} />}
         {content.courses.visible && <CoursesPreview data={content.courses} />}
