@@ -206,7 +206,7 @@ export function LandingTab() {
                     <ImageIcon className="h-5 w-5" />
                     <Upload className="h-4 w-4" />
                   </div>
-                  <span className="text-xs font-medium">Subir imagen (reemplaza el mockup)</span>
+                  <span className="text-xs font-medium">Subir foto del robot (va dentro del mockup)</span>
                   <span className="text-[10px] text-gray-400">PNG, JPG, WEBP · máx 5 MB</span>
                 </>
               )}
