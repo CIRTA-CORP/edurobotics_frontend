@@ -88,22 +88,14 @@ function Hero({ onAuth, user, data }) {
           </div>
         </div>
 
-        {/* Imagen del hero: la subida por la directora, o el mockup ilustrativo */}
-        {data.imageUrl ? (
-          <img
-            src={data.imageUrl}
-            alt="EduRobotics"
-            className="w-full rounded-xl border border-gray-200 shadow-2xl"
-          />
-        ) : (
-          <SimulatorMockup />
-        )}
+        {/* Mockup del simulador; su panel derecho usa la foto subida por la directora */}
+        <SimulatorMockup imageUrl={data.imageUrl} />
       </div>
     </section>
   )
 }
 
-function SimulatorMockup() {
+function SimulatorMockup({ imageUrl }) {
   return (
     <div className="relative">
       <div className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-2xl">
@@ -130,14 +122,17 @@ function SimulatorMockup() {
               ▸ repetir x3
             </div>
           </div>
-          <div className="col-span-3 flex items-center justify-center bg-gradient-to-br from-slate-800 to-slate-900 p-8">
-            <Bot className="h-28 w-28 text-blue-400" strokeWidth={1.2} />
+          <div className="col-span-3 bg-gradient-to-br from-slate-800 to-slate-900">
+            {imageUrl ? (
+              <img src={imageUrl} alt="Simulador EduRobotics" className="h-full w-full object-cover" />
+            ) : (
+              <div className="flex h-full items-center justify-center p-8">
+                <Bot className="h-28 w-28 text-blue-400" strokeWidth={1.2} />
+              </div>
+            )}
           </div>
         </div>
       </div>
-      <p className="mt-3 text-center text-xs text-muted-foreground">
-        Vista previa ilustrativa · reemplazar por captura real del simulador
-      </p>
     </div>
   )
 }
