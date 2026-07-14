@@ -21,6 +21,7 @@ import {
 const NAV_LINKS = [
   { label: 'Inicio', path: '/student' },
   { label: 'Malla', path: '/roadmap' },
+  { label: 'Página principal', path: '/' },
 ]
 
 /* ── User Avatar ────────────────────────────────── */
@@ -90,7 +91,9 @@ export function StudentHeader({ user, hideLogout, onLogout, adminView, setAdminV
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
 
   const isActive = (path) => {
-    if (path === '/student') return location.pathname === '/student'
+    // Exact-match paths (root landing and the student home) must not use
+    // startsWith, or '/' would match every route.
+    if (path === '/' || path === '/student') return location.pathname === path
     return location.pathname.startsWith(path)
   }
 

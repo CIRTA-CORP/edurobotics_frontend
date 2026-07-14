@@ -47,7 +47,7 @@ export function ModulesTab() {
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
+      <div className="flex flex-wrap items-center justify-between gap-2">
         <h3 className="text-lg font-semibold text-gray-900">Módulos del Curso</h3>
         <Button onClick={() => setIsModuleModalOpen(true)} className="gap-1.5">
           <Plus className="w-4 h-4" />

@@ -9,18 +9,20 @@ import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { clearStoredUser, getStoredUser } from '@/features/auth/services/auth'
-import { getCourses } from '@/features/courses/services/courses'
+import { getCourses, getCoursesRoadmap } from '@/features/courses/services/courses'
 import { getRoadmap } from '@/features/progress/services/progress'
-import { BookOpen, Loader2 } from 'lucide-react'
+import { BookOpen, Loader2, Filter, Check } from 'lucide-react'
 import { StudentHeader } from '@/features/student/components/StudentHeader'
 import { HeroSection } from '@/features/student/components/HeroSection'
 import { CourseGrid } from '@/features/student/components/CourseGrid'
 import { SpecializationsSection } from '@/features/specializations/components/SpecializationsSection'
+import { getSpecializations } from '@/features/specializations/services/specializations'
+import { buildCourseSpecMap } from '@/features/specializations/specStyle'
 import { LogoutModal } from '@/shared/components/LogoutModal'
 
 function StudentDashboardPage({ userOverride = null, hideLogout = false, hideHeader = false, adminView = null, setAdminView = null }) {
   const navigate = useNavigate()
-  const [user, setUser] = useState(() => userOverride || getStoredUser())
+  const [user] = useState(() => userOverride || getStoredUser())
 
   useEffect(() => {
     if (userOverride) return
@@ -44,12 +46,58 @@ function StudentDashboardPage({ userOverride = null, hideLogout = false, hideHea
     staleTime: 20_000,
   })
 
+  // Specializations are public; shared cache key with the roadmap page.
+  const { data: specializations = [] } = useQuery({
+    queryKey: ['specializations-public'],
+    queryFn: getSpecializations,
+    staleTime: 60_000,
+  })
+  const specMap = buildCourseSpecMap(specializations)
+
+  // Course prerequisites (shared cache key with the roadmap page) — used to tell
+  // which courses the student can actually start.
+  const { data: coursesRoadmapResp } = useQuery({
+    queryKey: ['courses-roadmap'],
+    queryFn: getCoursesRoadmap,
+    staleTime: 60_000,
+  })
+
   const courseList = coursesResp?.courses || []
   const roadmapMap = {}
   if (roadmapResp?.roadmap && Array.isArray(roadmapResp.roadmap)) {
     roadmapResp.roadmap.forEach(c => { roadmapMap[c.id] = c })
   }
-  const courses = courseList.map(course => ({ ...course, roadmapSummary: roadmapMap[course.id] }))
+  // Prerequisite ids + titles per course.
+  const prereqMap = {}
+  const titleMap = {}
+  ;(coursesRoadmapResp?.courses || []).forEach(c => {
+    prereqMap[c.id] = c.prerequisites || []
+    titleMap[c.id] = c.title
+  })
+
+  // A course is "locked" when it has prerequisites the student hasn't completed
+  // (unless they already started/finished it). Mirrors the roadmap graph logic.
+  const isCompleted = (id) => roadmapMap[id]?.state === 'completed'
+  const augment = (course) => {
+    const summary = roadmapMap[course.id]
+    const started = summary?.state === 'completed' || summary?.state === 'in_progress'
+    const unmet = started ? [] : (prereqMap[course.id] || []).filter(pid => !isCompleted(pid))
+    const locked = unmet.length > 0
+    const lockedReason = locked
+      ? `Requiere: ${unmet.map(pid => titleMap[pid] || course.title || 'otro curso').join(', ')}`
+      : ''
+    return { ...course, roadmapSummary: summary, locked, lockedReason }
+  }
+  // Available first, locked last (stable within each group).
+  const courses = courseList
+    .map(augment)
+    .sort((a, b) => Number(a.locked) - Number(b.locked))
+
+  const lockedCount = courses.filter(c => c.locked).length
+  const availableCount = courses.length - lockedCount
+  const [showOnlyAvailable, setShowOnlyAvailable] = useState(false)
+  const visibleCourses = showOnlyAvailable ? courses.filter(c => !c.locked) : courses
+
   const loading = coursesLoading
   const error = coursesError?.message || null
 
@@ -95,7 +143,7 @@ function StudentDashboardPage({ userOverride = null, hideLogout = false, hideHea
         {/* Specializations (issue #24) — only renders if there are any */}
         <SpecializationsSection />
 
-        <div className="mb-6 flex items-end justify-between gap-4">
+        <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
           <div className="flex items-center gap-3">
             <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-slate-900 text-white">
               <BookOpen className="w-5 h-5" />
@@ -103,10 +151,27 @@ function StudentDashboardPage({ userOverride = null, hideLogout = false, hideHea
             <div>
               <h2 className="text-2xl font-bold tracking-tight text-gray-900">Cursos activos</h2>
               <p className="text-sm text-gray-500">
-                {loading ? 'Cargando…' : `${courses.length} ${courses.length === 1 ? 'curso disponible' : 'cursos disponibles'}`}
+                {loading
+                  ? 'Cargando…'
+                  : `${availableCount} ${availableCount === 1 ? 'disponible' : 'disponibles'}${lockedCount ? ` · ${lockedCount} bloqueado${lockedCount === 1 ? '' : 's'}` : ''}`}
               </p>
             </div>
           </div>
+
+          {/* Toggle: show only courses the student can start */}
+          {!loading && lockedCount > 0 && (
+            <button
+              onClick={() => setShowOnlyAvailable(v => !v)}
+              className={`inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-sm font-medium transition-colors ${
+                showOnlyAvailable
+                  ? 'bg-slate-900 text-white'
+                  : 'bg-white text-gray-600 border border-gray-200 hover:border-gray-300'
+              }`}
+            >
+              {showOnlyAvailable ? <Check className="h-4 w-4" /> : <Filter className="h-4 w-4" />}
+              Solo disponibles
+            </button>
+          )}
         </div>
 
         {loading && (
@@ -133,7 +198,7 @@ function StudentDashboardPage({ userOverride = null, hideLogout = false, hideHea
         )}
 
         {!loading && !error && (
-          <CourseGrid courses={courses} onCourseClick={(id) => navigate(`/courses/${id}`)} />
+          <CourseGrid courses={visibleCourses} onCourseClick={(id) => navigate(`/courses/${id}`)} specMap={specMap} />
         )}
       </main>
     </div>

@@ -90,7 +90,7 @@ function getCourseState(course, roadmapData) {
 }
 
 // ── Course node ───────────────────────────────────────────────────────────────
-function CourseNode({ course, state, progress, onClick, dimmed }) {
+function CourseNode({ course, state, progress, onClick, dimmed, spec }) {
     const stateConf = STATE_CONFIG[state]
     const levelConf = LEVEL_CONFIG[course.level] || LEVEL_CONFIG.beginner
     const StateIcon = stateConf.icon
@@ -111,6 +111,9 @@ function CourseNode({ course, state, progress, onClick, dimmed }) {
                 ${dimmed ? 'opacity-30 hover:opacity-60' : ''}
             `}
         >
+            {/* Specialization accent bar (colour-codes the course's specialization) */}
+            {spec && <span className={`absolute inset-x-0 top-0 z-10 h-1.5 ${spec.color.bar}`} />}
+
             {/* Thumbnail header */}
             <div className="relative h-20 w-full overflow-hidden bg-slate-100">
                 {course.image_url ? (
@@ -140,6 +143,14 @@ function CourseNode({ course, state, progress, onClick, dimmed }) {
                     <p className="mb-2 line-clamp-2 text-[11px] leading-snug text-gray-400">
                         {course.description}
                     </p>
+                )}
+
+                {/* Specialization label */}
+                {spec && (
+                    <div className="mb-1.5 flex items-center gap-1.5">
+                        <span className={`h-1.5 w-1.5 shrink-0 rounded-full ${spec.color.dot}`} />
+                        <span className={`truncate text-[10px] font-semibold ${spec.color.text}`}>{spec.title}</span>
+                    </div>
                 )}
 
                 <div className={`flex items-center gap-1.5 text-[11px] ${stateConf.iconColor}`}>
@@ -239,7 +250,7 @@ function ArrowLayer({ courses, containerRef, highlightIds }) {
 }
 
 // ── Main RoadmapGraph ─────────────────────────────────────────────────────────
-export default function RoadmapGraph({ courses, roadmapData, highlightIds = null }) {
+export default function RoadmapGraph({ courses, roadmapData, highlightIds = null, specMap = {} }) {
     const navigate = useNavigate()
     const containerRef = useRef(null)
 
@@ -299,6 +310,7 @@ export default function RoadmapGraph({ courses, roadmapData, highlightIds = null
                                             progress={progress}
                                             onClick={handleCourseClick}
                                             dimmed={dimmed}
+                                            spec={specMap[course.id]}
                                         />
                                     )
                                 })}

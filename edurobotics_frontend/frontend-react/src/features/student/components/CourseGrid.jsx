@@ -12,7 +12,7 @@ import { useCallback } from 'react'
 import { Card, CardContent } from '@/shared/components/card'
 import {
   BookOpen, ArrowRight, Check, Clock, PlayCircle,
-  GraduationCap, Zap, Trophy
+  GraduationCap, Zap, Trophy, Lock
 } from 'lucide-react'
 import { getCourseDetail } from '@/features/courses/services/courses'
 
@@ -28,7 +28,7 @@ const STATE_CONFIG = {
   not_started: { label: 'No iniciado', color: 'text-gray-500', bg: 'bg-gray-50', barColor: 'bg-gray-300', icon: Clock },
 }
 
-export function CourseGrid({ courses, onCourseClick }) {
+export function CourseGrid({ courses, onCourseClick, specMap = {}, orderMap = {} }) {
   // Prefetch course data on hover — fires silently, fills the cache
   const handlePrefetch = useCallback((courseId) => {
     getCourseDetail(courseId).catch(() => { })
@@ -60,12 +60,15 @@ export function CourseGrid({ courses, onCourseClick }) {
         const LevelIcon = levelConfig.icon
         const StateIcon = stateConfig.icon
 
-        const ctaLabel = completed ? 'Revisar' : state === 'in_progress' ? 'Continuar' : 'Ver curso'
+        const locked = !!course.locked
+        const ctaLabel = locked ? 'Bloqueado' : completed ? 'Revisar' : state === 'in_progress' ? 'Continuar' : 'Ver curso'
+        const spec = specMap[course.id] || null
+        const order = orderMap[course.id] ?? null
 
         return (
           <article
             key={course.id}
-            className={`group relative cursor-pointer overflow-hidden rounded-2xl border shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-xl ${completed ? 'border-emerald-200' : 'border-gray-200'}`}
+            className={`group relative cursor-pointer overflow-hidden rounded-2xl border shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-xl ${locked ? 'border-gray-200 opacity-90' : completed ? 'border-emerald-200' : 'border-gray-200'}`}
             onClick={() => onCourseClick(course.id)}
             onMouseEnter={() => handlePrefetch(course.id)}
           >
@@ -77,7 +80,7 @@ export function CourseGrid({ courses, onCourseClick }) {
                   alt={course.title}
                   loading="lazy"
                   decoding="async"
-                  className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                  className={`absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-105 ${locked ? 'grayscale' : ''}`}
                 />
               ) : (
                 <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-slate-700 to-slate-900">
@@ -88,15 +91,31 @@ export function CourseGrid({ courses, onCourseClick }) {
               {/* Gradient scrim for text legibility */}
               <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-transparent" />
 
-              {/* Top row: level badge + course code */}
-              <div className="absolute inset-x-0 top-0 flex items-center justify-between p-3">
-                <span className="inline-flex items-center gap-1 rounded-full bg-white/90 px-2.5 py-1 text-xs font-medium text-gray-800 shadow-sm backdrop-blur-sm">
-                  <LevelIcon className="h-3 w-3" />
-                  {levelConfig.label}
-                </span>
-                <span className="rounded-full bg-black/40 px-2 py-1 font-mono text-[10px] text-white/90 backdrop-blur-sm">
-                  CR-{course.id}
-                </span>
+              {/* Top row: order (in a route) + level badge + specialization */}
+              <div className="absolute inset-x-0 top-0 flex items-start justify-between gap-2 p-3">
+                <div className="flex items-center gap-1.5">
+                  {order != null && (
+                    <span
+                      className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-white text-xs font-bold text-slate-900 shadow-sm"
+                      title={`Curso ${order} de la ruta`}
+                    >
+                      {order}
+                    </span>
+                  )}
+                  <span className="inline-flex items-center gap-1 rounded-full bg-white/90 px-2.5 py-1 text-xs font-medium text-gray-800 shadow-sm backdrop-blur-sm">
+                    <LevelIcon className="h-3 w-3" />
+                    {levelConfig.label}
+                  </span>
+                </div>
+                {spec && (
+                  <span
+                    className={`inline-flex max-w-[55%] items-center gap-1 truncate rounded-full px-2.5 py-1 text-[11px] font-semibold shadow-sm backdrop-blur-sm ${spec.color.badge}`}
+                    title={spec.title}
+                  >
+                    <span className={`h-1.5 w-1.5 shrink-0 rounded-full ${spec.color.dot}`} />
+                    <span className="truncate">{spec.title}</span>
+                  </span>
+                )}
               </div>
 
               {/* Bottom content */}
@@ -106,8 +125,16 @@ export function CourseGrid({ courses, onCourseClick }) {
                   {course.title}
                 </h3>
 
+                {/* Locked reason — always visible so the student knows why */}
+                {locked && (
+                  <p className="mt-1.5 flex items-center gap-1.5 text-xs font-medium text-amber-200">
+                    <Lock className="h-3.5 w-3.5 shrink-0" />
+                    <span className="line-clamp-1">{course.lockedReason || 'Bloqueado'}</span>
+                  </p>
+                )}
+
                 {/* Thin progress bar — always visible */}
-                {percentage !== null && (
+                {!locked && percentage !== null && (
                   <div className="mt-2.5 h-1.5 w-full overflow-hidden rounded-full bg-white/25">
                     <div
                       className={`h-full rounded-full transition-all duration-700 ease-out ${stateConfig.barColor}`}
@@ -133,9 +160,10 @@ export function CourseGrid({ courses, onCourseClick }) {
                     </div>
                   )}
 
-                  <span className="flex w-full items-center justify-center gap-2 rounded-lg bg-white px-4 py-2.5 text-sm font-semibold text-slate-900 shadow-sm transition-colors group-hover:bg-white/95">
+                  <span className={`flex w-full items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-sm font-semibold shadow-sm transition-colors ${locked ? 'bg-white/15 text-white backdrop-blur-sm' : 'bg-white text-slate-900 group-hover:bg-white/95'}`}>
+                    {locked ? <Lock className="h-4 w-4" /> : null}
                     {ctaLabel}
-                    <ArrowRight className="h-4 w-4" />
+                    {!locked && <ArrowRight className="h-4 w-4" />}
                   </span>
                 </div>
               </div>

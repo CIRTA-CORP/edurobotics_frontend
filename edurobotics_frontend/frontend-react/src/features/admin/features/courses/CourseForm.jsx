@@ -287,7 +287,6 @@ export function CourseForm({
                 onClick={onPrereqSave}
                 disabled={eligibleCourses.length === 0}
                 className="w-full gap-1.5"
-                variant="outline"
               >
                 <Save className="w-4 h-4" />
                 Guardar prerequisitos

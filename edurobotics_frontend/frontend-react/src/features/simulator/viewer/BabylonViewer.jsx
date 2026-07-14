@@ -131,8 +131,10 @@ const isGripperDebugEnabled = () => {
   } catch { return false; }
 };
 
-const FRAME_MS       = 110; // expected ms between backend frames
-const FIRST_FRAME_MS = 500; // longer transition for first frame (avoids jump from visual override)
+// Smoothing time constant (seconds) for the critically-damped follow: the robot
+// eases toward the latest target each render frame. Smaller = snappier / tracks
+// tighter; larger = smoother / more lag. Frame-rate independent.
+const SMOOTH_TAU = 0.12;
 
 const CAMERA_PRESETS = {
   free:  { alpha: -Math.PI / 2, beta: 1.1,          radius: 2.8, target: new Vector3(0, 0.8, 0) },
@@ -144,11 +146,8 @@ const CAMERA_PRESETS = {
 export default function BabylonViewer({ jointAngles, cameraView = "free" }) {
   const canvasRef       = useRef(null);
   const jointNodesRef   = useRef({});
-  const prevAnglesRef   = useRef(null);
   const targetAnglesRef = useRef(null);
   const latestAnglesRef = useRef(null);
-  const frameTimeRef    = useRef(null);
-  const frameDurRef     = useRef(FRAME_MS);
   const cameraRef       = useRef(null);
   const gripperNodesRef = useRef([]);
 
@@ -306,37 +305,48 @@ export default function BabylonViewer({ jointAngles, cameraView = "free" }) {
       loadLink(scene, grip + "robotiq_85_basic_finger_tip_link.glb", g_rft, Vector3.Zero(), ROS_FIX),
     ]).then(() => console.log("[BabylonViewer] ✅ All meshes loaded"));
 
+    let lastRender = performance.now();
     engine.runRenderLoop(() => {
-      const prev   = prevAnglesRef.current;
+      const now = performance.now();
+      const dt  = Math.min((now - lastRender) / 1000, 0.1); // seconds, clamped
+      lastRender = now;
+
       const target = targetAnglesRef.current;
-      const ft     = frameTimeRef.current;
-      if (prev && target && ft) {
-        const t = Math.min((Date.now() - ft) / frameDurRef.current, 1);
-        const nodes = [
+      if (target) {
+        // Critically-damped follow: each render frame move a fraction toward the
+        // latest target. Frame-rate independent, no per-waypoint pulsing, natural
+        // ease-out, and it smooths the gripper open/close so it no longer snaps.
+        const alpha = 1 - Math.exp(-dt / SMOOTH_TAU);
+
+        const arm = [
           jointNodesRef.current.j1, jointNodesRef.current.j2,
           jointNodesRef.current.j3, jointNodesRef.current.j4,
           jointNodesRef.current.j5, jointNodesRef.current.j6,
         ];
-        nodes.forEach((node, i) => {
+        arm.forEach((node, i) => {
           if (!node) return;
-          const from = prev[ARM_JOINT_NAMES[i]] ?? 0;
-          const to   = target[ARM_JOINT_NAMES[i]] ?? from;
-          const angle = from + (to - from) * t;
-          const ax = node.metadata?.axis;
-          if      (ax === "y") node.rotation.y = angle;
-          else if (ax === "z") node.rotation.z = angle;
-          else if (ax === "x") node.rotation.x = angle;
+          const to = target[ARM_JOINT_NAMES[i]];
+          if (to === undefined) return;
+          const ax  = node.metadata?.axis;
+          const cur = ax === "y" ? node.rotation.y : ax === "z" ? node.rotation.z : node.rotation.x;
+          const val = cur + (to - cur) * alpha;
+          if      (ax === "y") node.rotation.y = val;
+          else if (ax === "z") node.rotation.z = val;
+          else if (ax === "x") node.rotation.x = val;
         });
 
         gripperNodesRef.current.forEach((node, i) => {
           if (!node) return;
-          const def   = GRIPPER_DEFS[i];
-          const from  = prev[def.name]   ?? 0;
-          const to    = target[def.name] ?? from;
-          const angle = (from + (to - from) * t) * def.scale;
-          if      (def.axis === "x") node.rotation.x = angle;
-          else if (def.axis === "y") node.rotation.y = angle;
-          else if (def.axis === "z") node.rotation.z = angle;
+          const def = GRIPPER_DEFS[i];
+          const raw = target[def.name];
+          if (raw === undefined) return;
+          const to  = raw * def.scale;
+          const ax  = def.axis;
+          const cur = ax === "x" ? node.rotation.x : ax === "y" ? node.rotation.y : node.rotation.z;
+          const val = cur + (to - cur) * alpha;
+          if      (ax === "x") node.rotation.x = val;
+          else if (ax === "y") node.rotation.y = val;
+          else if (ax === "z") node.rotation.z = val;
         });
       }
       scene.render();
@@ -352,34 +362,8 @@ export default function BabylonViewer({ jointAngles, cameraView = "free" }) {
     const normalized = normalizeJointAngles(jointAngles, latestAnglesRef.current);
     if (!normalized) return;
     latestAnglesRef.current = normalized;
-
-    // Snapshot current displayed angles (arm + gripper) as the interpolation start.
-    const { j1, j2, j3, j4, j5, j6 } = jointNodesRef.current;
-    const nodes = [j1, j2, j3, j4, j5, j6];
-    const current = {};
-    nodes.forEach((node, i) => {
-      if (!node) return;
-      const ax = node.metadata?.axis;
-      current[ARM_JOINT_NAMES[i]] =
-        ax === "y" ? node.rotation.y :
-        ax === "z" ? node.rotation.z : node.rotation.x;
-    });
-    gripperNodesRef.current.forEach((node, i) => {
-      if (!node) return;
-      const def = GRIPPER_DEFS[i];
-      const ax  = def.axis;
-      const r   = ax === "x" ? node.rotation.x : ax === "y" ? node.rotation.y : node.rotation.z;
-      current[def.name] = r / (def.scale || 1);
-    });
-
-    const prev = Object.keys(current).length ? current : normalized;
-    const maxDelta = ARM_JOINT_NAMES.reduce((acc, name) => {
-      return Math.max(acc, Math.abs((prev[name] ?? 0) - (normalized[name] ?? 0)));
-    }, 0);
-    frameDurRef.current     = maxDelta > 0.5 ? FIRST_FRAME_MS : FRAME_MS;
-    prevAnglesRef.current   = prev;
+    // The render loop smoothly follows this target each frame (see runRenderLoop).
     targetAnglesRef.current = normalized;
-    frameTimeRef.current    = Date.now();
 
     if (debugEnabled) {
       setDebugInfo({ rawKeys: Object.keys(jointAngles), mapped: normalized });

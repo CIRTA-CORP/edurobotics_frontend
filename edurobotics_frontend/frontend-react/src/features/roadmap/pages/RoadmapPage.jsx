@@ -15,6 +15,7 @@ import { clearStoredUser, getStoredUser } from '@/features/auth/services/auth'
 import { getCoursesRoadmap } from '@/features/courses/services/courses'
 import { getRoadmap } from '@/features/progress/services/progress'
 import { getSpecializations } from '@/features/specializations/services/specializations'
+import { buildCourseSpecMap, specColor } from '@/features/specializations/specStyle'
 import {
     Map, Loader2, Layers,
     CheckCircle, Clock, Unlock, Lock,
@@ -63,6 +64,10 @@ function RoadmapPage() {
     }
     const loading = coursesLoading
     const error = coursesError?.message || null
+
+    // Map courseId → specialization colour/name, so every node is colour-coded
+    // by its specialization (not only when a filter chip is selected).
+    const specMap = useMemo(() => buildCourseSpecMap(specializations), [specializations])
 
     // Set of course ids belonging to the selected specialization (its sub-malla).
     const highlightIds = useMemo(() => {
@@ -137,7 +142,7 @@ function RoadmapPage() {
                         >
                             Todas
                         </button>
-                        {specializations.map(spec => (
+                        {specializations.map((spec, i) => (
                             <button
                                 key={spec.id}
                                 onClick={() => setSelectedSpecId(spec.id)}
@@ -147,6 +152,7 @@ function RoadmapPage() {
                                         : 'bg-white text-gray-600 border border-gray-200 hover:border-gray-300'
                                 }`}
                             >
+                                <span className={`h-2 w-2 shrink-0 rounded-full ${specColor(i).bar}`} />
                                 {spec.title}
                                 <span className={`text-[11px] ${selectedSpecId === spec.id ? 'text-slate-300' : 'text-gray-400'}`}>
                                     {spec.course_count ?? spec.courses?.length ?? 0}
@@ -159,7 +165,7 @@ function RoadmapPage() {
 
             {/* ── Graph ── */}
             <div className="max-w-5xl mx-auto px-6 py-6">
-                <RoadmapGraph courses={courses} roadmapData={roadmapData} highlightIds={highlightIds} />
+                <RoadmapGraph courses={courses} roadmapData={roadmapData} highlightIds={highlightIds} specMap={specMap} />
             </div>
 
             {/* ── Legend ── */}
