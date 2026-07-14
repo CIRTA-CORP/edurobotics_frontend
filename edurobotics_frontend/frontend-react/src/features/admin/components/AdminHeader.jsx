@@ -19,13 +19,14 @@ export function AdminHeader({ adminView, onViewChange, onLogout, onLogoClick }) 
         <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
           {/* Logo */}
           <div className="flex items-center gap-3">
-            <button
+            <Link
+              to="/"
               onClick={onLogoClick}
               className="cursor-pointer hover:opacity-75 transition-opacity"
-              title="Volver al inicio"
+              title="Ir a la página principal"
             >
               <img src="/cirtanitido.svg" alt="CIRTA" className="h-8" />
-            </button>
+            </Link>
             <div className="border-l border-gray-200 pl-3">
               <div className="flex items-center gap-2">
                 <h1 className="text-lg font-bold tracking-tight text-gray-900 leading-tight">EduRobotics</h1>
