@@ -46,6 +46,9 @@ function SpecializationDetailPage() {
     roadmapResp.roadmap.forEach((c) => { roadmapMap[c.id] = c })
   }
   const courses = (spec?.courses || []).map((c) => ({ ...c, roadmapSummary: roadmapMap[c.id] }))
+  // Position in the recommended route (1, 2, 3…) instead of the internal course id.
+  const orderMap = {}
+  courses.forEach((c, i) => { orderMap[c.id] = i + 1 })
   const totalCourses = courses.length
   const completedCourses = courses.filter((c) => c.roadmapSummary?.state === 'completed').length
   const pct = totalCourses > 0 ? Math.round((completedCourses / totalCourses) * 100) : 0
@@ -124,7 +127,7 @@ function SpecializationDetailPage() {
           </div>
         )}
         {!isLoading && !error && (
-          <CourseGrid courses={courses} onCourseClick={(cid) => navigate(`/courses/${cid}`)} />
+          <CourseGrid courses={courses} onCourseClick={(cid) => navigate(`/courses/${cid}`)} orderMap={orderMap} />
         )}
       </main>
     </div>
