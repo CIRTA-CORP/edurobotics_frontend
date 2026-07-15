@@ -256,6 +256,7 @@ function CoursePage() {
             isContentCompleted={progressHook.isContentCompleted}
             isQuizCompleted={progressHook.isQuizCompleted}
             markComplete={progressHook.markComplete}
+            updateAccess={progressHook.updateAccess}
             refreshProgress={progressHook.refreshProgress}
             getUnitProgress={progressHook.getUnitProgress}
             onUnitChange={setSelectedUnitId}
