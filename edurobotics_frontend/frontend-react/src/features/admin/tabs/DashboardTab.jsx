@@ -1,5 +1,6 @@
 import { GlobalMetrics } from '@/features/admin/features/courses/GlobalMetrics'
 import { SessionActivity } from '@/features/admin/features/courses/SessionActivity'
+import { CoursesMetricsOverview } from '@/features/admin/features/courses/CoursesMetricsOverview'
 
 export function DashboardTab() {
   return (
@@ -7,6 +8,7 @@ export function DashboardTab() {
       {/* Lead with real usage; cumulative stats are context below. */}
       <SessionActivity />
       <GlobalMetrics />
+      <CoursesMetricsOverview />
     </div>
   )
 }

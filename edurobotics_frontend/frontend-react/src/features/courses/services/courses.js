@@ -196,6 +196,11 @@ export const getAdminMetrics = async () => {
   return apiGet('/api/admin/metrics')
 }
 
+/** Admin: per-course basic metrics (feedback, difficulty, completions) — issue #35. */
+export const getCoursesBasicMetrics = async () => {
+  return apiGet('/api/admin/courses/metrics')
+}
+
 /** Real session/activity data from recorded logins (admin only). */
 export const getAdminSessions = async () => {
   return apiGet('/api/admin/sessions')
