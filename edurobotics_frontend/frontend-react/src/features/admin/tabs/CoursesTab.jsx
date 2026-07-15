@@ -157,7 +157,6 @@ export function CoursesTab() {
             ? handleCourseCreate
             : (e) => courseHooks.handleCourseUpdate(e, selectedCourse)}
           onDelete={() => handleCourseDelete(selectedCourse)}
-          onPrereqSave={() => courseHooks.handlePrereqSave(selectedCourse)}
           selectedCourse={selectedCourse}
           allCourses={courses}
         />

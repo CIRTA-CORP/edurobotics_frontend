@@ -35,7 +35,10 @@ export function useCourses(adminToken, refreshCourses, refreshSelectedCourse) {
     if (!selectedCourse || isSubmitting) return
     setIsSubmitting(true)
     try {
+      // "Guardar cambios" now persists the course AND its prerequisites in one
+      // action, so there's no separate prerequisites button (issue #34).
       await updateCourse(adminToken, selectedCourse.id, courseForm)
+      await setPrerequisites(adminToken, selectedCourse.id, prereqIds)
       await refreshSelectedCourse(selectedCourse.id)
       await refreshCourses()
       toast.success('Curso actualizado')
@@ -65,17 +68,6 @@ export function useCourses(adminToken, refreshCourses, refreshSelectedCourse) {
     }
   }
 
-  const handlePrereqSave = async (selectedCourse) => {
-    if (!selectedCourse) return
-    try {
-      await setPrerequisites(adminToken, selectedCourse.id, prereqIds)
-      await refreshSelectedCourse(selectedCourse.id)
-      toast.success('Prerequisitos guardados')
-    } catch (error) {
-      toast.error(error.message)
-    }
-  }
-
   return {
     courseForm,
     setCourseForm,
@@ -85,6 +77,5 @@ export function useCourses(adminToken, refreshCourses, refreshSelectedCourse) {
     handleCourseCreate,
     handleCourseUpdate,
     handleCourseDelete,
-    handlePrereqSave,
   }
 }
