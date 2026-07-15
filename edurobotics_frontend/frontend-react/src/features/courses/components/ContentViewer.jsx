@@ -291,6 +291,7 @@ export function ContentViewer({
   isContentCompleted,
   isQuizCompleted,
   markComplete,
+  updateAccess,
   refreshProgress,
   getUnitProgress,
   onUnitChange,
@@ -343,6 +344,19 @@ export function ContentViewer({
     setVisible(false)
     const timer = setTimeout(() => setVisible(true), 50)
     return () => clearTimeout(timer)
+  }, [unit?.id])
+
+  // Stamp an "opened" time for this unit's contents so the time-spent metrics
+  // measure from opening the unit to completing it — not just the completion
+  // instant (which made every unit read as "1 s"). The backend sets started_at
+  // only on first touch; re-opening just bumps last_accessed, so calling this
+  // again is harmless. Only pending contents are stamped.
+  useEffect(() => {
+    if (!updateAccess || !unit) return
+    for (const content of unit.contents || []) {
+      if (!isContentCompleted?.(content.id)) updateAccess(content.id)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [unit?.id])
 
   useEffect(() => {
