@@ -1,0 +1,134 @@
+# EduRobotics — Plan de trabajo maestro
+
+> **Cómo usar este documento (instrucciones para el agente implementador):**
+> Cada fase de abajo se ejecuta como UN change de OpenSpec. El flujo es siempre:
+> 1. Crear `openspec/changes/<nombre-del-change>/` con `proposal.md`, `design.md` (si hay decisiones), `tasks.md` y deltas de spec en `specs/`.
+> 2. **Esperar el OK de Mario antes de escribir código.** Nunca implementar sin proposal aprobado.
+> 3. Implementar siguiendo `tasks.md`, marcando tareas completadas.
+> 4. Correr `pytest tests/` en el backend y `npm run build && npm run lint` en el frontend antes de dar por cerrada cualquier tarea. A partir de F0, la suite DEBE quedar verde.
+> 5. Commits locales sí; **nunca `git push` sin que Mario lo pida** (regla permanente).
+>
+> Las fases están en orden de prioridad. No saltar de fase sin cerrar la anterior,
+> salvo que Mario lo autorice. Los criterios de aceptación de cada fase son el
+> contrato: si no se cumplen todos, la fase no está cerrada.
+
+Repos:
+- Backend: `/Users/mario/Desktop/proyecto/edurobotics_backend` (FastAPI + SQLAlchemy + Alembic, deploy en Railway)
+- Frontend: `/Users/mario/Desktop/proyecto/edurobotics_frontend/edurobotics_frontend/frontend-react` (React 19 + Vite + Tailwind, deploy en Vercel)
+
+---
+
+## F0 — Red de seguridad: tests verdes + CI + dependencias `fix-tests-ci-deps`
+
+**Por qué primero:** la suite está rota (17 failed / 22 errors: `no such table: specialization_courses` — el conftest quedó atrás cuando se agregaron especializaciones). Sin tests verdes ni CI, todo lo que sigue se degrada en silencio. Además `python-multipart==0.0.6` tiene CVE-2024-24762 (ReDoS → DoS).
+
+**Alcance:**
+- Arreglar `tests/conftest.py`: la BD de test debe crearse desde `Base.metadata.create_all` con TODOS los modelos importados (usar `init_db()` o equivalente), en SQLite en memoria o archivo temporal — nunca el `edurobotics.db` del repo. Eliminar `edurobotics.db` y `test_output.txt` del working tree / historial de tracking y añadirlos a `.gitignore`.
+- Actualizar `requirements.txt`: `python-multipart>=0.0.18`, `fastapi` a la última 0.1xx compatible, `pydantic` 2.x actual, y el resto de forma conservadora. Correr la suite tras cada bump para aislar breakages.
+- Añadir tests de auth que hoy faltan (login ok/fail, register duplicado, reset-password expirado, `ensure_self_or_admin` bloquea IDOR, `require_admin` bloquea student).
+- GitHub Actions en ambos repos: backend `pytest` + frontend `npm ci && npm run lint && npm run build`, en push y PR.
+
+**Criterios de aceptación:** `pytest tests/` 100% verde local y en CI · CI verde en ambos repos · `pip-audit` (o `pip list --outdated` + revisión de advisories) sin CVEs conocidos en deps directas.
+
+**Tamaño estimado:** 1 sesión larga. Sin cambios de producto — no requiere aprobación de la directora.
+
+---
+
+## F1 — Fixes de seguridad puntuales `security-hardening-pilot`
+
+**Alcance (3 fixes de código + 1 tarea manual de Mario):**
+1. **Rate limiter spoofeable** (`backend/app/core/ratelimit.py:37`): hoy toma el PRIMER valor de `X-Forwarded-For` (controlado por el cliente → bypass total del límite de login). Tomar el ÚLTIMO valor (el que añade el proxy de Railway) con fallback al peer directo. De paso, eliminar el cleanup muerto (`if not window: pop` tras `append` nunca ejecuta) y compactar el dict de IPs periódicamente.
+2. **Token JWT en query string del WebSocket** (`/api/simulator/ws?token=...` queda en logs de proxies): pasar el token como primer mensaje tras `accept()`, con timeout de 5s y cierre 1008 si no llega o es inválido. Actualizar el cliente en `src/features/simulator/`.
+3. **Roles vivos en JWT de 24h**: al degradar un admin, sus tokens siguen siendo admin hasta 24h. Mitigación mínima viable: columna `token_version` en `users`, incluida en el JWT y verificada en `require_admin`; al cambiar rol se incrementa. (Diseñarlo dentro de este change; el endpoint de cambio de rol llega en F2 — coordinar.)
+4. **Manual (Mario, no el agente):** rotar credenciales DB/Supabase/Fly que siguen en el historial de git. Bloqueante para el piloto.
+
+**Criterios de aceptación:** test que demuestra que XFF spoofeado NO evade el límite · test de WS que rechaza token inválido/ausente · test de que un admin degradado recibe 401/403 en el siguiente request admin · checklist de rotación confirmada por Mario.
+
+**Tamaño:** 1 sesión.
+
+---
+
+## F2 — Cerrar el change en curso `registered-users-admin`
+
+Ya existe el proposal (lista de usuarios + cambio de rol desde el panel). Ajustes antes de implementar:
+- Añadir al `design.md` la interacción con el `token_version` de F1 (degradar rol debe invalidar tokens admin vivos).
+- Mantener las salvaguardas ya especificadas: un admin no se cambia su propio rol; no degradar al último admin.
+
+**Criterios de aceptación:** los del proposal existente + tests de los dos endpoints nuevos (incluye caso "último admin") + la pestaña Usuarios funcionando.
+
+**Tamaño:** 1–2 sesiones. Ya tiene OK conceptual; confirmar con Mario el proposal actualizado.
+
+---
+
+## F3 — Contenido v2: parchar la jerarquía (opción A) `content-model-v2`
+
+**Decisión de arquitectura (aprobada por Mario en análisis del 2026-08-04):** se mantiene la jerarquía Curso → Módulo → Unidad → Contenido. NO se aplana ni se migra a documento-por-unidad. Se corrigen las cuatro costuras:
+
+1. **Quiz como bloque del flujo:** permitir que un quiz ocupe una posición en el `order_index` de los contenidos de la unidad (p. ej. `UnitContent` con `content_type="quiz"` y `quiz_id` FK, o columna `order_index` en `quizzes` — decidir en design.md). Resultado: se puede intercalar video → quiz → texto. Migración Alembic con backfill de los quizzes existentes al final de su unidad (comportamiento actual, sin romper datos).
+2. **Tabla `enrollments`** (`user_id`, `course_id`, `enrolled_at`, único por par): se crea al primer acceso al curso. Las métricas de la directora pasan a distinguir "inscrito sin actividad" vs "en progreso". Backfill desde `user_progress` existente.
+3. **Metadatos y validación de contenido:** en `UnitContent` añadir `title` y `duration_minutes` (nullable); validar `content_value` según `content_type` en el schema Pydantic (URL válida para video, HTML no vacío para text). El HTML sigue sanitizándose SOLO en el frontend con `sanitizeHtml.js` — no duplicar sanitización en backend, pero sí validar estructura.
+4. **Servicio único de completitud:** extraer a `app/features/progress/completion.py` la definición de "contenido/unidad/módulo/curso completado" y hacer que perfil (`auth/routes.py`), métricas admin (`admin/routes.py`) y roadmap (`progress/`) consuman esa única fuente. Tests que fijan la definición.
+
+**Criterios de aceptación:** migraciones reversibles con backfill probado contra un dump de producción (`backup_prod_2026-07-03.dump` como referencia de forma) · los tres consumidores de completitud dan los mismos números que antes del refactor (test de regresión) · quiz intercalable visible en CoursePage.
+
+**Tamaño:** 2–3 sesiones. Este change SÍ necesita proposal detallado y OK explícito antes de tocar nada (toca datos de producción).
+
+---
+
+## F4 — Especializaciones en la malla curricular `specializations-in-roadmap`
+
+**Pendiente pedido por la directora.** Hoy las especializaciones solo aparecen como tarjetas en el dashboard; deben verse EN la malla (roadmap). Ya existe `RoadmapGraph.jsx` con colores por especialización y chips de filtro — falta la representación estructural: agrupar visualmente los cursos de una especialización (contenedor/columna/banda por especialización, orden según `specialization_courses.order_index`) y el estado de avance de la especialización completa (usar el servicio de completitud de F3).
+
+Evaluar **React Flow** (ya identificado como candidato) si el grafo actual se queda corto; si el SVG/HTML actual aguanta la agrupación, no añadir la dependencia.
+
+**Criterios de aceptación:** la directora puede ver en la malla qué cursos forman cada especialización y el % de avance por especialización · funciona con cursos que pertenecen a varias especializaciones · sin regresión del filtro por chips.
+
+**Tamaño:** 1–2 sesiones. **Trabajo visual: Mario levanta frontend+backend y manda capturas para iterar.**
+
+---
+
+## F5 — Visual de métricas de tiempo `time-metrics-visual`
+
+**Pendiente conocido:** las métricas de tiempo (mediana inicio→fin por curso, ya calculadas en backend) se muestran de forma pobre en el dashboard admin. Rediseñar la presentación: distribución/percentiles en vez de un número seco, unidades legibles ("2 h 15 min", no minutos crudos), y estados vacíos claros cuando no hay datos.
+
+**Criterios de aceptación:** definidos sobre capturas — Mario manda screenshots del estado actual y se itera el diseño ANTES de codear (mockup en el proposal).
+
+**Tamaño:** 1 sesión.
+
+---
+
+## F6 — Pasada de UX, accesibilidad e idioma `ux-a11y-pass`
+
+**Alcance:**
+- **Idioma:** unificar TODOS los mensajes de error visibles al usuario en español (hoy conviven "Passwords do not match" y "Las contraseñas no coinciden"). Barrido de `detail=` en backend + textos del frontend.
+- **Accesibilidad** (hoy: 31 atributos aria/alt en 128 archivos — casi nada, y es una plataforma para colegios): foco visible y navegación por teclado en los flujos de estudiante (login → dashboard → curso → quiz), `alt` en imágenes de cursos, labels en inputs, roles/aria en el quiz (radiogroup), contraste de los estados "bloqueado/dimmed" del roadmap.
+- Revisión de UX con capturas: Mario levanta la app, recorre los flujos y manda screenshots; el orquestador (Claude) revisa y lista hallazgos concretos antes de abrir el proposal.
+
+**Criterios de aceptación:** flujo completo de estudiante operable solo con teclado · cero mensajes en inglés de cara al usuario · hallazgos de la revisión con capturas resueltos o explícitamente descartados.
+
+**Tamaño:** 1–2 sesiones.
+
+---
+
+## F7 — Contratos de API y consistencia `api-contracts`
+
+**Oportunista (hacer al tocar cada endpoint, o como fase final):**
+- `response_model` Pydantic en todos los endpoints (hoy devuelven dicts a mano) — habilita OpenAPI fiel y valida salidas.
+- Servicios que lanzan excepciones tipadas en vez de devolver `{"success": bool, "error": str}` — elimina el boilerplate repetido de traducción en cada route.
+- Unificar prefijos de rutas bajo `/api/...` (hoy conviven `/register`, `/admin/promote` y `/api/auth/...`). Mantener alias de compatibilidad hasta desplegar frontend y backend juntos.
+- Backfillear specs base de OpenSpec (`openspec/specs/`) para las capacidades núcleo: auth, progreso, contenido — así los futuros changes tienen contra qué diffear.
+
+**Criterios de aceptación:** `/docs` (OpenAPI) refleja fielmente todas las respuestas · cero endpoints con dict crudo · specs base de auth y progreso escritas.
+
+**Tamaño:** 2 sesiones, divisible.
+
+---
+
+## Reglas permanentes del proyecto (para cualquier change)
+
+- Proposal aprobado por Mario ANTES de codear. Sin excepciones.
+- Suite de tests verde antes de cerrar cualquier tarea (desde F0).
+- Nunca `git push` sin permiso explícito de Mario.
+- Toda migración Alembic debe ser reversible y probada contra una copia del dump de producción.
+- Mensajes de cara al usuario: siempre en español.
+- HTML de usuario: sanitizar SIEMPRE con `sanitizeHtml.js` antes de `dangerouslySetInnerHTML`; nunca añadir `.svg` a `ALLOWED_EXTENSIONS` de uploads.
