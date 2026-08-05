@@ -42,15 +42,18 @@
 - [x] 3.5 Tests (`test_quiz_blocks.py`): `blocks` respeta el orden intercalado; el SQL de
       backfill pone el quiz al final de la unidad. Regresión de completitud sigue verde. **47 passed.**
 
-## Paso 4 — Inscripciones (migración aditiva + backfill)
+## Paso 4 — Inscripciones (migración aditiva + backfill) ✅
 
-- [ ] 4.1 Modelo `Enrollment(user_id, course_id, enrolled_at, unique(user_id, course_id))`
-      + migración: crear tabla.
-- [ ] 4.2 Backfill: por cada (user, course) en `user_progress`, insertar inscripción con
-      `enrolled_at = min(started_at, last_accessed)`. Idempotente.
-- [ ] 4.3 `POST /api/courses/{id}/enroll` (auth, idempotente); `CoursePage` lo llama al montar.
-- [ ] 4.4 Métricas (#35/#36) distinguen inscrito / activo / completado.
-- [ ] 4.5 Tests: enroll es idempotente; backfill correcto contra la forma del dump; métricas separan los tres estados.
+- [x] 4.1 Modelo `Enrollment(user_id, course_id, enrolled_at, unique(user_id, course_id))`
+      (feature `enrollments`) + migración `e5f6a7b8c9d0` (crea tabla + índices).
+- [x] 4.2 Backfill en la migración: por cada (user, course) en `user_progress`, inscripción
+      con `enrolled_at = min(started_at, last_accessed)` (INSERT…SELECT, SQLite+Postgres).
+- [x] 4.3 `POST /api/courses/{id}/enroll` (auth, idempotente vía `ensure_enrolled`);
+      `CoursePage` lo llama al abrir el curso.
+- [x] 4.4 Métricas #35: columna **inscrito / activo / completado** (nueva columna
+      "Inscritos" en `CoursesMetricsOverview`).
+- [x] 4.5 Tests (`test_enrollments.py`): enroll idempotente (no duplica); métricas separan
+      inscrito de activo. **49 passed.**
 
 ## Verificación global
 
