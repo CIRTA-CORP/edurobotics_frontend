@@ -90,7 +90,7 @@ function getCourseState(course, roadmapData) {
 }
 
 // ── Course node ───────────────────────────────────────────────────────────────
-function CourseNode({ course, state, progress, onClick, dimmed, spec }) {
+function CourseNode({ course, state, progress, onClick, dimmed, spec, onHover }) {
     const stateConf = STATE_CONFIG[state]
     const levelConf = LEVEL_CONFIG[course.level] || LEVEL_CONFIG.beginner
     const StateIcon = stateConf.icon
@@ -103,6 +103,8 @@ function CourseNode({ course, state, progress, onClick, dimmed, spec }) {
         <button
             data-course-id={course.id}
             onClick={() => onClick(course.id)}
+            onMouseEnter={() => onHover?.(course.id)}
+            onMouseLeave={() => onHover?.(null)}
             className={`
                 relative w-56 overflow-hidden rounded-xl bg-white text-left cursor-pointer
                 shadow-sm transition-all duration-200
@@ -115,16 +117,19 @@ function CourseNode({ course, state, progress, onClick, dimmed, spec }) {
             {spec && <span className={`absolute inset-x-0 top-0 z-10 h-1.5 ${spec.color.bar}`} />}
 
             {/* Thumbnail header */}
-            <div className="relative h-20 w-full overflow-hidden bg-slate-100">
+            <div className="relative h-20 w-full overflow-hidden bg-gradient-to-br from-slate-700 to-slate-900">
                 {course.image_url ? (
-                    <img
-                        src={course.image_url}
-                        alt={course.title}
-                        className={`absolute inset-0 h-full w-full object-cover ${isLocked ? 'grayscale' : ''}`}
-                    />
+                    <>
+                        <img
+                            src={course.image_url}
+                            alt={course.title}
+                            className={`absolute inset-0 h-full w-full object-cover ${isLocked ? 'grayscale' : ''}`}
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
+                    </>
                 ) : (
                     <div className="absolute inset-0 flex items-center justify-center">
-                        <LevelIcon className="h-7 w-7 text-slate-300" strokeWidth={1.5} />
+                        <LevelIcon className="h-7 w-7 text-slate-400" strokeWidth={1.5} />
                     </div>
                 )}
 
@@ -150,6 +155,9 @@ function CourseNode({ course, state, progress, onClick, dimmed, spec }) {
                     <div className="mb-1.5 flex items-center gap-1.5">
                         <span className={`h-1.5 w-1.5 shrink-0 rounded-full ${spec.color.dot}`} />
                         <span className={`truncate text-[10px] font-semibold ${spec.color.text}`}>{spec.title}</span>
+                        {spec.count > 1 && (
+                            <span className="shrink-0 text-[10px] font-medium text-gray-400">+{spec.count - 1}</span>
+                        )}
                     </div>
                 )}
 
@@ -176,7 +184,7 @@ function CourseNode({ course, state, progress, onClick, dimmed, spec }) {
 }
 
 // ── SVG Arrow Layer ───────────────────────────────────────────────────────────
-function ArrowLayer({ courses, containerRef, highlightIds }) {
+function ArrowLayer({ courses, containerRef, highlightIds, hoveredId }) {
     const [arrows, setArrows] = useState([])
 
     const computeArrows = useCallback(() => {
@@ -204,7 +212,7 @@ function ArrowLayer({ courses, containerRef, highlightIds }) {
                 // its endpoints are in the selected specialization.
                 const active = !highlightIds || (highlightIds.has(prereqId) && highlightIds.has(course.id))
 
-                newArrows.push({ x1, y1, x2, y2, active, key: `${prereqId}->${course.id}` })
+                newArrows.push({ x1, y1, x2, y2, active, fromId: prereqId, toId: course.id, key: `${prereqId}->${course.id}` })
             })
         })
 
@@ -229,19 +237,20 @@ function ArrowLayer({ courses, containerRef, highlightIds }) {
                     <polygon points="0 0, 8 3, 0 6" fill="#94a3b8" />
                 </marker>
             </defs>
-            {arrows.map(({ x1, y1, x2, y2, active, key }) => {
+            {arrows.map(({ x1, y1, x2, y2, active, fromId, toId, key }) => {
                 const midY = (y1 + y2) / 2
+                const hot = hoveredId != null && (fromId === hoveredId || toId === hoveredId)
                 return (
                     <path
                         key={key}
                         d={`M ${x1} ${y1} C ${x1} ${midY}, ${x2} ${midY}, ${x2} ${y2}`}
-                        stroke="#cbd5e1"
-                        strokeWidth="2"
+                        stroke={hot ? '#6366f1' : '#cbd5e1'}
+                        strokeWidth={hot ? 3 : 2}
                         fill="none"
                         markerEnd="url(#arrowhead)"
                         strokeDasharray="6 3"
-                        className="transition-opacity duration-300"
-                        style={{ opacity: active ? 1 : 0.2 }}
+                        className="transition-all duration-200"
+                        style={{ opacity: hot ? 1 : active ? 1 : 0.2 }}
                     />
                 )
             })}
@@ -253,6 +262,7 @@ function ArrowLayer({ courses, containerRef, highlightIds }) {
 export default function RoadmapGraph({ courses, roadmapData, highlightIds = null, specMap = {} }) {
     const navigate = useNavigate()
     const containerRef = useRef(null)
+    const [hoveredId, setHoveredId] = useState(null)
 
     // Compute topological depths and group by depth
     const depths = computeDepths(courses)
@@ -279,7 +289,7 @@ export default function RoadmapGraph({ courses, roadmapData, highlightIds = null
     return (
         <div ref={containerRef} className="relative py-4">
             {/* SVG arrows */}
-            <ArrowLayer courses={courses} containerRef={containerRef} highlightIds={highlightIds} />
+            <ArrowLayer courses={courses} containerRef={containerRef} highlightIds={highlightIds} hoveredId={hoveredId} />
 
             {/* Depth rows */}
             <div className="relative space-y-10" style={{ zIndex: 1 }}>
@@ -311,6 +321,7 @@ export default function RoadmapGraph({ courses, roadmapData, highlightIds = null
                                             onClick={handleCourseClick}
                                             dimmed={dimmed}
                                             spec={specMap[course.id]}
+                                            onHover={setHoveredId}
                                         />
                                     )
                                 })}

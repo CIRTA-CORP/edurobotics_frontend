@@ -29,12 +29,20 @@ export function specColor(index) {
  * order) wins for its badge / colour.
  */
 export function buildCourseSpecMap(specializations = []) {
+  // How many specializations each course belongs to (for the "+N" indicator).
+  const counts = {}
+  specializations.forEach((spec) => {
+    ;(spec.courses || []).forEach((c) => {
+      counts[c.id] = (counts[c.id] || 0) + 1
+    })
+  })
+
   const map = {}
   specializations.forEach((spec, i) => {
     const color = specColor(i)
     ;(spec.courses || []).forEach((c) => {
-      if (map[c.id]) return
-      map[c.id] = { id: spec.id, title: spec.title, color }
+      if (map[c.id]) return // first specialization (by list order) wins the colour
+      map[c.id] = { id: spec.id, title: spec.title, color, count: counts[c.id] }
     })
   })
   return map
