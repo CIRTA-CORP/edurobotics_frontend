@@ -120,7 +120,7 @@ export function UsersTab() {
         )}
       </div>
       <p className="text-[11px] text-gray-400">
-        "Iniciados" = cursos con algún avance. "Completados" = cursos con todo el contenido terminado. No puedes cambiar tu propio rol.
+        "Iniciados" = cursos con algún avance. "Completados" = cursos con todo el contenido y los quizzes aprobados. No puedes cambiar tu propio rol.
       </p>
     </div>
   )

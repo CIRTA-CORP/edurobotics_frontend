@@ -79,7 +79,7 @@ export function CoursesMetricsOverview() {
         )}
       </div>
       <p className="text-[11px] text-gray-400">
-        "Completaron" = alumnos que terminaron todos los contenidos del curso, sobre los que lo iniciaron. Utilidad y dificultad son el promedio del feedback.
+        "Completaron" = alumnos que terminaron todo el contenido y aprobaron los quizzes, sobre los que iniciaron. Utilidad y dificultad son el promedio del feedback.
       </p>
     </div>
   )
