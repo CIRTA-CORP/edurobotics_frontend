@@ -29,9 +29,11 @@ const STATE_CONFIG = {
 }
 
 export function CourseGrid({ courses, onCourseClick, specMap = {}, orderMap = {} }) {
-  // Prefetch course data on hover — fires silently, fills the cache
+  // Prefetch on hover/focus — fires silently. Warms both the DATA (course detail)
+  // and the CODE (the preview page's lazy chunk), so the click feels instant.
   const handlePrefetch = useCallback((courseId) => {
     getCourseDetail(courseId).catch(() => { })
+    import('@/features/courses/pages/CoursePreviewPage.jsx')
   }, [])
 
   if (courses.length === 0) {
@@ -71,6 +73,7 @@ export function CourseGrid({ courses, onCourseClick, specMap = {}, orderMap = {}
             className={`group relative cursor-pointer overflow-hidden rounded-2xl border shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-xl ${locked ? 'border-gray-200 opacity-90' : completed ? 'border-emerald-200' : 'border-gray-200'}`}
             onClick={() => onCourseClick(course.id)}
             onMouseEnter={() => handlePrefetch(course.id)}
+            onFocus={() => handlePrefetch(course.id)}
           >
             <div className="relative aspect-[4/3] w-full">
               {/* Background image (issue #30), or gradient fallback */}
