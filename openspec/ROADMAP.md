@@ -36,13 +36,12 @@ Repos:
 
 ## F1 — Fixes de seguridad puntuales `security-hardening-pilot`
 
-**Alcance (3 fixes de código + 1 tarea manual de Mario):**
+**Alcance (3 fixes de código):**
 1. **Rate limiter spoofeable** (`backend/app/core/ratelimit.py:37`): hoy toma el PRIMER valor de `X-Forwarded-For` (controlado por el cliente → bypass total del límite de login). Tomar el ÚLTIMO valor (el que añade el proxy de Railway) con fallback al peer directo. De paso, eliminar el cleanup muerto (`if not window: pop` tras `append` nunca ejecuta) y compactar el dict de IPs periódicamente.
 2. **Token JWT en query string del WebSocket** (`/api/simulator/ws?token=...` queda en logs de proxies): pasar el token como primer mensaje tras `accept()`, con timeout de 5s y cierre 1008 si no llega o es inválido. Actualizar el cliente en `src/features/simulator/`.
-3. **Roles vivos en JWT de 24h**: al degradar un admin, sus tokens siguen siendo admin hasta 24h. Mitigación mínima viable: columna `token_version` en `users`, incluida en el JWT y verificada en `require_admin`; al cambiar rol se incrementa. (Diseñarlo dentro de este change; el endpoint de cambio de rol llega en F2 — coordinar.)
-4. **Manual (Mario, no el agente):** rotar credenciales DB/Supabase/Fly que siguen en el historial de git. Bloqueante para el piloto.
+3. **Roles vivos en JWT de 24h**: al degradar un admin, sus tokens siguen siendo admin hasta 24h. Mitigación mínima viable: columna `token_version` en `users` (migración aditiva), incluida en el JWT y verificada en `require_admin`; al cambiar rol se incrementa (cablear en el `/admin/promote` existente y en el endpoint nuevo de F2).
 
-**Criterios de aceptación:** test que demuestra que XFF spoofeado NO evade el límite · test de WS que rechaza token inválido/ausente · test de que un admin degradado recibe 401/403 en el siguiente request admin · checklist de rotación confirmada por Mario.
+**Criterios de aceptación:** test que demuestra que XFF spoofeado NO evade el límite · test de WS que rechaza token inválido/ausente · test de que un admin degradado recibe 401/403 en el siguiente request admin.
 
 **Tamaño:** 1 sesión.
 
