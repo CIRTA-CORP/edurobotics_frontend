@@ -157,7 +157,7 @@ export default function LeftPanel({ setAlertType, handleHide, onJointAngles }) {
     const token = getToken();
     const apiBase = import.meta.env.VITE_API_BASE || 'http://localhost:8001';
     const wsBase = apiBase.replace(/^http/, 'ws');
-    const wsUrl = `${wsBase}/api/simulator/ws?token=${token}`;
+    const wsUrl = `${wsBase}/api/simulator/ws`;
     const ws = new WebSocket(wsUrl);
     wsRef.current = ws;
 
@@ -165,6 +165,9 @@ export default function LeftPanel({ setAlertType, handleHide, onJointAngles }) {
     appendLine("Connecting...");
 
     ws.onopen = () => {
+      // Authenticate off-URL: send the token as the FIRST message (query-string
+      // tokens leak into proxy/server logs), then the run request.
+      ws.send(JSON.stringify({ token }));
       startTimeRef.current = Date.now();
       appendLine("Connected. Executing...");
       ws.send(JSON.stringify({ type: "run", body: code }));
