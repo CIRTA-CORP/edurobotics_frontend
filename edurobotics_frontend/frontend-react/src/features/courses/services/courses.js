@@ -201,6 +201,19 @@ export const getCoursesBasicMetrics = async () => {
   return apiGet('/api/admin/courses/metrics')
 }
 
+/** Admin: registered users with course counts — issue #36. */
+export const getAdminUsers = async () => {
+  return apiGet('/api/admin/users')
+}
+
+/** Admin: change a user's role (student ↔ admin). */
+export const updateUserRole = async (userId, role) => {
+  return apiRequest(`/api/admin/users/${userId}/role`, {
+    method: 'PATCH',
+    body: JSON.stringify({ role }),
+  })
+}
+
 /** Real session/activity data from recorded logins (admin only). */
 export const getAdminSessions = async () => {
   return apiGet('/api/admin/sessions')

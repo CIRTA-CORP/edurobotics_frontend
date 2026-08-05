@@ -14,7 +14,7 @@ import { useEffect, useState } from 'react'
 import { useAdmin } from '@/features/admin/context/AdminContext'
 import {
   BarChart3, BookOpen, Layers, FileText, Package, ClipboardCheck,
-  GraduationCap, Globe, ChevronDown, ChevronRight, Settings,
+  GraduationCap, Globe, ChevronDown, ChevronRight, Settings, Users,
 } from 'lucide-react'
 
 const LEVEL_DOT = {
@@ -78,6 +78,9 @@ export function AdminSidebarNav() {
       {/* ── Principal ── */}
       <NavButton active={activeTab === 'dashboard'} onClick={() => setActiveTab('dashboard')} icon={BarChart3}>
         Dashboard
+      </NavButton>
+      <NavButton active={activeTab === 'usuarios'} onClick={() => setActiveTab('usuarios')} icon={Users}>
+        Usuarios
       </NavButton>
 
       {/* ── Contenido ── */}
