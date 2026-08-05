@@ -303,7 +303,7 @@ export default function BabylonViewer({ jointAngles, cameraView = "free" }) {
       loadLink(scene, grip + "robotiq_85_finger_link.glb",           g_rf,  Vector3.Zero(), ROS_FIX),
       loadLink(scene, grip + "robotiq_85_basic_finger_tip_link.glb", g_lft, Vector3.Zero(), ROS_FIX_L),
       loadLink(scene, grip + "robotiq_85_basic_finger_tip_link.glb", g_rft, Vector3.Zero(), ROS_FIX),
-    ]).then(() => console.log("[BabylonViewer] ✅ All meshes loaded"));
+    ]);
 
     let lastRender = performance.now();
     engine.runRenderLoop(() => {

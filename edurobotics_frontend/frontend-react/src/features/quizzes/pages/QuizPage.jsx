@@ -71,7 +71,6 @@ export default function QuizPage() {
                         userId={user?.id}
                         onComplete={() => {
                             // El feedback se maneja dentro de QuizView
-                            console.log('Quiz completed')
                         }}
                     />
                 </div>
