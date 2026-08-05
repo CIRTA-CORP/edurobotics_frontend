@@ -238,22 +238,45 @@ export function QuizView({ quizId, userId, onComplete }) {
 
             {/* Current Question */}
             <div className="bg-white rounded-2xl border border-gray-200 p-6 shadow-sm">
-                <p className="text-base font-medium text-gray-900 mb-6 leading-relaxed">
+                <p id={`quiz-q-${currentQuestion.id}`} className="text-base font-medium text-gray-900 mb-6 leading-relaxed">
                     {currentQuestion.question_text}
                 </p>
 
-                <div className={
-                    currentQuestion.question_type === 'true_false'
-                        ? 'grid grid-cols-2 gap-3'
-                        : 'space-y-2.5'
-                }>
-                    {currentQuestion.answers.map(a => {
+                {/* Options as an accessible radio group: arrow keys move + select,
+                    Space/Enter selects natively (button), only the checked option
+                    (or the first when none) is tab-reachable (roving tabindex). */}
+                <div
+                    role="radiogroup"
+                    aria-labelledby={`quiz-q-${currentQuestion.id}`}
+                    className={
+                        currentQuestion.question_type === 'true_false'
+                            ? 'grid grid-cols-2 gap-3'
+                            : 'space-y-2.5'
+                    }
+                >
+                    {currentQuestion.answers.map((a, idx) => {
                         const isSelected = answers[currentQuestion.id] === a.id;
+                        const noneSelected = answers[currentQuestion.id] == null;
+                        const handleKeyDown = (e) => {
+                            const count = currentQuestion.answers.length;
+                            let next = null;
+                            if (e.key === 'ArrowDown' || e.key === 'ArrowRight') next = (idx + 1) % count;
+                            else if (e.key === 'ArrowUp' || e.key === 'ArrowLeft') next = (idx - 1 + count) % count;
+                            if (next === null) return;
+                            e.preventDefault();
+                            handleSelectAnswer(currentQuestion.id, currentQuestion.answers[next].id);
+                            e.currentTarget.parentElement.children[next]?.focus();
+                        };
                         return (
                             <button
                                 key={a.id}
+                                type="button"
+                                role="radio"
+                                aria-checked={isSelected}
+                                tabIndex={isSelected || (noneSelected && idx === 0) ? 0 : -1}
+                                onKeyDown={handleKeyDown}
                                 onClick={() => handleSelectAnswer(currentQuestion.id, a.id)}
-                                className={`w-full px-4 py-3.5 rounded-xl border-2 text-left transition-all ${isSelected
+                                className={`w-full px-4 py-3.5 rounded-xl border-2 text-left transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 ${isSelected
                                     ? 'border-blue-500 bg-blue-50 text-blue-800 shadow-sm shadow-blue-100'
                                     : 'border-gray-100 bg-gray-50 hover:border-gray-200 hover:bg-gray-100 text-gray-700'
                                     }`}
