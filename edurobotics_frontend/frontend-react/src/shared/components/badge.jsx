@@ -1,3 +1,4 @@
+// shadcn/ui Badge: small status pill (default / secondary / destructive / outline).
 import * as React from "react"
 import { cn } from '@/shared/lib/utils'
 

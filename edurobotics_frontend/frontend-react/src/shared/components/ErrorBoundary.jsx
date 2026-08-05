@@ -1,3 +1,9 @@
+/**
+ * Catches render errors in its subtree and shows a recoverable fallback (with a
+ * "retry" that resets the boundary) instead of a blank white screen. Wrap risky
+ * areas — e.g. the admin shell and the simulator — so one crash doesn't take
+ * down the whole page.
+ */
 import React from 'react'
 import { AlertCircle, RefreshCw } from 'lucide-react'
 import { Button } from './button'
