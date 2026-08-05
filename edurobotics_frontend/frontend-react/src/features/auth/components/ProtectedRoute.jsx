@@ -17,8 +17,10 @@ function ProtectedRoute({ children, requiredRole = null }) {
         return <Navigate to="/login" replace />
     }
 
-    // Si se requiere un rol específico y el usuario no lo tiene, redirigir al dashboard
-    if (requiredRole && user.role !== requiredRole) {
+    // Si se requiere un rol específico y el usuario no lo tiene, redirigir al dashboard.
+    // Los admins son superconjunto: pueden entrar a rutas de alumno (para previsualizar
+    // la experiencia del estudiante), pero un alumno NUNCA accede a rutas de admin.
+    if (requiredRole && user.role !== requiredRole && user.role !== 'admin') {
         return <Navigate to="/dashboard" replace />
     }
 
