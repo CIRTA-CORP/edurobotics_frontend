@@ -1,36 +1,29 @@
 ## 1. Backend — listar usuarios
 
-- [ ] 1.1 En `app/features/admin/routes.py`, agregar `GET /api/admin/users`
-      (`require_admin`) que devuelve todos los usuarios con id, nombre, username,
-      email, rol y `created_at`.
-- [ ] 1.2 Calcular por usuario "cursos iniciados" (cursos distintos con progreso) y
-      "completados" (contenidos completados == total del curso) con queries
-      agregadas, reutilizando la lógica de #35.
-- [ ] 1.3 Serializar sin exponer el hash de contraseña.
+- [x] 1.1 `GET /api/admin/users` (`require_admin`) con id, nombre, username, email,
+      rol y `created_at`.
+- [x] 1.2 "Iniciados" (cursos distintos con progreso) y "completados" (contenidos
+      completados == total del curso) con queries agregadas (misma lógica de #35).
+- [x] 1.3 Serializado sin el hash de contraseña (test lo verifica).
 
 ## 2. Backend — cambiar rol
 
-- [ ] 2.1 Agregar `PATCH /api/admin/users/{id}/role` (`require_admin`) con body
-      `{ "role": "student" | "admin" }`.
-- [ ] 2.2 Validar: no cambiar el propio rol; no degradar al último admin. Devolver
-      400 con mensaje claro.
-- [ ] 2.3 Loggear el cambio de rol (auditoría) con actor y objetivo.
+- [x] 2.1 `PATCH /api/admin/users/{id}/role` con body `{ "role": ... }`.
+- [x] 2.2 Salvaguardas: no cambiar el propio rol; no dejar el sistema sin admins.
+- [x] 2.3 Incrementa `token_version` al cambiar el rol (invalida tokens vivos, F1) + log.
 
 ## 3. Frontend — servicio
 
-- [ ] 3.1 Agregar `getAdminUsers()` y `updateUserRole(userId, role)` en el service.
+- [x] 3.1 `getAdminUsers()` y `updateUserRole(userId, role)` en el service.
 
 ## 4. Frontend — pestaña Usuarios
 
-- [ ] 4.1 Crear el componente de tabla `RegisteredUsers.jsx`: nombre, email, rol,
-      iniciados/completados, fecha de registro.
-- [ ] 4.2 Botón promover a admin / volver a estudiante, con confirmación y toast;
-      deshabilitar la acción sobre uno mismo.
-- [ ] 4.3 Agregar la pestaña "Usuarios" al tab bar / sidebar del admin y enrutarla.
+- [x] 4.1 `UsersTab.jsx`: tabla con nombre, email, rol, iniciados/completados, registro.
+- [x] 4.2 Botón promover/degradar con confirmación y toast; deshabilitado sobre uno mismo.
+- [x] 4.3 Pestaña "Usuarios" en el sidebar del admin + render en `AdminDashboardPage`.
 
 ## 5. Verificación
 
-- [ ] 5.1 Probar con TestClient: listar usuarios (admin 200, no-admin 403),
-      contadores correctos, y cambio de rol con las salvaguardas (propio rol,
-      último admin).
-- [ ] 5.2 Lint + build del frontend.
+- [x] 5.1 TestClient: listar (admin 200 / no-admin 403), contadores, y cambio de rol
+      con salvaguardas. **39 passed** (6 tests nuevos de F2).
+- [x] 5.2 Lint (archivos nuevos limpios) + build del frontend OK.

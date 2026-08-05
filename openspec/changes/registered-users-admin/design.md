@@ -34,6 +34,8 @@ ni para cambiar roles (hoy se hace a mano en Supabase).
 2. **Cambio de rol con salvaguardas.** `PATCH /api/admin/users/{id}/role` valida:
    (a) un admin no puede cambiar su propio rol; (b) no se puede degradar al último
    admin (siempre queda ≥1). Devuelve 400 con un mensaje claro si se viola.
+   Además, al cambiar el rol se **incrementa `token_version`** (mecanismo de F1) para
+   invalidar de inmediato los tokens vivos del usuario afectado.
 
 3. **Nunca exponer el hash de contraseña.** El serializador de usuario devuelve sólo
    campos públicos: id, nombre, usuario, email, rol, fecha de registro y contadores.
