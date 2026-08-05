@@ -16,23 +16,24 @@
 import { useEffect, useRef, useState, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
-    GraduationCap, Zap, Trophy, CheckCircle, Clock, Lock, Unlock,
+    CheckCircle, Clock, Lock, Unlock,
     BookOpen
 } from 'lucide-react'
+import { COURSE_LEVELS } from '@/shared/lib/courseLevel'
 
-// ── Level config (for badge only) ─────────────────────────────────────────────
+// ── Level config (for badge only) — label/icon from the shared source ─────────
 const LEVEL_CONFIG = {
-    beginner: { label: 'Principiante', icon: GraduationCap, color: 'bg-emerald-100 text-emerald-700 border-emerald-200' },
-    intermediate: { label: 'Intermedio', icon: Zap, color: 'bg-amber-100 text-amber-700 border-amber-200' },
-    advanced: { label: 'Avanzado', icon: Trophy, color: 'bg-rose-100 text-rose-700 border-rose-200' },
+    beginner: { ...COURSE_LEVELS.beginner, color: 'bg-emerald-100 text-emerald-700 border-emerald-200' },
+    intermediate: { ...COURSE_LEVELS.intermediate, color: 'bg-amber-100 text-amber-700 border-amber-200' },
+    advanced: { ...COURSE_LEVELS.advanced, color: 'bg-rose-100 text-rose-700 border-rose-200' },
 }
 
 // ── State config ──────────────────────────────────────────────────────────────
 const STATE_CONFIG = {
     completed: { icon: CheckCircle, label: 'Completado', nodeClass: 'ring-2 ring-emerald-400', iconColor: 'text-emerald-500' },
     in_progress: { icon: Clock, label: 'En progreso', nodeClass: 'ring-2 ring-blue-400', iconColor: 'text-blue-500' },
-    unlocked: { icon: Unlock, label: 'Disponible', nodeClass: 'ring-1 ring-gray-200', iconColor: 'text-gray-400' },
-    locked: { icon: Lock, label: 'Bloqueado', nodeClass: 'ring-1 ring-gray-200', iconColor: 'text-gray-300' },
+    unlocked: { icon: Unlock, label: 'Disponible', nodeClass: 'ring-1 ring-gray-200', iconColor: 'text-gray-600' },
+    locked: { icon: Lock, label: 'Bloqueado', nodeClass: 'ring-1 ring-gray-200', iconColor: 'text-gray-600' },
 }
 
 // ── Compute topological depth ─────────────────────────────────────────────────
@@ -110,7 +111,7 @@ function CourseNode({ course, state, progress, onClick, dimmed, spec, onHover })
                 shadow-sm transition-all duration-200
                 ${stateConf.nodeClass}
                 hover:shadow-md hover:-translate-y-0.5
-                ${dimmed ? 'opacity-30 hover:opacity-60' : ''}
+                ${dimmed ? 'opacity-60 hover:opacity-100' : ''}
             `}
         >
             {/* Specialization accent bar (colour-codes the course's specialization) */}
@@ -141,11 +142,11 @@ function CourseNode({ course, state, progress, onClick, dimmed, spec, onHover })
 
             {/* Body */}
             <div className="p-3">
-                <h3 className={`mb-1 line-clamp-2 text-[13px] font-semibold leading-snug ${isLocked ? 'text-gray-400' : 'text-gray-900'}`}>
+                <h3 className={`mb-1 line-clamp-2 text-[13px] font-semibold leading-snug ${isLocked ? 'text-gray-600' : 'text-gray-900'}`}>
                     {course.title}
                 </h3>
                 {course.description && (
-                    <p className="mb-2 line-clamp-2 text-[11px] leading-snug text-gray-400">
+                    <p className="mb-2 line-clamp-2 text-[11px] leading-snug text-gray-500">
                         {course.description}
                     </p>
                 )}
