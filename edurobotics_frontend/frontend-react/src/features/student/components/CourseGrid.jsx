@@ -11,15 +11,15 @@
 import { useCallback } from 'react'
 import { Card, CardContent } from '@/shared/components/card'
 import {
-  BookOpen, ArrowRight, Check, Clock, PlayCircle,
-  GraduationCap, Zap, Trophy, Lock
+  BookOpen, ArrowRight, Check, Clock, PlayCircle, Lock
 } from 'lucide-react'
 import { getCourseDetail } from '@/features/courses/services/courses'
+import { COURSE_LEVELS } from '@/shared/lib/courseLevel'
 
 const LEVEL_CONFIG = {
-  beginner: { label: 'Principiante', color: 'bg-emerald-100 text-emerald-700', icon: GraduationCap },
-  intermediate: { label: 'Intermedio', color: 'bg-amber-100 text-amber-700', icon: Zap },
-  advanced: { label: 'Avanzado', color: 'bg-rose-100 text-rose-700', icon: Trophy },
+  beginner: { ...COURSE_LEVELS.beginner, color: 'bg-emerald-100 text-emerald-700' },
+  intermediate: { ...COURSE_LEVELS.intermediate, color: 'bg-amber-100 text-amber-700' },
+  advanced: { ...COURSE_LEVELS.advanced, color: 'bg-rose-100 text-rose-700' },
 }
 
 const STATE_CONFIG = {

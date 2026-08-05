@@ -15,16 +15,17 @@ import { getStoredUser } from '@/features/auth/services/auth'
 import { getCourseDetail, checkPrerequisites, enrollCourse } from '@/features/courses/services/courses'
 import { Button } from '@/shared/components/button'
 import {
-  Loader2, BookOpen, ArrowLeft, GraduationCap, Zap, Trophy, Shield, Menu, X
+  Loader2, BookOpen, ArrowLeft, Shield, Menu, X
 } from 'lucide-react'
 import { CourseSidebar } from '@/features/courses/components/CourseSidebar'
 import { ContentViewer } from '@/features/courses/components/ContentViewer'
 import { useProgress } from '@/shared/hooks/useProgress'
+import { COURSE_LEVELS } from '@/shared/lib/courseLevel'
 
 const LEVEL_CONFIG = {
-  beginner: { label: 'Principiante', icon: GraduationCap, color: 'text-emerald-600 bg-emerald-50' },
-  intermediate: { label: 'Intermedio', icon: Zap, color: 'text-amber-600 bg-amber-50' },
-  advanced: { label: 'Avanzado', icon: Trophy, color: 'text-rose-600 bg-rose-50' },
+  beginner: { ...COURSE_LEVELS.beginner, color: 'text-emerald-600 bg-emerald-50' },
+  intermediate: { ...COURSE_LEVELS.intermediate, color: 'text-amber-600 bg-amber-50' },
+  advanced: { ...COURSE_LEVELS.advanced, color: 'text-rose-600 bg-rose-50' },
 }
 
 // ── Skeleton loader (shows page structure while data loads) ──

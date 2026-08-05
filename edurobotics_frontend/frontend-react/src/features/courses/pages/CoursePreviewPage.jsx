@@ -27,16 +27,17 @@ import { HeroBand } from '@/shared/components/HeroBand'
 import {
     ArrowLeft, BookOpen, ChevronDown, ChevronRight,
     PlayCircle, FileText, Link2, Loader2, CheckCircle,
-    Lock, AlertTriangle, XCircle, GraduationCap, Zap,
-    Trophy, Layers, Package, Shield, Map, ExternalLink,
+    Lock, AlertTriangle, XCircle,
+    Layers, Package, Shield, Map, ExternalLink,
     ClipboardCheck
 } from 'lucide-react'
+import { COURSE_LEVELS } from '@/shared/lib/courseLevel'
 
-// ── Level config ──────────────────────────────────────────────────────────────
+// ── Level config — label/icon from the shared source ──────────────────────────
 const LEVEL_CONFIG = {
-    beginner: { label: 'Principiante', icon: GraduationCap, color: 'bg-emerald-100 text-emerald-700', gradient: 'from-emerald-500 to-teal-600' },
-    intermediate: { label: 'Intermedio', icon: Zap, color: 'bg-amber-100 text-amber-700', gradient: 'from-amber-500 to-orange-600' },
-    advanced: { label: 'Avanzado', icon: Trophy, color: 'bg-rose-100 text-rose-700', gradient: 'from-rose-500 to-red-600' },
+    beginner: { ...COURSE_LEVELS.beginner, color: 'bg-emerald-100 text-emerald-700', gradient: 'from-emerald-500 to-teal-600' },
+    intermediate: { ...COURSE_LEVELS.intermediate, color: 'bg-amber-100 text-amber-700', gradient: 'from-amber-500 to-orange-600' },
+    advanced: { ...COURSE_LEVELS.advanced, color: 'bg-rose-100 text-rose-700', gradient: 'from-rose-500 to-red-600' },
 }
 
 // ── Content type icon ─────────────────────────────────────────────────────────
