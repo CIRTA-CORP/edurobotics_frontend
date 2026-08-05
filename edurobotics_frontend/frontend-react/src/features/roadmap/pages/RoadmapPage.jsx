@@ -69,6 +69,16 @@ function RoadmapPage() {
     // by its specialization (not only when a filter chip is selected).
     const specMap = useMemo(() => buildCourseSpecMap(specializations), [specializations])
 
+    // Progress per specialization (completed courses over its total), from the
+    // progress already loaded. Visitors without a session see 0%.
+    const specProgress = {}
+    specializations.forEach((spec) => {
+        const specCourses = spec.courses || []
+        const total = specCourses.length
+        const completed = specCourses.filter((c) => roadmapData[c.id]?.state === 'completed').length
+        specProgress[spec.id] = { total, completed, pct: total ? Math.round((completed / total) * 100) : 0 }
+    })
+
     // Set of course ids belonging to the selected specialization (its sub-malla).
     const highlightIds = useMemo(() => {
         if (!selectedSpecId) return null
@@ -157,9 +167,26 @@ function RoadmapPage() {
                                 <span className={`text-[11px] ${selectedSpecId === spec.id ? 'text-slate-300' : 'text-gray-400'}`}>
                                     {spec.course_count ?? spec.courses?.length ?? 0}
                                 </span>
+                                {user && (
+                                    <span className={`text-[11px] font-semibold ${selectedSpecId === spec.id ? 'text-slate-200' : 'text-gray-500'}`}>
+                                        · {specProgress[spec.id]?.pct ?? 0}%
+                                    </span>
+                                )}
                             </button>
                         ))}
                     </div>
+
+                    {/* Selected specialization: overall progress */}
+                    {selectedSpecId && specProgress[selectedSpecId] && (
+                        <div className="mt-3 text-sm text-gray-500">
+                            <span className="font-medium text-gray-700">
+                                {specializations.find(s => s.id === selectedSpecId)?.title}
+                            </span>{' '}
+                            · {specProgress[selectedSpecId].completed} de {specProgress[selectedSpecId].total}{' '}
+                            {specProgress[selectedSpecId].total === 1 ? 'curso' : 'cursos'}
+                            {user && ` · ${specProgress[selectedSpecId].pct}% completado`}
+                        </div>
+                    )}
                 </div>
             )}
 
