@@ -28,16 +28,19 @@
 
 ## Paso 3 — Quiz como bloque ordenable (migración aditiva + backfill)
 
-- [ ] 3.1 `Quiz`: `order_index` (Integer, default 0) + migración aditiva.
-- [ ] 3.2 Backfill en la migración: cada quiz toma `order_index = max(order de contenidos
-      de su unidad) + 1` (preserva "al final"). Idempotente.
-- [ ] 3.3 `get_course_detail`: por unidad, devolver `blocks: [{kind, order_index, ...}]`
-      fusionando contenidos + quizzes y ordenando por `order_index`. Mantener `contents`
-      y `quizzes` por compatibilidad.
-- [ ] 3.4 Frontend (`ContentViewer`/`CoursePage`): renderizar `blocks` en orden (quiz
-      intercalado). Permitir en el admin fijar la posición del quiz.
-- [ ] 3.5 Tests: el orden intercalado se respeta; backfill contra la forma del dump prod
-      no rompe; regresión de completitud sigue verde.
+- [x] 3.1 `Quiz`: `order_index` (Integer, default 0) + migración aditiva `d4e5f6a7b8c9`.
+- [x] 3.2 Backfill en la migración: cada quiz toma `order_index = max(order de contenidos
+      de su unidad) + 1` (preserva "al final"), vía UPDATE correlacionado (SQLite+Postgres).
+- [x] 3.3 `get_course_detail`: por unidad, `blocks: [{kind, order_index, ...}]` fusionando
+      contenidos + quizzes ordenados; `contents`/`quizzes` se mantienen. `QuizUpdate`
+      acepta `order_index` (el admin puede reposicionar por API).
+- [~] 3.4 Frontend: **diferido y a decidir con Mario.** `ContentViewer` hoy no itera
+      contenidos por orden (fusiona rich text + simulador + quiz al final); el render
+      intercalado real es un refactor grande y student-facing, no ejercitado aún
+      (unidades con ~1 contenido) y solapado con **#29**. Backend `blocks` queda listo
+      para cuando se haga esa UI.
+- [x] 3.5 Tests (`test_quiz_blocks.py`): `blocks` respeta el orden intercalado; el SQL de
+      backfill pone el quiz al final de la unidad. Regresión de completitud sigue verde. **47 passed.**
 
 ## Paso 4 — Inscripciones (migración aditiva + backfill)
 
