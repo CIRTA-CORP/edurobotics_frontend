@@ -45,6 +45,7 @@ export function CoursesMetricsOverview() {
               <thead>
                 <tr className="border-b border-gray-100 text-left text-[11px] font-semibold uppercase tracking-wide text-gray-400">
                   <th className="px-4 py-3">Curso</th>
+                  <th className="px-4 py-3 text-center">Inscritos</th>
                   <th className="px-4 py-3 text-center">Completaron</th>
                   <th className="px-4 py-3 text-center">Utilidad</th>
                   <th className="px-4 py-3 text-center">Dificultad</th>
@@ -64,6 +65,7 @@ export function CoursesMetricsOverview() {
                         )}
                       </div>
                     </td>
+                    <td className="px-4 py-3 text-center font-semibold text-gray-900">{c.enrolled}</td>
                     <td className="px-4 py-3 text-center">
                       <span className="font-semibold text-gray-900">{c.completed}</span>
                       <span className="text-gray-400"> / {c.learners}</span>
@@ -79,7 +81,7 @@ export function CoursesMetricsOverview() {
         )}
       </div>
       <p className="text-[11px] text-gray-400">
-        "Completaron" = alumnos que terminaron todo el contenido y aprobaron los quizzes, sobre los que iniciaron. Utilidad y dificultad son el promedio del feedback.
+        "Inscritos" = alumnos que abrieron el curso. "Completaron" = terminaron todo el contenido y aprobaron los quizzes, sobre los que tuvieron actividad. Utilidad y dificultad son el promedio del feedback.
       </p>
     </div>
   )

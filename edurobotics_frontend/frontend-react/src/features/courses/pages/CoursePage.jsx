@@ -12,7 +12,7 @@ import { useEffect, useState, useRef } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { getStoredUser } from '@/features/auth/services/auth'
-import { getCourseDetail, checkPrerequisites } from '@/features/courses/services/courses'
+import { getCourseDetail, checkPrerequisites, enrollCourse } from '@/features/courses/services/courses'
 import { Button } from '@/shared/components/button'
 import {
   Loader2, BookOpen, ArrowLeft, GraduationCap, Zap, Trophy, Shield, Menu, X
@@ -124,6 +124,11 @@ function CoursePage() {
     const firstUnit = course.modules?.[0]?.units?.[0]
     if (firstUnit) setSelectedUnitId(firstUnit.id)
   }, [course, selectedUnitId])
+
+  // Enroll the student when they open the course (idempotent, fire-and-forget).
+  useEffect(() => {
+    if (user?.id && course?.id) enrollCourse(course.id).catch(() => {})
+  }, [user?.id, course?.id])
 
   const allUnits = course?.modules?.flatMap(m => m.units || []) || []
   const currentUnit = allUnits.find(u => u.id === selectedUnitId)

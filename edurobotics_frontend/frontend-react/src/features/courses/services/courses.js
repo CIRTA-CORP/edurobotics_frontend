@@ -19,6 +19,11 @@ export const getCourseDetail = async (courseId) => {
   return apiGetCached(`/api/courses/${courseId}`, { ttl: 60_000 })
 }
 
+/** Idempotently enroll the current user in a course (called when they open it). */
+export const enrollCourse = async (courseId) => {
+  return apiPost(`/api/courses/${courseId}/enroll`, {})
+}
+
 /** Admin: full structured backup of a course (modules/units/contents/quizzes). */
 export const exportCourse = async (courseId) => {
   return apiGet(`/api/courses/${courseId}/export`)
