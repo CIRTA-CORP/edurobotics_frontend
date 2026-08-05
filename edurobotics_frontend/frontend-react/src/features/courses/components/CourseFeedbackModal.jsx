@@ -1,3 +1,5 @@
+// End-of-course feedback modal: collects the student's ratings when they finish
+// a course (feeds CourseFeedbackSummary in the admin panel). Can be skipped.
 import { useState } from 'react'
 import { MessageSquare, Send, Loader2 } from 'lucide-react'
 import { Button } from '@/shared/components/button'

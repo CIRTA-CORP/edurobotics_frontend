@@ -1,3 +1,4 @@
+// Quiz route: loads the quiz by id from the URL and hosts QuizView for the student.
 import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'

@@ -1,3 +1,5 @@
+// QuizView: the student's quiz-taking flow — renders questions, collects
+// answers, submits the attempt and shows the pass/fail result with feedback.
 import { useState, useEffect } from 'react';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { Button } from '@/shared/components/button';

@@ -1,3 +1,6 @@
+// Public landing page. Its sections (hero, stats, simulator, etc.) and their
+// texts/visibility are admin-editable via the Landing tab; this renders whatever
+// the landing config returns, falling back to defaults when unset.
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'

@@ -1,3 +1,5 @@
+// Post-login entry route: sends the user to the right home (admin panel vs
+// student dashboard) based on their role.
 import { useEffect, useState } from 'react'
 import { Navigate, useNavigate } from 'react-router-dom'
 import { getStoredUser } from '@/features/auth/services/auth'
