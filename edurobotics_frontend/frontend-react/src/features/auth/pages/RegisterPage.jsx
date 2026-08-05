@@ -1,3 +1,4 @@
+// Register route: page wrapper around RegisterForm (redirects away if already logged in).
 import { useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { getStoredUser } from '@/features/auth/services/auth'

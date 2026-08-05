@@ -1,3 +1,4 @@
+// Reset-password route: takes the token from the URL and sets a new password.
 import { useState } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { resetPassword } from '@/features/auth/services/auth'

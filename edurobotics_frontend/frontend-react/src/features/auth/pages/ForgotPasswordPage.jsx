@@ -1,3 +1,5 @@
+// Forgot-password route: asks for an email and triggers the reset link. Always
+// shows a neutral confirmation (never reveals whether the email exists).
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { forgotPassword } from '@/features/auth/services/auth'

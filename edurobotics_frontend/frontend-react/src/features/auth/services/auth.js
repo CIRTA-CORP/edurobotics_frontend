@@ -1,3 +1,11 @@
+/**
+ * Auth service: register/login/logout and JWT persistence.
+ *
+ * The token lives in localStorage; `getToken`/`getStoredUser` read it (the user
+ * is decoded from the JWT payload, not stored separately). The API client
+ * (shared/services/api.js) reads this token for every request and clears it on
+ * a 401, so session expiry is handled there — this module only owns storage.
+ */
 import { API_BASE } from '@/config'
 
 const parseError = async (response) => {
