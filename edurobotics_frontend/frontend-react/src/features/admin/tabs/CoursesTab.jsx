@@ -1,3 +1,5 @@
+// Courses tab: the course detail view — create/edit a course, its feedback and
+// time metrics, plus PDF/backup export and course import.
 import { useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useQueryClient } from '@tanstack/react-query'

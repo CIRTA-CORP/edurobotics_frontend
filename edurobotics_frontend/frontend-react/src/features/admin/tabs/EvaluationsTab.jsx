@@ -1,3 +1,5 @@
+// Evaluations tab: hosts the quiz editor for the selected unit (nothing until
+// a unit is selected).
 import { QuizEditor } from '@/features/admin/features/quizzes/QuizEditor'
 import { useAdmin } from '@/features/admin/context/AdminContext'
 

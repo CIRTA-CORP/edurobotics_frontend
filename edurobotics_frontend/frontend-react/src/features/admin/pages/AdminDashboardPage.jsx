@@ -1,3 +1,11 @@
+/**
+ * AdminDashboardPage — the admin panel shell.
+ *
+ * Renders the header, sidebar and breadcrumbs, and swaps the active tab (driven
+ * by AdminContext). Every tab is lazy-loaded so the shell stays light — the
+ * heavy Content tab (TipTap) and the student preview only download when opened.
+ * An ErrorBoundary wraps everything so one tab crashing can't blank the panel.
+ */
 import { lazy, Suspense, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Loader2 } from 'lucide-react'

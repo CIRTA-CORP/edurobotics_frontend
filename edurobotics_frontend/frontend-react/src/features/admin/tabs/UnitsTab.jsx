@@ -1,3 +1,5 @@
+// Units tab: lists the selected module's units and hosts the create/edit
+// drawer. Composes UnitList + UnitForm; state comes from useAdmin().
 import { Plus } from 'lucide-react'
 import { Button } from '@/shared/components/button'
 import { Drawer } from '@/shared/components/Drawer'

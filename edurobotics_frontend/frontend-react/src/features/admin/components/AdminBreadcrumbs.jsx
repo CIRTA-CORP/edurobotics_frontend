@@ -1,4 +1,6 @@
-﻿import { BarChart3, ChevronRight } from 'lucide-react'
+﻿// Breadcrumb trail for the admin panel (Admin > course > module > unit). Each
+// crumb is clickable and drives the active tab/selection via useAdmin().
+import { BarChart3, ChevronRight } from 'lucide-react'
 import { useAdmin } from '@/features/admin/context/AdminContext'
 
 export function AdminBreadcrumbs() {

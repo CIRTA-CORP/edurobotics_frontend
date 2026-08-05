@@ -1,3 +1,5 @@
+// Per-course feedback summary: aggregates students' end-of-course ratings into
+// bars (difficulty, clarity, etc.) shown in the course detail view.
 import { useQuery } from '@tanstack/react-query'
 import { Star, Users, TrendingUp, BarChart3 } from 'lucide-react'
 import { getCourseFeedbackSummary } from '@/features/courses/services/courses'

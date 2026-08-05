@@ -1,3 +1,5 @@
+// Content tab: the rich-text/content editor for the selected unit (nothing until
+// a unit is selected).
 import { ContentForm } from '@/features/admin/features/content/ContentForm'
 import { useAdmin } from '@/features/admin/context/AdminContext'
 

@@ -1,3 +1,13 @@
+/**
+ * AdminProvider — the single source of truth for the admin panel.
+ *
+ * Holds the shell state shared across tabs: the current user/view, which
+ * course/module/unit is selected, the active tab, modal open flags, and the
+ * data hooks (courses/modules/units/content). The active tab and selected
+ * course are mirrored to the URL (?tab=&course=) so the panel is deep-linkable
+ * and survives a refresh. Tabs read this via `useAdmin()` instead of threading
+ * props, which keeps each tab thin.
+ */
 import { createContext, useContext, useState, useCallback, useEffect } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
