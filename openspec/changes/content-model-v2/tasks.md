@@ -15,14 +15,16 @@
 - [x] 1.4 Notas del panel actualizadas (CoursesMetricsOverview, UsersTab): "completado =
       todo el contenido y los quizzes aprobados".
 
-## Paso 2 — Metadatos y validación de contenido (migración aditiva)
+## Paso 2 — Metadatos y validación de contenido (migración aditiva) ✅
 
-- [ ] 2.1 `UnitContent`: `title` (String, null), `duration_minutes` (Integer, null) +
-      migración Alembic aditiva reversible.
-- [ ] 2.2 Schema Pydantic de crear/editar contenido: validar `content_value` por
-      `content_type` (URL para video; no vacío para text/rich_text). Sin sanitizar en back.
-- [ ] 2.3 Exponer `title`/`duration_minutes` en `get_course_detail`. (UI opcional → #29/F5.)
-- [ ] 2.4 Tests: validación rechaza URL inválida / texto vacío; columnas nullable no rompen datos existentes.
+- [x] 2.1 `UnitContent`: `title` (String, null) + `duration_minutes` (Integer, null) +
+      migración aditiva reversible `c3d4e5f6a7b8`.
+- [x] 2.2 Schema Pydantic: `model_validator` valida `content_value` por `content_type`
+      (URL http/https para video; no vacío para text/rich_text). Sin sanitizar en back.
+- [x] 2.3 `title`/`duration_minutes` expuestos en `get_course_detail` y en el listado de
+      contenidos; create/update los persisten. (UI → #29/F5.)
+- [x] 2.4 Tests (`test_content_metadata.py`): metadatos persisten; video con URL inválida
+      y texto vacío → 422; contenidos existentes con NULL no rompen el detalle. **45 passed.**
 
 ## Paso 3 — Quiz como bloque ordenable (migración aditiva + backfill)
 
