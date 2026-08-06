@@ -1,3 +1,11 @@
+/**
+ * AdminDashboardPage — the admin panel shell.
+ *
+ * Renders the header, sidebar and breadcrumbs, and swaps the active tab (driven
+ * by AdminContext). Every tab is lazy-loaded so the shell stays light — the
+ * heavy Content tab (TipTap) and the student preview only download when opened.
+ * An ErrorBoundary wraps everything so one tab crashing can't blank the panel.
+ */
 import { lazy, Suspense, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Loader2 } from 'lucide-react'
@@ -21,6 +29,7 @@ const ContentTab = named(() => import('@/features/admin/tabs/ContentTab'), 'Cont
 const EvaluationsTab = named(() => import('@/features/admin/tabs/EvaluationsTab'), 'EvaluationsTab')
 const LandingTab = named(() => import('@/features/admin/tabs/LandingTab'), 'LandingTab')
 const SpecializationsTab = named(() => import('@/features/admin/tabs/SpecializationsTab'), 'SpecializationsTab')
+const UsersTab = named(() => import('@/features/admin/tabs/UsersTab'), 'UsersTab')
 
 const TabLoader = () => (
   <div className="flex justify-center py-16">
@@ -101,6 +110,7 @@ function AdminDashboardLayout() {
                   {activeTab === 'evaluaciones' && <EvaluationsTab />}
                   {activeTab === 'especializaciones' && <SpecializationsTab />}
                   {activeTab === 'landing' && <LandingTab />}
+                  {activeTab === 'usuarios' && <UsersTab />}
                 </Suspense>
               </div>
             </main>

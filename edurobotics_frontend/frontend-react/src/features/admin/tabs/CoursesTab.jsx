@@ -1,3 +1,5 @@
+// Courses tab: the course detail view — create/edit a course, its feedback and
+// time metrics, plus PDF/backup export and course import.
 import { useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useQueryClient } from '@tanstack/react-query'
@@ -157,7 +159,6 @@ export function CoursesTab() {
             ? handleCourseCreate
             : (e) => courseHooks.handleCourseUpdate(e, selectedCourse)}
           onDelete={() => handleCourseDelete(selectedCourse)}
-          onPrereqSave={() => courseHooks.handlePrereqSave(selectedCourse)}
           selectedCourse={selectedCourse}
           allCourses={courses}
         />

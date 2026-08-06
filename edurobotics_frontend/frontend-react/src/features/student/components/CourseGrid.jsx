@@ -11,15 +11,15 @@
 import { useCallback } from 'react'
 import { Card, CardContent } from '@/shared/components/card'
 import {
-  BookOpen, ArrowRight, Check, Clock, PlayCircle,
-  GraduationCap, Zap, Trophy, Lock
+  BookOpen, ArrowRight, Check, Clock, PlayCircle, Lock
 } from 'lucide-react'
 import { getCourseDetail } from '@/features/courses/services/courses'
+import { COURSE_LEVELS } from '@/shared/lib/courseLevel'
 
 const LEVEL_CONFIG = {
-  beginner: { label: 'Principiante', color: 'bg-emerald-100 text-emerald-700', icon: GraduationCap },
-  intermediate: { label: 'Intermedio', color: 'bg-amber-100 text-amber-700', icon: Zap },
-  advanced: { label: 'Avanzado', color: 'bg-rose-100 text-rose-700', icon: Trophy },
+  beginner: { ...COURSE_LEVELS.beginner, color: 'bg-emerald-100 text-emerald-700' },
+  intermediate: { ...COURSE_LEVELS.intermediate, color: 'bg-amber-100 text-amber-700' },
+  advanced: { ...COURSE_LEVELS.advanced, color: 'bg-rose-100 text-rose-700' },
 }
 
 const STATE_CONFIG = {
@@ -29,9 +29,11 @@ const STATE_CONFIG = {
 }
 
 export function CourseGrid({ courses, onCourseClick, specMap = {}, orderMap = {} }) {
-  // Prefetch course data on hover — fires silently, fills the cache
+  // Prefetch on hover/focus — fires silently. Warms both the DATA (course detail)
+  // and the CODE (the preview page's lazy chunk), so the click feels instant.
   const handlePrefetch = useCallback((courseId) => {
     getCourseDetail(courseId).catch(() => { })
+    import('@/features/courses/pages/CoursePreviewPage.jsx')
   }, [])
 
   if (courses.length === 0) {
@@ -71,6 +73,7 @@ export function CourseGrid({ courses, onCourseClick, specMap = {}, orderMap = {}
             className={`group relative cursor-pointer overflow-hidden rounded-2xl border shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-xl ${locked ? 'border-gray-200 opacity-90' : completed ? 'border-emerald-200' : 'border-gray-200'}`}
             onClick={() => onCourseClick(course.id)}
             onMouseEnter={() => handlePrefetch(course.id)}
+            onFocus={() => handlePrefetch(course.id)}
           >
             <div className="relative aspect-[4/3] w-full">
               {/* Background image (issue #30), or gradient fallback */}

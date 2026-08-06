@@ -32,7 +32,6 @@ export function CourseForm({
   setPrereqIds,       // (ids: number[]) => void
   onSubmit,
   onDelete,
-  onPrereqSave,
   selectedCourse,
   isSubmitting = false,
   allCourses = [],    // all courses for the checkbox list
@@ -236,6 +235,7 @@ export function CourseForm({
               </div>
               <p className="text-xs text-gray-400 mb-3">
                 El estudiante debe completar estos cursos para acceder a <strong>{selectedCourse?.title}</strong>.
+                Se guardan junto con el curso al presionar <strong>Guardar cambios</strong>.
               </p>
 
               {eligibleCourses.length === 0 ? (
@@ -281,16 +281,6 @@ export function CourseForm({
                   })}
                 </div>
               )}
-
-              <Button
-                type="button"
-                onClick={onPrereqSave}
-                disabled={eligibleCourses.length === 0}
-                className="w-full gap-1.5"
-              >
-                <Save className="w-4 h-4" />
-                Guardar prerequisitos
-              </Button>
             </div>
           )}
     </>

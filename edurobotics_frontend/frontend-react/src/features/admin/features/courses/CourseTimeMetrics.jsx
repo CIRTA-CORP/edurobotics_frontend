@@ -1,11 +1,10 @@
 /**
- * CourseTimeMetrics — time-spent metrics for a course (issue #22).
+ * CourseTimeMetrics — real active time-on-task for a course (issue #22 / F5).
  *
- * Shows the estimated *active* time learners spend on the course, its modules
- * and units. Completion time (avg/min/max) is measured over learners who
- * finished a scope; learners still in progress are reflected via the
- * "invested so far" figure and the started/completed counts, so the panel is
- * useful before anyone completes the course.
+ * Time is *measured* from client heartbeats while a learner has the lesson open
+ * and its tab visible — not inferred from the calendar span between first start
+ * and last completion (which made single-content units read as ~0 / "1 s").
+ * Scopes with no accrued time show "datos insuficientes", never a fake number.
  */
 import { useQuery } from '@tanstack/react-query'
 import { Card, CardContent } from '@/shared/components/card'
@@ -30,38 +29,54 @@ function fmt(minutes) {
   return h ? `${d}d ${h}h` : `${d} d`
 }
 
-/** Picks the headline figure for a scope: median completion time, else invested. */
+/** Picks the headline figure for a scope: median active time, else invested.
+ *  A value of 0 means no heartbeats accrued → treated as insufficient data. */
 function headline(data) {
   if (!data || (data.learners ?? 0) === 0) return null
-  if (data.sample > 0) {
-    return { value: data.median_minutes, label: 'habitual al completar', inProgress: false }
+  if (data.sample > 0 && data.median_minutes) {
+    return { value: data.median_minutes, label: 'tiempo activo típico', inProgress: false }
   }
-  return { value: data.invested_avg_minutes, label: 'invertido hasta ahora', inProgress: true }
+  if (data.invested_avg_minutes) {
+    return { value: data.invested_avg_minutes, label: 'invertido hasta ahora', inProgress: true }
+  }
+  return null
 }
 
+/** One row of the per-module / per-unit table: Parte · Completaron · Tiempo típico. */
 function MetricRow({ label, sub, data }) {
   const h = headline(data)
+  const completed = data.completed ?? 0
+  const learners = data.learners ?? 0
   return (
-    <div className="flex items-center justify-between gap-3 border-b border-gray-100 py-2.5 last:border-0">
+    <div className="grid grid-cols-[1fr_auto_auto] items-center gap-4 border-b border-gray-100 py-2.5 last:border-0">
       <div className="min-w-0">
         <p className="truncate text-sm font-medium text-gray-800">{label}</p>
-        {sub && <p className="text-xs text-gray-400">{sub}</p>}
+        {sub && <p className="truncate text-xs text-gray-400">{sub}</p>}
       </div>
-      {!h ? (
-        <span className="text-xs text-gray-300">Sin actividad</span>
-      ) : (
-        <div className="flex items-center gap-4 text-right">
-          <div>
+      <p className="w-24 text-right text-[11px] text-gray-400">
+        {completed > 0 ? `${completed} de ${learners} completó` : `${learners} iniciaron`}
+      </p>
+      <div className="w-16 text-right">
+        {h ? (
+          <>
             <p className="text-sm font-semibold text-gray-900">{fmt(h.value)}</p>
-            <p className="text-[10px] text-gray-400">{h.inProgress ? 'en progreso' : 'habitual'}</p>
-          </div>
-          <p className="w-20 text-[11px] text-gray-400">
-            {data.completed > 0
-              ? `${data.completed} de ${data.learners} completó`
-              : `${data.learners} iniciaron`}
-          </p>
-        </div>
-      )}
+            <p className="text-[10px] text-gray-400">{h.inProgress ? 'en progreso' : 'activo'}</p>
+          </>
+        ) : (
+          <p className="text-[11px] text-gray-300">datos insuficientes</p>
+        )}
+      </div>
+    </div>
+  )
+}
+
+/** Small header above a metric table. */
+function TableHead() {
+  return (
+    <div className="grid grid-cols-[1fr_auto_auto] gap-4 pb-1 text-[10px] font-semibold uppercase tracking-wide text-gray-300">
+      <span>Parte</span>
+      <span className="w-24 text-right">Completaron</span>
+      <span className="w-16 text-right">Tiempo</span>
     </div>
   )
 }
@@ -91,14 +106,14 @@ export function CourseTimeMetrics({ courseId }) {
           </div>
           <div>
             <h3 className="text-sm font-semibold text-gray-900">Tiempo de dedicación</h3>
-            <p className="text-xs text-gray-400">Desde que inician hasta que completan (incluye pausas entre sesiones)</p>
+            <p className="text-xs text-gray-400">Tiempo activo real mientras el alumno está en la lección</p>
           </div>
         </div>
 
         {/* Course summary */}
         <div className="mb-4 rounded-lg border border-gray-100 bg-gray-50/60 p-4">
           {!h ? (
-            <p className="text-sm text-gray-400">Aún no hay actividad en este curso.</p>
+            <p className="text-sm text-gray-400">Aún no hay tiempo activo registrado en este curso.</p>
           ) : (
             <div className="flex flex-wrap items-end gap-x-8 gap-y-3">
               <div>
@@ -126,20 +141,23 @@ export function CourseTimeMetrics({ courseId }) {
         {data.modules?.length > 0 && (
           <div className="mt-3">
             <p className="mb-1 text-[11px] font-semibold uppercase tracking-wide text-gray-400">Por módulo</p>
+            <TableHead />
             {data.modules.map((m) => <MetricRow key={`m-${m.id}`} label={m.title} data={m} />)}
           </div>
         )}
 
         {/* Units */}
         {data.units?.length > 0 && (
-          <div className="mt-3">
+          <div className="mt-4">
             <p className="mb-1 text-[11px] font-semibold uppercase tracking-wide text-gray-400">Por unidad</p>
+            <TableHead />
             {data.units.map((u) => <MetricRow key={`u-${u.id}`} label={u.title} sub={u.module_title} data={u} />)}
           </div>
         )}
 
         <p className="mt-4 text-[11px] text-gray-400">
-          "Habitual" = mediana del tiempo entre iniciar y completar, de quienes terminaron cada parte (robusta ante casos que quedaron pausados mucho tiempo). Las unidades de un solo contenido tienden a ~0.
+          "Tiempo activo típico" = mediana del tiempo real en la lección (pestaña abierta y visible),
+          entre quienes completaron cada parte. Las partes sin actividad registrada muestran "datos insuficientes".
         </p>
       </CardContent>
     </Card>

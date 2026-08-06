@@ -1,3 +1,4 @@
+// Login form: validates credentials, calls loginUser, and redirects on success.
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { loginUser } from '@/features/auth/services/auth'

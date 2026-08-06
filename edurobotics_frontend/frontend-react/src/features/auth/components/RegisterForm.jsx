@@ -1,3 +1,5 @@
+// Registration form: validates the new-account fields, calls registerUser and
+// redirects on success.
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { registerUser } from '@/features/auth/services/auth'

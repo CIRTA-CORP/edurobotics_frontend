@@ -1,3 +1,5 @@
+// shadcn/ui Button: variant/size styles via cva, `asChild` to render as a child
+// element (e.g. a link). See https://ui.shadcn.com/docs/components/button
 import * as React from "react"
 import { cva } from "class-variance-authority"
 import { cn } from '@/shared/lib/utils'

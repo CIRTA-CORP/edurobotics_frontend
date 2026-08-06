@@ -19,6 +19,7 @@ import { useNavigate, useParams } from 'react-router-dom'
 import { CourseFeedbackModal } from './CourseFeedbackModal'
 import { API_BASE } from '@/config'
 import { sanitizeHtml } from '@/shared/lib/sanitizeHtml'
+import { sendHeartbeat } from '@/features/progress/services/progress'
 
 const isVideoUrl = (url) => {
   return url?.includes('youtube.com') || url?.includes('youtu.be') || url?.includes('vimeo.com')
@@ -366,6 +367,23 @@ export function ContentViewer({
     window.addEventListener('focus', handleFocus)
     return () => window.removeEventListener('focus', handleFocus)
   }, [refreshProgress])
+
+  // Heartbeat: accrue real active time while the learner is on this unit and the
+  // tab is visible. We credit a single content per tick (a unit's time is the sum
+  // of its contents, so crediting one avoids multiplying by the block count) and
+  // pause when the tab is hidden, so background tabs don't inflate the metric.
+  const heartbeatContentId = contents[0]?.id
+  useEffect(() => {
+    if (!heartbeatContentId) return
+    const HEARTBEAT_MS = 15_000
+    const tick = () => {
+      if (document.visibilityState === 'visible') {
+        sendHeartbeat(heartbeatContentId, HEARTBEAT_MS / 1000).catch(() => {})
+      }
+    }
+    const timer = setInterval(tick, HEARTBEAT_MS)
+    return () => clearInterval(timer)
+  }, [heartbeatContentId])
 
   const handleMarkAllComplete = async () => {
     if (navigating) return

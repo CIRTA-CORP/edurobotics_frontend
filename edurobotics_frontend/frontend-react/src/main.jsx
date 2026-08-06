@@ -8,7 +8,7 @@ import { queryClient } from '@/shared/lib/queryClient'
 
 createRoot(document.getElementById('root')).render(
   <QueryClientProvider client={queryClient}>
-    <BrowserRouter>
+    <BrowserRouter future={{ v7_startTransition: true }}>
       <App />
     </BrowserRouter>
     {import.meta.env.DEV && <ReactQueryDevtools initialIsOpen={false} />}

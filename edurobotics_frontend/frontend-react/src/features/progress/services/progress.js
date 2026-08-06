@@ -15,6 +15,11 @@ export const updateLastAccessed = async (userId, contentId) => {
   return apiPost('/api/progress/update-access', { user_id: userId, content_id: contentId })
 }
 
+/** Accrue ~seconds of real active time on a content while the learner is on it. */
+export const sendHeartbeat = async (contentId, seconds = 15) => {
+  return apiPost('/api/progress/heartbeat', { content_id: contentId, seconds })
+}
+
 export const getUserProgress = async (userId, courseId = null) => {
   const url = courseId 
     ? `/api/progress/${userId}?course_id=${courseId}`

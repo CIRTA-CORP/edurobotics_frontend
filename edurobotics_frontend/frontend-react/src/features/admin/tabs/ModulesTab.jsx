@@ -1,3 +1,5 @@
+// Modules tab: lists the selected course's modules and hosts the create/edit
+// drawer. Composes ModuleList + ModuleForm; state comes from useAdmin().
 import { Plus } from 'lucide-react'
 import { Button } from '@/shared/components/button'
 import { Drawer } from '@/shared/components/Drawer'

@@ -19,6 +19,11 @@ export const getCourseDetail = async (courseId) => {
   return apiGetCached(`/api/courses/${courseId}`, { ttl: 60_000 })
 }
 
+/** Idempotently enroll the current user in a course (called when they open it). */
+export const enrollCourse = async (courseId) => {
+  return apiPost(`/api/courses/${courseId}/enroll`, {})
+}
+
 /** Admin: full structured backup of a course (modules/units/contents/quizzes). */
 export const exportCourse = async (courseId) => {
   return apiGet(`/api/courses/${courseId}/export`)
@@ -194,6 +199,24 @@ export const getCourseFeedbackSummary = async (courseId) => {
 
 export const getAdminMetrics = async () => {
   return apiGet('/api/admin/metrics')
+}
+
+/** Admin: per-course basic metrics (feedback, difficulty, completions) — issue #35. */
+export const getCoursesBasicMetrics = async () => {
+  return apiGet('/api/admin/courses/metrics')
+}
+
+/** Admin: registered users with course counts — issue #36. */
+export const getAdminUsers = async () => {
+  return apiGet('/api/admin/users')
+}
+
+/** Admin: change a user's role (student ↔ admin). */
+export const updateUserRole = async (userId, role) => {
+  return apiRequest(`/api/admin/users/${userId}/role`, {
+    method: 'PATCH',
+    body: JSON.stringify({ role }),
+  })
 }
 
 /** Real session/activity data from recorded logins (admin only). */

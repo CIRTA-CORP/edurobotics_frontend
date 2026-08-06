@@ -1,3 +1,13 @@
+/**
+ * Centralized API client.
+ *
+ * Every request injects the JWT (when present) and, on a 401, clears the token
+ * and redirects to /login — so expired sessions are handled in one place, not
+ * per caller. `apiGetCached` adds a short in-memory cache plus in-flight
+ * deduplication (concurrent callers of the same endpoint share one request).
+ * Any write (POST/PUT/DELETE) invalidates the cache, since a mutation can stale
+ * any cached read.
+ */
 import { API_BASE } from '@/config'
 import { getToken } from '@/features/auth/services/auth'
 
@@ -40,10 +50,6 @@ export function invalidateApiCache(prefix = '') {
         }
     }
 }
-
-/**
- * Centralized API client with automatic JWT token injection
- */
 
 /**
  * Make an authenticated API request

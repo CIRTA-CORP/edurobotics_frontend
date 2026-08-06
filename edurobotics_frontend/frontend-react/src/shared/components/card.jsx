@@ -1,3 +1,4 @@
+// shadcn/ui Card and its parts (Header/Title/Description/Content/Footer).
 import * as React from "react"
 import { cn } from '@/shared/lib/utils'
 

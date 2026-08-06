@@ -1,3 +1,5 @@
+// Dashboard "Métricas Globales": platform-wide cumulative cards (registered
+// students, published courses, completions, pass rate, avg difficulty).
 import { useQuery } from '@tanstack/react-query'
 import { Users, BookOpen, CheckCircle, ClipboardCheck, Star, UserPlus, BarChart3 } from 'lucide-react'
 import { getAdminMetrics } from '@/features/courses/services/courses'

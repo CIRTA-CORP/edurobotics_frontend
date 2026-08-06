@@ -1,0 +1,22 @@
+schema: spec-driven
+
+context: |
+  Producto: EduRobotics — plataforma educativa de robótica (CIRTA).
+  Dos repos: backend (FastAPI, feature-based en app/features/*) y frontend
+  (React + Vite, feature-based en src/features/*).
+  OJO: el código del frontend vive en la ruta anidada
+  edurobotics_frontend/frontend-react.
+  Auth: JWT propio con dependencia require_admin. DB: SQLAlchemy + Alembic
+  (producción en Supabase). Deploy: Railway (backend) + Vercel (frontend).
+  Convenciones: commits en inglés imperativo, sin prefijo y SIN coautor;
+  nunca hacer push sin permiso; el contenido no publicado (is_published)
+  nunca debe ser visible para estudiantes; los listados usan ORDER BY estable.
+
+rules:
+  proposal:
+    - Mantener el proposal breve y accionable
+    - Listar el impacto en AMBOS repos (backend y frontend) cuando aplique
+  design:
+    - Incluir siempre una sección "Non-Goals"
+  tasks:
+    - Terminar con una tarea de verificación (TestClient y/o lint + build)

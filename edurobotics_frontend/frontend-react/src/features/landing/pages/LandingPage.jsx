@@ -1,3 +1,6 @@
+// Public landing page. Its sections (hero, stats, simulator, etc.) and their
+// texts/visibility are admin-editable via the Landing tab; this renders whatever
+// the landing config returns, falling back to defaults when unset.
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
@@ -15,6 +18,7 @@ import { getStoredUser } from '@/features/auth/services/auth'
 import { AuthModal } from '@/features/auth/components/AuthModal'
 import { getLandingContent } from '@/features/landing/services/landing'
 import { mergeLandingContent } from '@/features/landing/landingContent'
+import { levelOf } from '@/shared/lib/courseLevel'
 
 /**
  * LandingPage — Página pública de marketing (ruta "/").
@@ -232,8 +236,8 @@ function CourseCard({ title, level, description, imageUrl, courseId }) {
 
       {/* Level badge */}
       <div className="absolute inset-x-0 top-0 p-3">
-        <span className="inline-flex items-center rounded-full bg-white/90 px-2.5 py-1 text-xs font-medium capitalize text-gray-800 shadow-sm backdrop-blur-sm">
-          {level}
+        <span className="inline-flex items-center rounded-full bg-white/90 px-2.5 py-1 text-xs font-medium text-gray-800 shadow-sm backdrop-blur-sm">
+          {levelOf(level).label}
         </span>
       </div>
 

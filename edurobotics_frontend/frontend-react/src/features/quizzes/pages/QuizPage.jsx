@@ -1,3 +1,4 @@
+// Quiz route: loads the quiz by id from the URL and hosts QuizView for the student.
 import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
@@ -71,7 +72,6 @@ export default function QuizPage() {
                         userId={user?.id}
                         onComplete={() => {
                             // El feedback se maneja dentro de QuizView
-                            console.log('Quiz completed')
                         }}
                     />
                 </div>

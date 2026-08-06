@@ -1,3 +1,8 @@
+/**
+ * Loading placeholders: `Skeleton` is the base shimmer block; the named exports
+ * (e.g. `CourseListSkeleton`) compose it into page-shaped placeholders shown
+ * while data loads, to avoid layout jank.
+ */
 export function Skeleton({ className = '' }) {
   return (
     <div className={`animate-pulse bg-gray-200 rounded ${className}`} />
