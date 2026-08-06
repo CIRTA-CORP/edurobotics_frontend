@@ -43,15 +43,20 @@ export default function LeftPanel({ setAlertType, handleHide, onJointAngles }) {
   const [enviromentConfig, setEnviromentConfig] = useState({
     language: "python",
     editor: "python",
-    "blockly?": true,
+    // Pestaña "Bloques" OCULTA hasta que la ejecución de bloques funcione (issue
+    // #21, pedido de la directora). Queda solo Editor + Guía + Terminal. El código
+    // de Blockly NO se borra — poner en `true` la reactiva.
+    "blockly?": false,
   });
   const runningEnviroment = "python_env";
 
   const [runLoading, setRunLoading] = useState(false);
   const [terminalOutput, setTerminalOutput] = useState("");
-  const [panelSelected, setPanelSelected] = useState(
-    localStorage.getItem("panelSelected") || EDITOR
-  );
+  const [panelSelected, setPanelSelected] = useState(() => {
+    const stored = localStorage.getItem("panelSelected") || EDITOR;
+    // Bloques está oculto: nunca arrancar en esa pestaña (quedaría en blanco).
+    return stored === BLOCKLY ? EDITOR : stored;
+  });
 
   const monacoRef       = useRef(null);
   const decorationsRef  = useRef([]);
