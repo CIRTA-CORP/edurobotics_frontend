@@ -340,12 +340,16 @@ export function ContentViewer({
   const isLastUnit = currentUnitIndex === (allUnits?.length - 1)
   const isQuizPassed = hasQuiz && isQuizCompleted?.(quiz?.id)
 
-  // Transition animation on unit change
+  // Transition animation on unit change. Also scroll the content pane back to the
+  // top for the new unit: doing it here (after the new unit renders) instead of in
+  // the nav handlers means the content swap can't leave the reader stuck at the
+  // bottom. Instant (not smooth) so you land at the top of the unit immediately.
   useEffect(() => {
     setVisible(false)
+    scrollRef?.current?.scrollTo({ top: 0 })
     const timer = setTimeout(() => setVisible(true), 50)
     return () => clearTimeout(timer)
-  }, [unit?.id])
+  }, [unit?.id, scrollRef])
 
   // Stamp an "opened" time for this unit's contents so the time-spent metrics
   // measure from opening the unit to completing it — not just the completion
@@ -396,23 +400,18 @@ export function ContentViewer({
     setNavigating(false)
   }
 
+  // Scroll back to top is handled centrally by the unit-change effect above.
   const handleNextUnit = () => {
     if (currentUnitIndex !== -1 && currentUnitIndex < (allUnits?.length - 1)) {
       const nextUnit = allUnits[currentUnitIndex + 1]
-      if (nextUnit && onUnitChange) {
-        onUnitChange(nextUnit.id)
-        scrollRef?.current?.scrollTo({ top: 0, behavior: 'smooth' })
-      }
+      if (nextUnit && onUnitChange) onUnitChange(nextUnit.id)
     }
   }
 
   const handlePreviousUnit = () => {
     if (currentUnitIndex > 0) {
       const prevUnit = allUnits[currentUnitIndex - 1]
-      if (prevUnit && onUnitChange) {
-        onUnitChange(prevUnit.id)
-        scrollRef?.current?.scrollTo({ top: 0, behavior: 'smooth' })
-      }
+      if (prevUnit && onUnitChange) onUnitChange(prevUnit.id)
     }
   }
 
