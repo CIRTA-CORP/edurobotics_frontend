@@ -7,10 +7,17 @@
  */
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
-import { Users, Shield, GraduationCap, Loader2 } from 'lucide-react'
+import { Users, Shield, GraduationCap, BookOpen, Loader2 } from 'lucide-react'
 import { getAdminUsers, updateUserRole } from '@/features/courses/services/courses'
 import { getStoredUser } from '@/features/auth/services/auth'
-import { Button } from '@/shared/components/button'
+
+// Badge look per role (teacher is read-only staff; admin has full control).
+const ROLE_META = {
+  admin: { label: 'Admin', icon: Shield, cls: 'bg-purple-100 text-purple-700' },
+  teacher: { label: 'Profesor', icon: BookOpen, cls: 'bg-indigo-100 text-indigo-700' },
+  student: { label: 'Estudiante', icon: GraduationCap, cls: 'bg-gray-100 text-gray-600' },
+}
+const ROLE_LABEL = { student: 'estudiante', teacher: 'profesor', admin: 'administrador' }
 
 function fmtDate(iso) {
   if (!iso) return '—'
@@ -40,11 +47,9 @@ export function UsersTab() {
     onError: (err) => toast.error(err?.message || 'No se pudo cambiar el rol'),
   })
 
-  const changeRole = (user) => {
-    const toAdmin = user.role !== 'admin'
-    const nextRole = toAdmin ? 'admin' : 'student'
-    const action = toAdmin ? 'hacer administrador a' : 'volver estudiante a'
-    if (!window.confirm(`¿Seguro que quieres ${action} "${user.name || user.username}"?`)) return
+  const setRole = (user, nextRole) => {
+    if (nextRole === user.role) return
+    if (!window.confirm(`¿Cambiar a "${user.name || user.username}" a ${ROLE_LABEL[nextRole]}?`)) return
     roleMutation.mutate({ userId: user.id, role: nextRole })
   }
 
@@ -78,7 +83,8 @@ export function UsersTab() {
               </thead>
               <tbody>
                 {users.map((u) => {
-                  const isAdmin = u.role === 'admin'
+                  const meta = ROLE_META[u.role] || ROLE_META.student
+                  const RoleIcon = meta.icon
                   const isMe = me && u.id === me.id
                   return (
                     <tr key={u.id} className="border-b border-gray-50 last:border-0 hover:bg-gray-50/60">
@@ -87,11 +93,9 @@ export function UsersTab() {
                         <div className="text-xs text-gray-400">{u.email}</div>
                       </td>
                       <td className="px-4 py-3">
-                        <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-semibold ${
-                          isAdmin ? 'bg-purple-100 text-purple-700' : 'bg-gray-100 text-gray-600'
-                        }`}>
-                          {isAdmin ? <Shield className="h-3 w-3" /> : <GraduationCap className="h-3 w-3" />}
-                          {isAdmin ? 'Admin' : 'Estudiante'}
+                        <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-semibold ${meta.cls}`}>
+                          <RoleIcon className="h-3 w-3" />
+                          {meta.label}
                         </span>
                       </td>
                       <td className="px-4 py-3 text-center font-semibold text-gray-900">{u.courses_started}</td>
@@ -101,14 +105,17 @@ export function UsersTab() {
                         {isMe ? (
                           <span className="text-xs text-gray-300">Tú</span>
                         ) : (
-                          <Button
-                            variant="outline"
-                            size="sm"
+                          <select
+                            value={u.role}
                             disabled={roleMutation.isPending}
-                            onClick={() => changeRole(u)}
+                            onChange={(e) => setRole(u, e.target.value)}
+                            className="rounded-lg border border-gray-200 bg-white px-2 py-1 text-xs text-gray-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+                            aria-label={`Rol de ${u.name || u.username}`}
                           >
-                            {isAdmin ? 'Volver a estudiante' : 'Hacer admin'}
-                          </Button>
+                            <option value="student">Estudiante</option>
+                            <option value="teacher">Profesor</option>
+                            <option value="admin">Admin</option>
+                          </select>
                         )}
                       </td>
                     </tr>
