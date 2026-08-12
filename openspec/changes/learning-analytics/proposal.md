@@ -102,3 +102,17 @@ test de que un submit inválido no deja filas huérfanas (transacción); (2) que
 agregación lentas contra Supabase — mitigado por escala de piloto + índices existentes;
 verificar con EXPLAIN si alguna supera ~300 ms; (3) tentación de mostrar números con n=1 —
 bloqueada por el requirement de "datos insuficientes".
+
+## Coordinación de paralelo (IMPORTANTE — leer antes de codear)
+
+- **Instrumentación YA HECHA:** la tabla `quiz_attempt_answers` (migración `a7b8c9d0e1f3`), su
+  escritura en el submit, y `INACTIVITY_DAYS` + helpers en `progress/activity.py` **ya existen**
+  (tareas 1.x y 2.1 marcadas). **NO rehacerlas.**
+- **Guard ADMIN-ONLY por ahora:** implementar los endpoints con **`require_admin`**, NO con
+  `require_teacher_or_admin`. Otro track (teacher-course-management) está modificando el guard de
+  profesor; el acceso de profesor a la analítica se suma DESPUÉS de que ese track aterrice.
+- **NO tocar** `core/security.py`, `courses/`, `teacher/`, `quizzes/models.py`,
+  `progress/activity.py`. Trabajar en **archivos nuevos**: `app/features/analytics/**`,
+  `tests/test_analytics.py`, `features/admin/tabs/AnalyticsTab.jsx` (+ registro de la pestaña).
+- **`main.py`:** NO editarlo para registrar el router — dejar el router creado y avisar a Claude
+  para engancharlo (evita el conflicto de esa línea entre tracks).
