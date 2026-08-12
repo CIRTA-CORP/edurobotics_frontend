@@ -21,6 +21,10 @@ never via the query string.
 - **WHEN** a WebSocket connects without a valid token as its first message within 5s
 - **THEN** the server closes the connection with code 1008
 
+#### Scenario: Valid token proceeds
+- **WHEN** a WebSocket sends a valid token as its first message
+- **THEN** the connection is accepted and the session proceeds
+
 ### Requirement: Changing a user's role invalidates their live tokens
 The system SHALL invalidate a user's existing tokens when their role changes (via
 `token_version`), so a demoted admin cannot keep admin access.
