@@ -25,8 +25,7 @@
       usan `require_course_editor_from("course_id")` — **admin cualquier curso; profesor
       solo SUS cursos asignados** (habilitado tras aterrizar #26 v2, como estaba planeado).
       `interaction` (toda la plataforma) sigue `require_admin`. Flag `insufficient_data`
-      cuando n < 3. **El router NO está registrado en `main.py` todavía — queda pendiente
-      el hook de Claude (una línea `app.include_router(analytics_router)`).**
+      cuando n < 3. Router enganchado en `main.py` (hook de Claude).
 
 ## 3. Frontend
 
