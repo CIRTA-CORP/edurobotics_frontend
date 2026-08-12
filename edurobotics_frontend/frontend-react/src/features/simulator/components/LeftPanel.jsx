@@ -187,6 +187,14 @@ export default function LeftPanel({ setAlertType, handleHide, onJointAngles }) {
           return;
         }
 
+        // Session limit (#43): the simulator is full — surface the message and
+        // stop the spinner (the server closes right after with 1013).
+        if (data.type === "busy") {
+          appendLine(data.msg);
+          setRunLoading(false);
+          return;
+        }
+
         if (data.type === "log" || data.type === "success" || data.type === "error" || data.type === "done") {
           appendLine(data.msg);
           // Detect Python traceback and highlight the offending line in the editor

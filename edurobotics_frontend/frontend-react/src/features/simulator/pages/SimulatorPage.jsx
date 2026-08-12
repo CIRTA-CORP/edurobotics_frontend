@@ -1,7 +1,8 @@
 import { lazy, Suspense, useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Monitor, Loader2 } from 'lucide-react';
+import { ArrowLeft, Monitor, Loader2, Users, RotateCw } from 'lucide-react';
 import { getStoredUser } from '@/features/auth/services/auth';
+import { getSimulatorCapacity } from '@/features/simulator/services/simulator';
 
 // Lazy so the heavy 3D engine (Babylon.js, ~6.5MB) only downloads on desktop,
 // where the simulator actually runs — phones never pull it.
@@ -30,11 +31,45 @@ function DesktopOnlyNotice() {
   );
 }
 
+/** Simulator at full capacity (#43): no waitlist — retry later. */
+function SimulatorBusyNotice({ onRetry }) {
+  return (
+    <div className="flex h-full flex-col items-center justify-center px-6 text-center">
+      <div className="mb-5 flex h-16 w-16 items-center justify-center rounded-2xl bg-amber-500/10 text-amber-400 border border-amber-500/30">
+        <Users className="h-8 w-8" />
+      </div>
+      <h2 className="text-xl font-semibold text-white">El simulador está ocupado</h2>
+      <p className="mt-2 max-w-sm text-sm text-slate-400">
+        Se alcanzó el máximo de usuarios simultáneos. Inténtalo nuevamente más tarde.
+      </p>
+      <div className="mt-6 flex items-center gap-3">
+        <button
+          onClick={onRetry}
+          className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-700"
+        >
+          <RotateCw className="h-4 w-4" /> Reintentar
+        </button>
+        <Link
+          to="/dashboard"
+          className="inline-flex items-center gap-2 rounded-lg border border-slate-700 bg-slate-800 px-4 py-2 text-sm font-medium text-slate-200 transition-colors hover:bg-slate-700"
+        >
+          <ArrowLeft className="h-4 w-4" /> Volver al dashboard
+        </Link>
+      </div>
+    </div>
+  );
+}
+
 export default function SimulatorPage() {
   const navigate = useNavigate();
   const [isDesktop, setIsDesktop] = useState(
     () => typeof window !== 'undefined' && window.matchMedia(DESKTOP_QUERY).matches,
   );
+  // Capacity check (#43): consult before rendering the IDE so a full simulator
+  // shows the "busy" state instead of failing at connection time.
+  const [capacity, setCapacity] = useState(null); // null = checking
+  const [capacityError, setCapacityError] = useState(false);
+  const [retryKey, setRetryKey] = useState(0);
 
   // Track viewport size so rotating/resizing updates the gate live.
   useEffect(() => {
@@ -47,14 +82,39 @@ export default function SimulatorPage() {
   // Access guard: the simulator is only reachable from inside a course unit
   // that includes a "Simulador 3D" block (which sets sim_access). Admins can
   // always open it for testing. Anyone else is sent back to their dashboard.
+  // Then check capacity (state updates happen async via the promise, never
+  // synchronously in the effect body).
   useEffect(() => {
     const user = getStoredUser();
     const isAdmin = user?.role === 'admin';
     const granted = sessionStorage.getItem('sim_access') === '1';
     if (!isAdmin && !granted) {
       navigate('/student', { replace: true });
+      return;
     }
-  }, [navigate]);
+
+    let cancelled = false;
+    getSimulatorCapacity()
+      .then((data) => {
+        if (!cancelled) {
+          setCapacity(data);
+          setCapacityError(false);
+        }
+      })
+      .catch(() => {
+        // Backend unreachable → let the IDE surface the connection error instead
+        // of blocking the page on a false negative.
+        if (!cancelled) setCapacityError(true);
+      });
+    return () => { cancelled = true; };
+  }, [navigate, retryKey]);
+
+  const handleRetry = () => {
+    setCapacity(null); // back to the checking state
+    setRetryKey((k) => k + 1);
+  };
+
+  const busy = capacity !== null && capacity.available === false;
 
   return (
     <div className="h-screen w-full bg-slate-950 overflow-hidden flex flex-col">
@@ -91,7 +151,15 @@ export default function SimulatorPage() {
       </header>
 
       <div className="flex-grow w-full relative">
-        {isDesktop ? (
+        {!isDesktop ? (
+          <DesktopOnlyNotice />
+        ) : busy ? (
+          <SimulatorBusyNotice onRetry={handleRetry} />
+        ) : capacity === null && !capacityError ? (
+          <div className="flex h-full items-center justify-center">
+            <Loader2 className="h-8 w-8 animate-spin text-blue-500" />
+          </div>
+        ) : (
           <Suspense
             fallback={
               <div className="flex h-full items-center justify-center">
@@ -101,8 +169,6 @@ export default function SimulatorPage() {
           >
             <Ide />
           </Suspense>
-        ) : (
-          <DesktopOnlyNotice />
         )}
       </div>
     </div>
