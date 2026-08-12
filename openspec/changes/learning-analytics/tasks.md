@@ -21,12 +21,12 @@
       por pregunta (solo desde la fecha de instrumentación; exponer esa fecha como
       `per_question_data_start` = min(created_at) de la tabla, no una fecha hardcodeada).
 - [x] 2.5 Contenido: ranking por `active_seconds` y por abiertos-vs-completados.
-- [x] 2.6 Endpoints `/api/analytics/*` con **`require_admin` POR AHORA** (desviación
-      temporal respecto del design original `require_teacher_or_admin`: el guard de profesor
-      lo está rehaciendo el track teacher-course-management; cuando aterrice, se amplía el
-      guard de estos mismos endpoints). Flag `insufficient_data` cuando n < 3.
-      **El router NO está registrado en `main.py` todavía — queda pendiente el hook de Claude
-      (una línea `app.include_router(analytics_router)`) para no pisar a los otros tracks.**
+- [x] 2.6 Endpoints `/api/analytics/*`: los de curso (`progress`/`performance`/`content`)
+      usan `require_course_editor_from("course_id")` — **admin cualquier curso; profesor
+      solo SUS cursos asignados** (habilitado tras aterrizar #26 v2, como estaba planeado).
+      `interaction` (toda la plataforma) sigue `require_admin`. Flag `insufficient_data`
+      cuando n < 3. **El router NO está registrado en `main.py` todavía — queda pendiente
+      el hook de Claude (una línea `app.include_router(analytics_router)`).**
 
 ## 3. Frontend
 
@@ -35,8 +35,10 @@
       ranking de contenidos. Sin librería de charts (divs).
 - [x] 3.2 Estados "datos insuficientes" y nota de fecha de inicio de recolección donde
       aplique. Tooltip explicando el umbral de 14 días.
-- [ ] 3.3 Recorte de la misma sección en la vista profesor (#26) — mismo componente,
-      mismos endpoints. **Diferido al track teacher-course-management (Track A).**
+- [x] 3.3 Recorte para el profesor (mismo componente, mismos endpoints): la pestaña
+      "Analítica" se muestra en el panel compartido del profesor con su selector de cursos
+      (solo los suyos, vía `require_course_editor_from`); la sección "Interacción" (datos
+      de toda la plataforma) queda admin-only y se oculta al profesor.
 
 ## 4. Verificación
 

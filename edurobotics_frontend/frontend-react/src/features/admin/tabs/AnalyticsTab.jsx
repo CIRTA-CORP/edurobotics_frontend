@@ -326,7 +326,7 @@ function ContentSection({ courseId }) {
 }
 
 export function AnalyticsTab() {
-  const { courses, selectedCourseId, setSelectedCourseId } = useAdmin()
+  const { courses, selectedCourseId, setSelectedCourseId, isTeacher } = useAdmin()
   const [localCourseId, setLocalCourseId] = useState(selectedCourseId)
 
   const courseId = localCourseId ?? selectedCourseId ?? courses?.[0]?.id ?? null
@@ -368,10 +368,13 @@ export function AnalyticsTab() {
             <div className="mb-2"><SectionTitle icon={FileText}>Contenidos</SectionTitle></div>
             <ContentSection courseId={courseId} />
           </div>
-          <div>
-            <div className="mb-2"><SectionTitle icon={MousePointerClick}>Interacción (toda la plataforma)</SectionTitle></div>
-            <InteractionSection />
-          </div>
+          {/* The interaction summary is platform-wide (LoginEvent) → admin-only. */}
+          {!isTeacher && (
+            <div>
+              <div className="mb-2"><SectionTitle icon={MousePointerClick}>Interacción (toda la plataforma)</SectionTitle></div>
+              <InteractionSection />
+            </div>
+          )}
         </div>
       ) : (
         <p className="text-sm text-gray-400">Aún no hay cursos para analizar.</p>
