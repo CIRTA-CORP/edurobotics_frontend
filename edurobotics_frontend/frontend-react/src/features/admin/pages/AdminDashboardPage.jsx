@@ -31,6 +31,7 @@ const LandingTab = named(() => import('@/features/admin/tabs/LandingTab'), 'Land
 const SpecializationsTab = named(() => import('@/features/admin/tabs/SpecializationsTab'), 'SpecializationsTab')
 const UsersTab = named(() => import('@/features/admin/tabs/UsersTab'), 'UsersTab')
 const AnalyticsTab = named(() => import('@/features/admin/tabs/AnalyticsTab'), 'AnalyticsTab')
+const StudentsTab = named(() => import('@/features/admin/tabs/StudentsTab'), 'StudentsTab')
 
 const TabLoader = () => (
   <div className="flex justify-center py-16">
@@ -123,6 +124,7 @@ function AdminDashboardLayout() {
                   {activeTab === 'landing' && <LandingTab />}
                   {activeTab === 'usuarios' && <UsersTab />}
                   {activeTab === 'analitica' && <AnalyticsTab />}
+                  {activeTab === 'progreso' && <StudentsTab />}
                 </Suspense>
               </div>
             </main>

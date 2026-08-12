@@ -86,6 +86,10 @@ export function AdminSidebarNav() {
           </NavButton>
         </>
       )}
+      {/* Progreso es la vista del profesor (sus alumnos); también disponible para admin. */}
+      <NavButton active={activeTab === 'progreso'} onClick={() => setActiveTab('progreso')} icon={GraduationCap}>
+        Progreso
+      </NavButton>
       {/* Analítica es compartida: el profesor ve las métricas de SUS cursos. */}
       <NavButton active={activeTab === 'analitica'} onClick={() => setActiveTab('analitica')} icon={BarChart3}>
         Analítica

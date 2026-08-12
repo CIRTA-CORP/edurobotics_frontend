@@ -24,9 +24,11 @@
 
 ## 3. Frontend: gestión acotada
 
-- [x] 3.1 Vista teacher: reusa el panel admin (`/admin` ahora admite `teacher`; la ruta
-      `/teacher` sigue siendo el progreso y ganó el botón "Gestionar mis cursos"). La lista
-      de cursos del panel sale de `GET /api/teacher/courses` cuando el rol es teacher.
+- [x] 3.1 Vista teacher: reusa el panel admin (`/admin` ahora admite `teacher`; `/teacher`
+      redirige al panel en la pestaña `progreso`). La lista de cursos del panel sale de
+      `GET /api/teacher/courses` cuando el rol es teacher. La vista de progreso v1 se
+      rediseñó como pestaña `StudentsTab` con el design system del panel (tarjetas de
+      resumen + tabla + drawer), reemplazando la página plana anterior.
 - [x] 3.2 Ocultar acciones globales para `teacher`: crear/importar/editar/borrar/publicar
       curso, PDF/backup, métricas/feedback del curso, pestañas Dashboard/Usuarios/Analítica/
       Especializaciones/Landing, badge y toggle de vista del header. Deep-link a un tab

@@ -20,7 +20,6 @@ const CoursePage = lazy(() => import('@/features/courses/pages/CoursePage.jsx'))
 const RoadmapPage = lazy(() => import('@/features/roadmap/pages/RoadmapPage.jsx'))
 const AdminDashboardPage = lazy(() => import('@/features/admin/pages/AdminDashboardPage.jsx'))
 const StudentDashboardPage = lazy(() => import('@/features/student/pages/StudentDashboardPage.jsx'))
-const TeacherDashboardPage = lazy(() => import('@/features/teacher/pages/TeacherDashboardPage.jsx'))
 const QuizPage = lazy(() => import('@/features/quizzes/pages/QuizPage.jsx'))
 const UserProfilePage = lazy(() => import('@/features/profile/pages/UserProfilePage.jsx'))
 const SimulatorPage = lazy(() => import('@/features/simulator/pages/SimulatorPage.jsx'))
@@ -84,11 +83,12 @@ function App() {
               </ProtectedRoute>
             }
           />
+          {/* Teacher: the shared management panel, landing on student progress */}
           <Route
             path="/teacher"
             element={
-              <ProtectedRoute requiredRole="teacher">
-                <TeacherDashboardPage />
+              <ProtectedRoute allowedRoles={['admin', 'teacher']}>
+                <Navigate to="/admin?tab=progreso" replace />
               </ProtectedRoute>
             }
           />
