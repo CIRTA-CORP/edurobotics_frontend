@@ -41,7 +41,7 @@
       alumno → 403; acceso a quiz scoped; alumnos del profesor scoped (lista + detalle 404);
       asignar/quitar admin (400 si no es profesor); curso no publicado visible solo para su
       profesor.
-- [x] 4.2 `pytest` verde (72 passed); `npm run build` verde (sin issues de lint nuevos).
+- [x] 4.2 `pytest` verde (73 passed); `npm run build` verde (sin issues de lint nuevos).
 
 ## Diferido a v3 (anotado)
 - Profesor crea cursos desde cero; calificación manual; mensajería; secciones/paralelos.
