@@ -9,6 +9,11 @@
 
 import { useEditor, EditorContent, ReactNodeViewRenderer, NodeViewWrapper } from '@tiptap/react'
 import StarterKit from '@tiptap/starter-kit'
+import CodeBlockLowlight from '@tiptap/extension-code-block-lowlight'
+import { createLowlight } from 'lowlight'
+import python from 'highlight.js/lib/languages/python'
+import javascript from 'highlight.js/lib/languages/javascript'
+import bash from 'highlight.js/lib/languages/bash'
 import Image from '@tiptap/extension-image'
 import Link from '@tiptap/extension-link'
 import Youtube from '@tiptap/extension-youtube'
@@ -25,8 +30,10 @@ import {
   ImageIcon, Youtube as YoutubeIcon, FileDown, LinkIcon,
   AlignLeft, AlignCenter, AlignRight,
   Undo, Redo, Minus, Loader2,
-  PenLine, Eye, Columns2
+  PenLine, Eye, Columns2, Code, SquareCode
 } from 'lucide-react'
+
+const lowlight = createLowlight({ python, javascript, bash })
 
 // ── Resizable Image Node View ──
 function ResizableImageView({ node, updateAttributes, selected }) {
@@ -232,6 +239,16 @@ function EditorToolbar({ editor, onImageUpload, onFileUpload, uploading }) {
 
       <ToolbarDivider />
 
+      {/* Code */}
+      <ToolbarButton onClick={() => editor.chain().focus().toggleCodeBlock().run()} active={editor.isActive('codeBlock')} title="Bloque de código">
+        <SquareCode className="w-4 h-4" />
+      </ToolbarButton>
+      <ToolbarButton onClick={() => editor.chain().focus().toggleCode().run()} active={editor.isActive('code')} title="Código en línea">
+        <Code className="w-4 h-4" />
+      </ToolbarButton>
+
+      <ToolbarDivider />
+
       {/* Link */}
       <ToolbarButton onClick={addLink} active={editor.isActive('link')} title="Enlace">
         <LinkIcon className="w-4 h-4" />
@@ -289,6 +306,7 @@ export function RichTextEditor({ content, onSave, saving }) {
     onUpdate: ({ editor }) => setLiveHtml(editor.getHTML()),
     extensions: [
       StarterKit.configure({
+        codeBlock: false,
         paragraph: {
           HTMLAttributes: {
             class: 'prose-paragraph',
@@ -314,6 +332,12 @@ export function RichTextEditor({ content, onSave, saving }) {
       Underline.configure({
         HTMLAttributes: {
           class: 'underline',
+        },
+      }),
+      CodeBlockLowlight.configure({
+        lowlight,
+        HTMLAttributes: {
+          class: 'code-block',
         },
       }),
       TextAlign.configure({
