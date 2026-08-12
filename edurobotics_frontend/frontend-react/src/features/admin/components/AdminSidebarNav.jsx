@@ -70,7 +70,9 @@ export function AdminSidebarNav() {
   const onCourseClick = (course) => {
     setOpenCourseId((prev) => (prev === course.id ? null : course.id)) // expandir al instante
     handleCourseSelect(course)
-    setActiveTab('cursos')
+    // Teachers don't manage the course meta (that's admin) — land them on Módulos,
+    // not the "Detalle del curso" tab, which would be empty for them.
+    setActiveTab(isTeacher ? 'modulos' : 'cursos')
   }
 
   return (
@@ -140,9 +142,11 @@ export function AdminSidebarNav() {
                   {/* Sub-secciones del curso */}
                   {isOpen && (
                     <div className="my-1 ml-4 space-y-0.5 border-l border-gray-200 pl-2">
-                      <NavButton active={activeTab === 'cursos'} onClick={() => setActiveTab('cursos')} icon={Settings}>
-                        Detalle del curso
-                      </NavButton>
+                      {!isTeacher && (
+                        <NavButton active={activeTab === 'cursos'} onClick={() => setActiveTab('cursos')} icon={Settings}>
+                          Detalle del curso
+                        </NavButton>
+                      )}
                       <NavButton active={activeTab === 'modulos'} onClick={() => setActiveTab('modulos')} icon={Layers}>
                         Módulos
                       </NavButton>

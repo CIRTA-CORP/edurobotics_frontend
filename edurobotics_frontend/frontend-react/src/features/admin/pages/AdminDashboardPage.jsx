@@ -64,11 +64,11 @@ function AdminDashboardLayout() {
     setUser(storedUser)
   }, [navigate, setUser])
 
-  // A teacher only has the content + analytics tabs; any admin-only tab (deep
-  // link) falls back to their course management view.
+  // A teacher has no course-meta tab ('cursos') nor the admin-only tabs; any of
+  // those (default or deep link) falls back to their home, "Progreso".
   useEffect(() => {
-    if (isTeacher && ['dashboard', 'usuarios', 'especializaciones', 'landing'].includes(activeTab)) {
-      setActiveTab('cursos')
+    if (isTeacher && ['dashboard', 'usuarios', 'especializaciones', 'landing', 'cursos'].includes(activeTab)) {
+      setActiveTab('progreso')
     }
   }, [isTeacher, activeTab, setActiveTab])
 
