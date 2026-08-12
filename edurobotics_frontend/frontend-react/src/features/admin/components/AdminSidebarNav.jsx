@@ -82,6 +82,9 @@ export function AdminSidebarNav() {
       <NavButton active={activeTab === 'usuarios'} onClick={() => setActiveTab('usuarios')} icon={Users}>
         Usuarios
       </NavButton>
+      <NavButton active={activeTab === 'analitica'} onClick={() => setActiveTab('analitica')} icon={BarChart3}>
+        Analítica
+      </NavButton>
 
       {/* ── Contenido ── */}
       <SectionLabel>Contenido</SectionLabel>
