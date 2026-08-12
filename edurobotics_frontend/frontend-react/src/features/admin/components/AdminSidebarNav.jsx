@@ -52,7 +52,7 @@ function SectionLabel({ children }) {
 
 export function AdminSidebarNav() {
   const {
-    activeTab, setActiveTab, courses, isCoursesLoading,
+    activeTab, setActiveTab, courses, isCoursesLoading, isTeacher,
     selectedCourse, handleCourseSelect, selectedModule, selectedUnit,
   } = useAdmin()
 
@@ -76,15 +76,19 @@ export function AdminSidebarNav() {
   return (
     <nav className="rounded-xl border border-gray-200 bg-white p-2 lg:sticky lg:top-20">
       {/* ── Principal ── */}
-      <NavButton active={activeTab === 'dashboard'} onClick={() => setActiveTab('dashboard')} icon={BarChart3}>
-        Dashboard
-      </NavButton>
-      <NavButton active={activeTab === 'usuarios'} onClick={() => setActiveTab('usuarios')} icon={Users}>
-        Usuarios
-      </NavButton>
-      <NavButton active={activeTab === 'analitica'} onClick={() => setActiveTab('analitica')} icon={BarChart3}>
-        Analítica
-      </NavButton>
+      {!isTeacher && (
+        <>
+          <NavButton active={activeTab === 'dashboard'} onClick={() => setActiveTab('dashboard')} icon={BarChart3}>
+            Dashboard
+          </NavButton>
+          <NavButton active={activeTab === 'usuarios'} onClick={() => setActiveTab('usuarios')} icon={Users}>
+            Usuarios
+          </NavButton>
+          <NavButton active={activeTab === 'analitica'} onClick={() => setActiveTab('analitica')} icon={BarChart3}>
+            Analítica
+          </NavButton>
+        </>
+      )}
 
       {/* ── Contenido ── */}
       <SectionLabel>Contenido</SectionLabel>
@@ -156,15 +160,21 @@ export function AdminSidebarNav() {
       )}
 
       {/* Especializaciones es contenido (agrupa cursos) */}
-      <NavButton active={activeTab === 'especializaciones'} onClick={() => setActiveTab('especializaciones')} icon={GraduationCap}>
-        Especializaciones
-      </NavButton>
+      {!isTeacher && (
+        <NavButton active={activeTab === 'especializaciones'} onClick={() => setActiveTab('especializaciones')} icon={GraduationCap}>
+          Especializaciones
+        </NavButton>
+      )}
 
       {/* ── Sitio ── */}
-      <SectionLabel>Sitio</SectionLabel>
-      <NavButton active={activeTab === 'landing'} onClick={() => setActiveTab('landing')} icon={Globe}>
-        Landing
-      </NavButton>
+      {!isTeacher && (
+        <>
+          <SectionLabel>Sitio</SectionLabel>
+          <NavButton active={activeTab === 'landing'} onClick={() => setActiveTab('landing')} icon={Globe}>
+            Landing
+          </NavButton>
+        </>
+      )}
     </nav>
   )
 }

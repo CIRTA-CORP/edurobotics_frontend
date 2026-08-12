@@ -20,6 +20,7 @@ export function CoursesTab() {
     isCourseModalOpen,
     setIsCourseModalOpen,
     courseHooks,
+    isTeacher,
   } = useAdmin()
 
   const navigate = useNavigate()
@@ -79,32 +80,35 @@ export function CoursesTab() {
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <h3 className="text-lg font-semibold text-gray-900">Gestión de Cursos</h3>
-        <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center">
-          <input
-            ref={importInputRef}
-            type="file"
-            accept="application/json,.json"
-            onChange={handleImportFile}
-            className="hidden"
-          />
-          <Button
-            variant="outline"
-            onClick={() => importInputRef.current?.click()}
-            disabled={importing}
-            className="w-full justify-center gap-1.5 sm:w-auto"
-          >
-            <Upload className="w-4 h-4" />
-            {importing ? 'Importando…' : 'Importar respaldo'}
-          </Button>
-          <Button onClick={() => setIsCourseModalOpen(true)} className="w-full justify-center gap-1.5 sm:w-auto">
-            <Plus className="w-4 h-4" />
-            Crear Curso
-          </Button>
-        </div>
+        <h3 className="text-lg font-semibold text-gray-900">{isTeacher ? 'Mis cursos' : 'Gestión de Cursos'}</h3>
+        {/* Global actions stay admin-only: creating/importing courses is not for teachers. */}
+        {!isTeacher && (
+          <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center">
+            <input
+              ref={importInputRef}
+              type="file"
+              accept="application/json,.json"
+              onChange={handleImportFile}
+              className="hidden"
+            />
+            <Button
+              variant="outline"
+              onClick={() => importInputRef.current?.click()}
+              disabled={importing}
+              className="w-full justify-center gap-1.5 sm:w-auto"
+            >
+              <Upload className="w-4 h-4" />
+              {importing ? 'Importando…' : 'Importar respaldo'}
+            </Button>
+            <Button onClick={() => setIsCourseModalOpen(true)} className="w-full justify-center gap-1.5 sm:w-auto">
+              <Plus className="w-4 h-4" />
+              Crear Curso
+            </Button>
+          </div>
+        )}
       </div>
 
-      {selectedCourse && (
+      {selectedCourse && !isTeacher && (
         <div className="flex flex-wrap items-center gap-2 rounded-xl border border-gray-200 bg-white p-3">
           <span className="mr-auto px-1 text-sm text-gray-500">
             <span className="font-medium text-gray-700">“{selectedCourse.title}”</span>
@@ -133,36 +137,39 @@ export function CoursesTab() {
         </div>
       )}
 
-      {selectedCourse && (
+      {/* Course-level metrics/feedback come from admin endpoints. */}
+      {selectedCourse && !isTeacher && (
         <CourseTimeMetrics courseId={selectedCourse.id} />
       )}
 
-      {selectedCourse && (
+      {selectedCourse && !isTeacher && (
         <CourseFeedbackSummary courseId={selectedCourse.id} />
       )}
 
-      {/* Create / edit course — slide-over drawer */}
-      <Drawer
-        open={drawerOpen}
-        onClose={closeDrawer}
-        title={drawerMode === 'create' ? 'Crear nuevo curso' : `Editar curso`}
-      >
-        <CourseForm
-          bare
-          mode={drawerMode}
-          courseForm={courseHooks.courseForm}
-          setCourseForm={courseHooks.setCourseForm}
-          prereqIds={courseHooks.prereqIds}
-          setPrereqIds={courseHooks.setPrereqIds}
-          isSubmitting={courseHooks.isSubmitting}
-          onSubmit={drawerMode === 'create'
-            ? handleCourseCreate
-            : (e) => courseHooks.handleCourseUpdate(e, selectedCourse)}
-          onDelete={() => handleCourseDelete(selectedCourse)}
-          selectedCourse={selectedCourse}
-          allCourses={courses}
-        />
-      </Drawer>
+      {/* Create / edit course — slide-over drawer (admin only) */}
+      {!isTeacher && (
+        <Drawer
+          open={drawerOpen}
+          onClose={closeDrawer}
+          title={drawerMode === 'create' ? 'Crear nuevo curso' : `Editar curso`}
+        >
+          <CourseForm
+            bare
+            mode={drawerMode}
+            courseForm={courseHooks.courseForm}
+            setCourseForm={courseHooks.setCourseForm}
+            prereqIds={courseHooks.prereqIds}
+            setPrereqIds={courseHooks.setPrereqIds}
+            isSubmitting={courseHooks.isSubmitting}
+            onSubmit={drawerMode === 'create'
+              ? handleCourseCreate
+              : (e) => courseHooks.handleCourseUpdate(e, selectedCourse)}
+            onDelete={() => handleCourseDelete(selectedCourse)}
+            selectedCourse={selectedCourse}
+            allCourses={courses}
+          />
+        </Drawer>
+      )}
     </div>
   )
 }

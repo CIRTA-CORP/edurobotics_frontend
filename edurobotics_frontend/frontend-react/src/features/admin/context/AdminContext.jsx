@@ -13,6 +13,7 @@ import { useSearchParams } from 'react-router-dom'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import { getCourseDetail, getAllCourses, invalidateCourseCache } from '@/features/courses/services/courses'
+import { getTeacherCourses } from '@/features/teacher/services/teacher'
 import { useCourses } from '@/features/admin/features/courses/useCourses'
 import { useModules } from '@/features/admin/features/modules/useModules'
 import { useUnits } from '@/features/admin/features/units/useUnits'
@@ -111,10 +112,14 @@ export function AdminProvider({ children }) {
   const unitHooks = useUnits(null, refreshSelectedCourse)
   const contentHooks = useContent(null, refreshSelectedCourse)
 
+  // A teacher manages only their assigned courses (the panel is shared with the
+  // admin, but the course source and the visible actions differ per role).
+  const isTeacher = user?.role === 'teacher'
+
   // React Query hooks
   const { data: coursesResp, error: coursesError, isLoading: isCoursesLoading } = useQuery({
-    queryKey: ['admin-courses'],
-    queryFn: getAllCourses,
+    queryKey: ['admin-courses', isTeacher ? 'teacher' : 'admin'],
+    queryFn: isTeacher ? getTeacherCourses : getAllCourses,
     enabled: !!user && adminView === 'admin',
     staleTime: 5 * 60 * 1000, // 5 minutes for lists
     gcTime: 10 * 60 * 1000, // 10 minutes garbage collection
@@ -328,6 +333,7 @@ export function AdminProvider({ children }) {
     setAdminView,
     showLogoutModal,
     setShowLogoutModal,
+    isTeacher,
 
     // Selection state
     selectedCourseId,

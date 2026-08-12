@@ -8,7 +8,7 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
-import { Loader2, LogOut, GraduationCap, AlertCircle, ChevronRight } from 'lucide-react'
+import { Loader2, LogOut, GraduationCap, AlertCircle, ChevronRight, BookOpen } from 'lucide-react'
 import { clearStoredUser, getStoredUser } from '@/features/auth/services/auth'
 import { getTeacherStudents, getTeacherStudentDetail } from '@/features/teacher/services/teacher'
 import { LogoutModal } from '@/shared/components/LogoutModal'
@@ -96,6 +96,13 @@ export default function TeacherDashboardPage() {
             </div>
           </div>
           <div className="flex items-center gap-3">
+            <button
+              onClick={() => navigate('/admin')}
+              className="inline-flex items-center gap-1.5 rounded-lg bg-indigo-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-indigo-700 transition-colors"
+            >
+              <BookOpen className="h-3.5 w-3.5" />
+              Gestionar mis cursos
+            </button>
             <span className="text-sm text-gray-600">{user?.first_name} {user?.last_name}</span>
             <button onClick={() => setShowLogout(true)} className="text-gray-400 hover:text-gray-700" title="Salir">
               <LogOut className="h-4 w-4" />

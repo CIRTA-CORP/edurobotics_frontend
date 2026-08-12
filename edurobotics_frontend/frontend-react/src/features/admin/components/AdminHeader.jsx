@@ -11,8 +11,11 @@
 import { Button } from '@/shared/components/button'
 import { Link } from 'react-router-dom'
 import { Eye, Layout, LogOut, Shield, Terminal } from 'lucide-react'
+import { useAdmin } from '@/features/admin/context/AdminContext'
 
 export function AdminHeader({ adminView, onViewChange, onLogout, onLogoClick }) {
+  const { isTeacher } = useAdmin()
+
   return (
     <header className="bg-white/80 backdrop-blur-md border-b border-gray-200 shadow-sm sticky top-0 z-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
@@ -30,53 +33,57 @@ export function AdminHeader({ adminView, onViewChange, onLogout, onLogoClick }) 
             <div className="border-l border-gray-200 pl-3">
               <div className="flex items-center gap-2">
                 <h1 className="text-lg font-bold tracking-tight text-gray-900 leading-tight">EduRobotics</h1>
-                <span className="inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full bg-slate-900 text-white ring-1 ring-inset ring-white/10">
+                <span className={`inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full ring-1 ring-inset ring-white/10 ${isTeacher ? 'bg-indigo-600 text-white' : 'bg-slate-900 text-white'}`}>
                   <Shield className="w-2.5 h-2.5" />
-                  ADMIN
+                  {isTeacher ? 'PROFESOR' : 'ADMIN'}
                 </span>
               </div>
-              <p className="hidden sm:block text-[11px] text-gray-500 leading-tight">Gestión de cursos y módulos</p>
+              <p className="hidden sm:block text-[11px] text-gray-500 leading-tight">
+                {isTeacher ? 'Gestión de tus cursos' : 'Gestión de cursos y módulos'}
+              </p>
             </div>
           </div>
 
           {/* Right side */}
           <div className="flex items-center gap-2 sm:gap-3">
-            {/* View toggle */}
-            <div className="flex bg-gray-100 rounded-lg p-0.5">
-              <button
-                onClick={() => onViewChange('admin')}
-                title="Vista admin"
-                className={`flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-md text-xs font-medium transition-all ${adminView === 'admin'
-                    ? 'bg-white text-gray-900 shadow-sm'
-                    : 'text-gray-500 hover:text-gray-700'
-                  }`}
-              >
-                <Layout className="w-3.5 h-3.5" />
-                <span className="hidden sm:inline">Admin</span>
-              </button>
-              <button
-                onClick={() => onViewChange('student')}
-                title="Vista estudiante"
-                className={`flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-md text-xs font-medium transition-all ${adminView === 'student'
-                    ? 'bg-white text-gray-900 shadow-sm'
-                    : 'text-gray-500 hover:text-gray-700'
-                  }`}
-              >
-                <Eye className="w-3.5 h-3.5" />
-                <span className="hidden sm:inline">Estudiante</span>
-              </button>
+            {/* View toggle (admin only: teachers see their own panel) */}
+            {!isTeacher && (
+              <div className="flex bg-gray-100 rounded-lg p-0.5">
+                <button
+                  onClick={() => onViewChange('admin')}
+                  title="Vista admin"
+                  className={`flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-md text-xs font-medium transition-all ${adminView === 'admin'
+                      ? 'bg-white text-gray-900 shadow-sm'
+                      : 'text-gray-500 hover:text-gray-700'
+                    }`}
+                >
+                  <Layout className="w-3.5 h-3.5" />
+                  <span className="hidden sm:inline">Admin</span>
+                </button>
+                <button
+                  onClick={() => onViewChange('student')}
+                  title="Vista estudiante"
+                  className={`flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-md text-xs font-medium transition-all ${adminView === 'student'
+                      ? 'bg-white text-gray-900 shadow-sm'
+                      : 'text-gray-500 hover:text-gray-700'
+                    }`}
+                >
+                  <Eye className="w-3.5 h-3.5" />
+                  <span className="hidden sm:inline">Estudiante</span>
+                </button>
 
-              <div className="w-px h-6 bg-gray-200 mx-1 self-center" />
+                <div className="w-px h-6 bg-gray-200 mx-1 self-center" />
 
-              <Link
-                to="/simulator"
-                title="Simulador"
-                className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-md text-xs font-medium transition-all text-purple-600 hover:bg-purple-50 hover:text-purple-700"
-              >
-                <Terminal className="w-3.5 h-3.5" />
-                <span className="hidden sm:inline">Simulador</span>
-              </Link>
-            </div>
+                <Link
+                  to="/simulator"
+                  title="Simulador"
+                  className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-md text-xs font-medium transition-all text-purple-600 hover:bg-purple-50 hover:text-purple-700"
+                >
+                  <Terminal className="w-3.5 h-3.5" />
+                  <span className="hidden sm:inline">Simulador</span>
+                </Link>
+              </div>
+            )}
 
             <div className="w-px h-6 bg-gray-200" />
 

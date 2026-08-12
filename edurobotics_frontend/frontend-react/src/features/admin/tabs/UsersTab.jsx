@@ -1,15 +1,25 @@
 /**
- * UsersTab — registered users with course progress and role management (issue #36).
+ * UsersTab — registered users with course progress and role management (issue #36),
+ * plus course assignment for teachers (#26 v2).
  *
  * Lists every user with how many courses they started/completed and lets an admin
  * promote another user to admin or return them to student (with confirmation).
+ * Teachers get an extra "Cursos" action to assign them the courses they teach.
  * You can't change your own role; the backend also refuses to remove the last admin.
  */
+import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import { Users, Shield, GraduationCap, BookOpen, Loader2 } from 'lucide-react'
 import { getAdminUsers, updateUserRole } from '@/features/courses/services/courses'
+import {
+  getUserAssignedCourses,
+  assignCourseTeacher,
+  unassignCourseTeacher,
+} from '@/features/teacher/services/teacher'
 import { getStoredUser } from '@/features/auth/services/auth'
+import { useAdmin } from '@/features/admin/context/AdminContext'
+import { Drawer } from '@/shared/components/Drawer'
 
 // Badge look per role (teacher is read-only staff; admin has full control).
 const ROLE_META = {
@@ -28,9 +38,66 @@ function fmtDate(iso) {
   }
 }
 
+/** Drawer to assign the courses a teacher manages (#26 v2). */
+function TeacherCoursesDrawer({ teacher, onClose }) {
+  const queryClient = useQueryClient()
+  const { courses } = useAdmin()
+
+  const { data, isLoading } = useQuery({
+    queryKey: ['assigned-courses', teacher?.id],
+    queryFn: () => getUserAssignedCourses(teacher.id),
+    enabled: !!teacher,
+    staleTime: 15_000,
+  })
+  const assigned = new Set(data?.courses || [])
+
+  const toggleMutation = useMutation({
+    mutationFn: ({ courseId, assign }) =>
+      assign ? assignCourseTeacher(courseId, teacher.id) : unassignCourseTeacher(courseId, teacher.id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['assigned-courses', teacher?.id] })
+      queryClient.invalidateQueries({ queryKey: ['admin-courses'] })
+    },
+    onError: (err) => toast.error(err?.message || 'No se pudo actualizar la asignación'),
+  })
+
+  const toggle = (courseId, assign) => {
+    toggleMutation.mutate({ courseId, assign })
+  }
+
+  return (
+    <Drawer open={!!teacher} onClose={onClose} title={teacher ? `Cursos de ${teacher.name || teacher.username}` : ''}>
+      {isLoading ? (
+        <div className="flex justify-center py-10"><Loader2 className="h-5 w-5 animate-spin text-gray-400" /></div>
+      ) : courses.length === 0 ? (
+        <p className="text-sm text-gray-400">Aún no hay cursos que asignar.</p>
+      ) : (
+        <div className="space-y-1">
+          {courses.map((c) => {
+            const checked = assigned.has(c.id)
+            return (
+              <label key={c.id} className="flex cursor-pointer items-center gap-3 rounded-lg px-2 py-2 hover:bg-gray-50">
+                <input
+                  type="checkbox"
+                  checked={checked}
+                  disabled={toggleMutation.isPending}
+                  onChange={() => toggle(c.id, !checked)}
+                  className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus-visible:ring-2 focus-visible:ring-indigo-500"
+                />
+                <span className="truncate text-sm text-gray-700">{c.title}</span>
+              </label>
+            )
+          })}
+        </div>
+      )}
+    </Drawer>
+  )
+}
+
 export function UsersTab() {
   const queryClient = useQueryClient()
   const me = getStoredUser()
+  const [assignTeacher, setAssignTeacher] = useState(null)
 
   const { data, isLoading } = useQuery({
     queryKey: ['admin-users'],
@@ -105,17 +172,27 @@ export function UsersTab() {
                         {isMe ? (
                           <span className="text-xs text-gray-300">Tú</span>
                         ) : (
-                          <select
-                            value={u.role}
-                            disabled={roleMutation.isPending}
-                            onChange={(e) => setRole(u, e.target.value)}
-                            className="rounded-lg border border-gray-200 bg-white px-2 py-1 text-xs text-gray-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
-                            aria-label={`Rol de ${u.name || u.username}`}
-                          >
-                            <option value="student">Estudiante</option>
-                            <option value="teacher">Profesor</option>
-                            <option value="admin">Admin</option>
-                          </select>
+                          <div className="flex items-center justify-end gap-2">
+                            {u.role === 'teacher' && (
+                              <button
+                                onClick={() => setAssignTeacher(u)}
+                                className="rounded-lg border border-indigo-200 bg-indigo-50 px-2 py-1 text-xs font-medium text-indigo-700 hover:bg-indigo-100"
+                              >
+                                Cursos
+                              </button>
+                            )}
+                            <select
+                              value={u.role}
+                              disabled={roleMutation.isPending}
+                              onChange={(e) => setRole(u, e.target.value)}
+                              className="rounded-lg border border-gray-200 bg-white px-2 py-1 text-xs text-gray-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+                              aria-label={`Rol de ${u.name || u.username}`}
+                            >
+                              <option value="student">Estudiante</option>
+                              <option value="teacher">Profesor</option>
+                              <option value="admin">Admin</option>
+                            </select>
+                          </div>
                         )}
                       </td>
                     </tr>
@@ -127,8 +204,10 @@ export function UsersTab() {
         )}
       </div>
       <p className="text-[11px] text-gray-400">
-        "Iniciados" = cursos con algún avance. "Completados" = cursos con todo el contenido y los quizzes aprobados. No puedes cambiar tu propio rol.
+        "Iniciados" = cursos con algún avance. "Completados" = cursos con todo el contenido y los quizzes aprobados. No puedes cambiar tu propio rol. Los profesores editan solo los cursos que les asignas.
       </p>
+
+      <TeacherCoursesDrawer teacher={assignTeacher} onClose={() => setAssignTeacher(null)} />
     </div>
   )
 }

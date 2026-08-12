@@ -2,29 +2,46 @@
 
 ## 1. Backend: membresía y autorización
 
-- [ ] 1.1 Modelo `CourseTeacher` (`course_id`, `user_id`, único) + migración aditiva/reversible.
-- [ ] 1.2 `require_course_editor` en `core/security.py`: admin siempre; teacher si está asignado al
-      curso (resuelve `course_id` desde unit/content/module/quiz).
-- [ ] 1.3 Aplicar `require_course_editor` a las rutas de ESCRITURA de modules/units/contents/quizzes
-      (hoy `require_admin`). Global (publicar/borrar/roles/especializaciones/landing) sigue admin.
+- [x] 1.1 Modelo `CourseTeacher` (`course_id`, `user_id`, único) + migración aditiva/reversible
+      (`b8c9d0e1f2a3`).
+- [x] 1.2 `course_id_of` + `require_course_editor_from` en `core/security.py`: admin siempre;
+      teacher si está asignado al curso (resuelve `course_id` subiendo desde
+      answer→question→quiz→unit/module→course). Base: `is_course_editor`/`ensure_course_editor`.
+- [x] 1.3 Aplicado a las rutas de ESCRITURA de modules/units/contents/quizzes (antes
+      `require_admin`): crear módulo, CRUD unidades/contenidos, CRUD quizzes/preguntas/
+      respuestas, y `GET /api/admin/quizzes/{id}` (el profesor ve las respuestas correctas
+      de SUS quizzes). Global (publicar/borrar/roles/especializaciones/landing/import/export)
+      sigue admin.
 
 ## 2. Backend: endpoints de asignación y "mis cursos"
 
-- [ ] 2.1 Admin: asignar / quitar / listar docentes de un curso.
-- [ ] 2.2 `GET /api/teacher/courses` (cursos del profesor); filtrar la vista de progreso v1 a sus alumnos.
+- [x] 2.1 Admin: asignar / quitar / listar docentes de un curso (`POST/DELETE/GET
+      /api/admin/courses/{id}/teachers`) + `GET /api/admin/users/{id}/courses` (back de la UI).
+- [x] 2.2 `GET /api/teacher/courses` (cursos del profesor); vista de progreso v1 filtrada a
+      los alumnos de sus cursos (progreso/quiz intento/matrícula en sus cursos; contadores
+      scoped; admin sin filtro). `GET /api/courses/{id}` muestra no-publicados al profesor
+      asignado (antes 404).
 
 ## 3. Frontend: gestión acotada
 
-- [ ] 3.1 Vista teacher: reusa el panel de cursos del admin pero listando solo `GET /api/teacher/courses`.
-- [ ] 3.2 Ocultar acciones globales para `teacher` (crear/publicar/borrar curso, Usuarios,
-      Especializaciones, Landing).
-- [ ] 3.3 UI admin para asignar cursos a un profesor.
+- [x] 3.1 Vista teacher: reusa el panel admin (`/admin` ahora admite `teacher`; la ruta
+      `/teacher` sigue siendo el progreso y ganó el botón "Gestionar mis cursos"). La lista
+      de cursos del panel sale de `GET /api/teacher/courses` cuando el rol es teacher.
+- [x] 3.2 Ocultar acciones globales para `teacher`: crear/importar/editar/borrar/publicar
+      curso, PDF/backup, métricas/feedback del curso, pestañas Dashboard/Usuarios/Analítica/
+      Especializaciones/Landing, badge y toggle de vista del header. Deep-link a un tab
+      admin-only cae a 'cursos'.
+- [x] 3.3 UI admin para asignar cursos a un profesor: botón "Cursos" en la fila de cada
+      profesor (UsersTab) con drawer de checkboxes por curso.
 
 ## 4. Verificación
 
-- [ ] 4.1 Tests: profesor edita SU curso ✓; edita curso ajeno → 403; publicar/borrar/rol → 403;
-      alumno sin acceso.
-- [ ] 4.2 `pytest` verde; `npm run build` verde.
+- [x] 4.1 Tests (`tests/test_teacher_courses.py`, 9 tests): profesor edita SU curso ✓; edita
+      curso ajeno → 403; crear módulo propio ✓/ajeno → 403; publicar/borrar/rol → 403;
+      alumno → 403; acceso a quiz scoped; alumnos del profesor scoped (lista + detalle 404);
+      asignar/quitar admin (400 si no es profesor); curso no publicado visible solo para su
+      profesor.
+- [x] 4.2 `pytest` verde (72 passed); `npm run build` verde (sin issues de lint nuevos).
 
 ## Diferido a v3 (anotado)
 - Profesor crea cursos desde cero; calificación manual; mensajería; secciones/paralelos.
