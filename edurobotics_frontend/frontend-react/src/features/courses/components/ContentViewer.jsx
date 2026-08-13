@@ -440,10 +440,10 @@ export function ContentViewer({
 
   return (
     <>
-      <div className={`max-w-4xl mx-auto space-y-4 transition-all duration-300 ${visible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'}`}>
+      <div className={`max-w-[720px] mx-auto space-y-5 transition-all duration-300 ${visible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'}`}>
         {/* ── Breadcrumbs + status ── */}
         <div className="flex items-center justify-between px-1">
-          <nav className="flex items-center gap-1.5 text-xs text-gray-400 min-w-0">
+          <nav className="flex items-center gap-1.5 text-[11px] uppercase tracking-wide font-mono text-gray-400 min-w-0">
             {currentModule && (
               <>
                 <span className="truncate max-w-[160px]" title={currentModule.title}>{currentModule.title}</span>
@@ -460,30 +460,31 @@ export function ContentViewer({
           )}
         </div>
 
-        {/* ── Lesson title ── */}
-        <h1 className="px-1 text-2xl md:text-3xl font-bold tracking-tight text-gray-900">
+        {/* ── Lesson title (editorial serif) ── */}
+        <h1
+          className="px-1 text-3xl md:text-[2.6rem] font-bold tracking-tight leading-[1.1] text-gray-900"
+          style={{ fontFamily: '"Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif' }}
+        >
           {unit.title}
         </h1>
 
-        {/* ── Lesson content card — everything flows together ── */}
+        {/* ── Lesson content — de-boxed, flows on the page (no card) ── */}
         {(hasRichBody || legacyContents.length > 0) && (
-          <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
-            <div className="p-6 md:p-8 lg:p-12 space-y-8 max-w-[800px] mx-auto">
-              {/* Table of Contents */}
-              {hasRichBody && <TableOfContents headings={headings} />}
+          <div className="px-1 space-y-7">
+            {/* Table of Contents */}
+            {hasRichBody && <TableOfContents headings={headings} />}
 
-              {/* Rich text content (new TipTap format) — single unified document */}
-              {hasRichBody && (
-                <div
-                  className="rich-content prose prose-sm md:prose-base max-w-none w-full overflow-hidden text-gray-700 leading-relaxed break-words"
-                  dangerouslySetInnerHTML={{ __html: processedHtml }}
-                />
-              )}
-              {/* Legacy content blocks (old multi-block format) */}
-              {legacyContents.map((content) => (
-                <ContentBlock key={content.id} content={content} />
-              ))}
-            </div>
+            {/* Rich text content (new TipTap format) — single unified document */}
+            {hasRichBody && (
+              <div
+                className="rich-content max-w-none w-full overflow-hidden break-words"
+                dangerouslySetInnerHTML={{ __html: processedHtml }}
+              />
+            )}
+            {/* Legacy content blocks (old multi-block format) */}
+            {legacyContents.map((content) => (
+              <ContentBlock key={content.id} content={content} />
+            ))}
           </div>
         )}
 
