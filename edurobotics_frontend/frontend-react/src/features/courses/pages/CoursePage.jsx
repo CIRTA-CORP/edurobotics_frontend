@@ -202,7 +202,7 @@ function CoursePage() {
 
   // ── Main layout ──
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col">
+    <div className="min-h-screen bg-white flex flex-col">
       {/* Top bar */}
       <CourseTopBar course={course} user={user} onBack={() => navigate('/dashboard')} />
 
@@ -233,7 +233,7 @@ function CoursePage() {
 
         {/* ── Sidebar ── */}
         <aside className={`
-          w-72 flex-shrink-0 bg-white border-r border-gray-200 overflow-y-auto
+          w-72 flex-shrink-0 bg-gray-50/70 border-r border-gray-200 overflow-y-auto
           fixed lg:relative inset-y-0 left-0 z-40
           transform transition-transform duration-200 ease-in-out
           ${sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
