@@ -8,7 +8,6 @@
  */
 
 import { useState, useEffect, useMemo, useRef } from 'react'
-import { Button } from '@/shared/components/button'
 import {
   FileText, FileDown,
   CheckCircle, ChevronRight, ExternalLink,
@@ -499,55 +498,50 @@ export function ContentViewer({
           </div>
         )}
 
-        {/* ── Simulator section ── */}
+        {/* ── Simulator section (de-boxed, editorial) ── */}
         {simulatorContent && (
-          <div className="rounded-2xl border border-blue-200 bg-gradient-to-br from-blue-50 to-blue-50 overflow-hidden">
-            <div className="h-1 bg-blue-500" />
-            <div className="p-5 md:p-6">
-              <div className="flex items-start justify-between gap-4 flex-wrap">
-                <div className="flex items-start gap-3 min-w-0">
-                  <div className="w-10 h-10 rounded-xl bg-blue-100 flex items-center justify-center flex-shrink-0">
-                    <Cpu className="w-5 h-5 text-blue-600" />
-                  </div>
-                  <div className="min-w-0">
-                    <h3 className="text-sm font-bold text-gray-900">Simulador 3D</h3>
-                    <p className="text-xs text-gray-600 mt-0.5">
-                      {simulatorContent.content_value?.trim()
-                        || 'Practica con el robot en el simulador antes de continuar.'}
-                    </p>
-                  </div>
-                </div>
-                <button
-                  onClick={() => {
-                    if (!isContentCompleted?.(simulatorContent.id)) {
-                      markComplete?.(simulatorContent.id)
-                    }
-                    // Grant simulator access for this session: the /simulator
-                    // route only opens when entered from a unit that includes it.
-                    sessionStorage.setItem('sim_access', '1')
-                    navigate('/simulator')
-                  }}
-                  className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 transition-colors flex-shrink-0"
-                >
-                  Abrir simulador
-                  <ChevronRight className="w-4 h-4" />
-                </button>
+          <div className="flex items-start justify-between gap-4 flex-wrap rounded-xl border border-gray-200 bg-white p-5">
+            <div className="flex items-start gap-3 min-w-0">
+              <div className="w-10 h-10 rounded-lg bg-indigo-50 flex items-center justify-center flex-shrink-0">
+                <Cpu className="w-5 h-5 text-indigo-600" />
+              </div>
+              <div className="min-w-0">
+                <h3 className="text-sm font-semibold text-gray-900">Simulador 3D</h3>
+                <p className="text-xs text-gray-500 mt-0.5">
+                  {simulatorContent.content_value?.trim()
+                    || 'Practica con el robot en el simulador antes de continuar.'}
+                </p>
               </div>
             </div>
+            <button
+              onClick={() => {
+                if (!isContentCompleted?.(simulatorContent.id)) {
+                  markComplete?.(simulatorContent.id)
+                }
+                // Grant simulator access for this session: the /simulator
+                // route only opens when entered from a unit that includes it.
+                sessionStorage.setItem('sim_access', '1')
+                navigate('/simulator')
+              }}
+              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-semibold text-white bg-gray-900 hover:bg-gray-800 transition-colors flex-shrink-0"
+            >
+              Abrir simulador
+              <ChevronRight className="w-4 h-4" />
+            </button>
           </div>
         )}
 
-        {/* ── Progress + navigation bar ── */}
-        <div className="flex items-center justify-between px-5 py-3 bg-white rounded-xl border border-gray-200">
+        {/* ── Navigation (de-boxed, hairline top) ── */}
+        <div className="flex items-center justify-between gap-3 border-t border-gray-200 pt-6 mt-2">
           {/* Previous unit */}
           <div className="flex-1">
             {!isFirstUnit && (
               <button
                 onClick={handlePreviousUnit}
-                className="flex items-center gap-1.5 text-xs text-gray-400 hover:text-blue-600 transition-colors"
+                className="flex items-center gap-1.5 text-sm text-gray-400 hover:text-gray-800 transition-colors"
               >
-                <ChevronLeft className="w-3.5 h-3.5" />
-                <span className="hidden sm:inline truncate max-w-[120px]">
+                <ChevronLeft className="w-4 h-4" />
+                <span className="hidden sm:inline truncate max-w-[140px]">
                   {allUnits[currentUnitIndex - 1]?.title || 'Anterior'}
                 </span>
                 <span className="sm:hidden">Anterior</span>
@@ -555,31 +549,24 @@ export function ContentViewer({
             )}
           </div>
 
-          {/* Center: actions */}
+          {/* Center: primary action */}
           <div className="flex items-center gap-2">
             {!allContentsCompleted ? (
-              <Button
+              <button
                 onClick={handleMarkAllComplete}
                 disabled={navigating}
-                size="sm"
-                className="gap-1.5 bg-blue-600 hover:bg-blue-700"
+                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold text-white bg-gray-900 hover:bg-gray-800 disabled:opacity-60 transition-colors"
               >
-                {navigating ? 'Guardando...' : (
-                  <>
-                    <CheckCircle className="w-4 h-4" />
-                    Marcar como leído
-                  </>
-                )}
-              </Button>
+                {navigating ? 'Guardando…' : (<><CheckCircle className="w-4 h-4" /> Marcar como leído</>)}
+              </button>
             ) : !hasQuiz ? (
-              <Button
+              <button
                 onClick={handleFinish}
-                size="sm"
-                className="gap-1.5 bg-emerald-600 hover:bg-emerald-700"
+                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold text-white bg-gray-900 hover:bg-gray-800 transition-colors"
               >
                 {isLastUnit ? 'Finalizar curso' : 'Siguiente unidad'}
                 <ChevronRight className="w-4 h-4" />
-              </Button>
+              </button>
             ) : null}
           </div>
 
@@ -588,13 +575,13 @@ export function ContentViewer({
             {!isLastUnit && (
               <button
                 onClick={handleNextUnit}
-                className="flex items-center gap-1.5 text-xs text-gray-400 hover:text-blue-600 transition-colors"
+                className="flex items-center gap-1.5 text-sm text-gray-400 hover:text-gray-800 transition-colors"
               >
-                <span className="hidden sm:inline truncate max-w-[120px]">
+                <span className="hidden sm:inline truncate max-w-[140px]">
                   {allUnits[currentUnitIndex + 1]?.title || 'Siguiente'}
                 </span>
                 <span className="sm:hidden">Siguiente</span>
-                <ChevronRight className="w-3.5 h-3.5" />
+                <ChevronRight className="w-4 h-4" />
               </button>
             )}
           </div>
@@ -602,24 +589,17 @@ export function ContentViewer({
 
         {/* ── Quiz section ── */}
         {hasQuiz && (
-          <div className={`rounded-2xl border overflow-hidden ${
-            isQuizPassed
-              ? 'bg-emerald-50/50 border-emerald-200'
-              : allContentsCompleted
-                ? 'bg-white border-gray-200' 
-                : 'bg-gray-50/50 border-gray-200'
+          <div className={`rounded-xl border ${
+            isQuizPassed ? 'bg-emerald-50/40 border-emerald-200' : 'bg-white border-gray-200'
           }`}>
-            {/* Top accent line */}
-            <div className={`h-1 ${isQuizPassed ? 'bg-emerald-500' : 'bg-blue-500'}`} />
-
             <div className="p-5 md:p-6">
               {/* Header row */}
               <div className="flex items-start justify-between gap-4 mb-4">
                 <div className="flex items-start gap-3 min-w-0">
-                  <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${
-                    isQuizPassed ? 'bg-emerald-100' : 'bg-blue-50'
+                  <div className={`w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 ${
+                    isQuizPassed ? 'bg-emerald-100' : 'bg-indigo-50'
                   }`}>
-                    <ClipboardCheck className={`w-5 h-5 ${isQuizPassed ? 'text-emerald-600' : 'text-blue-600'}`} />
+                    <ClipboardCheck className={`w-5 h-5 ${isQuizPassed ? 'text-emerald-600' : 'text-indigo-600'}`} />
                   </div>
                   <div className="min-w-0">
                     <h3 className="text-sm font-bold text-gray-900">Evaluación</h3>
@@ -639,11 +619,7 @@ export function ContentViewer({
                 <div className="flex items-center gap-3 flex-wrap">
                   <button
                     onClick={() => navigate(`/courses/${courseId}/quiz/${quiz.id}`)}
-                    className={`inline-flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-semibold text-white transition-colors ${
-                      isQuizPassed
-                        ? 'bg-gray-700 hover:bg-gray-800'
-                        : 'bg-blue-600 hover:bg-blue-700'
-                    }`}
+                    className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-semibold text-white bg-gray-900 hover:bg-gray-800 transition-colors"
                   >
                     {isQuizPassed ? 'Repetir evaluación' : 'Comenzar evaluación'}
                     <ChevronRight className="w-4 h-4" />
