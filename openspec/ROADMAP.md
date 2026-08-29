@@ -123,6 +123,30 @@ Evaluar **React Flow** (ya identificado como candidato) si el grafo actual se qu
 
 ---
 
+## F8 — Fluidez percibida `perceived-performance`
+
+**Diagnóstico (análisis 2026-08-05).** La app YA tiene buena base (rutas lazy, vendor chunks, skeletons, React Query con staleTime, warm-up ping al backend). La sensación de "no fluido" viene de tres causas concretas, en este orden:
+
+1. **Respuestas del backend sin comprimir.** FastAPI NO comprime por defecto y no hay `GZipMiddleware` en `main.py`. El roadmap, las listas de cursos y sobre todo `content_value` (HTML completo de lecciones) viajan en texto plano desde Railway; el HTML comprime 5–10×. Fix: `app.add_middleware(GZipMiddleware, minimum_size=1000)` — 2 líneas, el mayor impacto de toda la fase.
+2. **Transiciones de ruta que "parpadean".** El `Suspense` global usa `PageLoader`: pantalla completa gris + spinner en CADA navegación mientras baja el chunk lazy. Eso se percibe como lentitud aunque tarde 200 ms. Fixes:
+   - Activar el future flag `v7_startTransition` de React Router para que la página anterior permanezca visible mientras carga la nueva (sin flash gris).
+   - Sacar el header/shell del estudiante FUERA del `Suspense` (layout persistente) para que solo cambie el área de contenido.
+   - **Prefetch en hover/focus**: al pasar el mouse por una tarjeta de curso, disparar `import()` del chunk de `CoursePage` + `queryClient.prefetchQuery` de sus datos. La navegación pasa a sentirse instantánea. Igual para los links del header.
+3. **Sin cache HTTP en endpoints públicos.** No hay `Cache-Control`/`ETag` en ninguna respuesta; el navegador nunca reutiliza nada entre sesiones. Fix: `Cache-Control: public, max-age=30` (alineado con el staleTime del cliente) en cursos/especializaciones/landing públicos.
+
+**Secundario (hacer si sobra tiempo en la sesión):**
+- Autohospedar la fuente Inter (`@fontsource-variable/inter`) en vez del CSS de Google Fonts, que hoy bloquea el primer render (afecta solo la primera visita).
+- `width`/`height` (o `aspect-ratio`) en imágenes de tarjetas para eliminar cualquier layout shift restante.
+- Reportar Web Vitals (LCP/INP/CLS) vía `web-vitals` → GA4 (react-ga4 ya está instalado) para tener datos reales de alumnos, no impresiones.
+
+**Medir ANTES y DESPUÉS (obligatorio, es el criterio de honestidad de la fase):** Lighthouse (móvil, Slow 4G) sobre landing, dashboard y una lección en el deploy de Vercel; y en DevTools → Network, el TTFB de `/api/*`. Si el TTFB desde Railway supera ~400 ms constantes, el problema es latencia/regiones (Railway ↔ Supabase) y ningún fix de frontend lo tapa — revisar que ambos estén en la misma región antes de seguir optimizando.
+
+**Criterios de aceptación:** respuestas JSON > 1 KB llegan con `content-encoding: gzip` · navegar dashboard → curso con cache caliente no muestra pantalla-spinner completa · Lighthouse Performance ≥ 90 en landing y dashboard (móvil) · comparativa antes/después documentada en el change.
+
+**Tamaño:** 1–2 sesiones. Requiere que Mario pruebe en el deploy real (Vercel + Railway), no solo local.
+
+---
+
 ## Reglas permanentes del proyecto (para cualquier change)
 
 - Proposal aprobado por Mario ANTES de codear. Sin excepciones.
