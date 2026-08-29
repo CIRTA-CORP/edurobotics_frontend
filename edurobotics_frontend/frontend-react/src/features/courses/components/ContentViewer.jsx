@@ -12,7 +12,7 @@ import {
   FileText, FileDown,
   CheckCircle, ChevronRight, ExternalLink,
   ClipboardCheck, ChevronLeft, ArrowUp,
-  ListTree, Cpu
+  ListTree, Cpu, Clock, Lock
 } from 'lucide-react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { CourseFeedbackModal } from './CourseFeedbackModal'
@@ -41,10 +41,11 @@ const buildUrl = (value) => {
 function ContentBlock({ content }) {
   if (content.content_type === 'video' && isVideoUrl(content.content_value)) {
     return (
-      <div className="aspect-video bg-black rounded-xl overflow-hidden shadow-sm">
+      <div className="aspect-video bg-black rounded-xl overflow-hidden border border-gray-200">
         <iframe
           src={getYoutubeEmbedUrl(content.content_value)}
           className="w-full h-full"
+          title="Video de la unidad"
           allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
           allowFullScreen
         />
@@ -77,7 +78,7 @@ function ContentBlock({ content }) {
         <img
           src={buildUrl(content.content_value)}
           alt="Contenido visual"
-          className="max-w-full max-h-[500px] object-contain rounded-xl shadow-sm border border-gray-100"
+          className="max-w-full max-h-[500px] object-contain rounded-xl border border-gray-200"
         />
       </figure>
     )
@@ -90,18 +91,18 @@ function ContentBlock({ content }) {
 
     if (ext === 'PDF') {
       return (
-        <div className="flex flex-col gap-3 w-full">
-          {/* PDF Header / Download Bar */}
-          <div className="flex items-center justify-between px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl">
+        <div className="flex flex-col gap-2 w-full">
+          {/* PDF header / download bar */}
+          <div className="flex items-center justify-between gap-4 px-4 py-3 bg-white border border-gray-200 rounded-xl">
             <div className="flex items-center gap-3 min-w-0">
-              <div className="w-8 h-8 rounded-lg bg-rose-100 flex items-center justify-center flex-shrink-0">
-                <FileDown className="w-4 h-4 text-rose-600" />
+              <div className="w-9 h-9 rounded-[10px] bg-rose-50 flex items-center justify-center flex-shrink-0">
+                <FileDown className="w-4 h-4 text-rose-500" />
               </div>
               <div className="min-w-0">
-                <h3 className="text-sm font-semibold text-gray-800 truncate" title={fileName}>
+                <h3 className="text-[13.5px] font-semibold text-gray-800 truncate" title={fileName}>
                   {fileName}
                 </h3>
-                <p className="text-[11px] font-medium text-gray-500">Documento PDF</p>
+                <p className="font-mono text-[10.5px] text-gray-400 mt-0.5">Documento PDF</p>
               </div>
             </div>
             <a
@@ -109,7 +110,7 @@ function ContentBlock({ content }) {
               target="_blank"
               rel="noopener noreferrer"
               download
-              className="flex-shrink-0 flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-gray-700 bg-white border border-gray-200 hover:bg-gray-50 hover:text-blue-600 rounded-lg transition-colors shadow-sm"
+              className="flex-shrink-0 flex items-center gap-1.5 px-3.5 py-1.5 text-[12.5px] font-semibold text-gray-600 bg-white border border-gray-200 hover:border-gray-300 rounded-[9px] transition-colors"
               title="Descargar PDF"
             >
               <FileDown className="w-3.5 h-3.5" />
@@ -117,8 +118,8 @@ function ContentBlock({ content }) {
             </a>
           </div>
 
-          {/* PDF Embed */}
-          <div className="w-full bg-gray-100 rounded-xl border border-gray-200 overflow-hidden shadow-inner" style={{ height: '75vh', minHeight: '600px' }}>
+          {/* PDF preview */}
+          <div className="w-full bg-gray-50 rounded-xl border border-gray-200 overflow-hidden" style={{ height: '60vh', minHeight: '420px' }}>
             <object
               data={fileUrl}
               type="application/pdf"
@@ -152,15 +153,20 @@ function ContentBlock({ content }) {
         target="_blank"
         rel="noopener noreferrer"
         download
-        className="flex items-center gap-4 px-5 py-4 bg-gradient-to-r from-rose-50 to-orange-50 hover:from-rose-100 hover:to-orange-100 rounded-xl border border-rose-200/60 transition-all group w-full"
+        className="flex items-center justify-between gap-4 px-4 py-3.5 rounded-xl border border-gray-200 bg-white hover:border-gray-300 transition-colors w-full"
       >
-        <div className="w-11 h-11 rounded-lg bg-white shadow-sm flex items-center justify-center border border-rose-200/50 flex-shrink-0">
-          <FileDown className="w-5 h-5 text-rose-500 group-hover:scale-110 transition-transform" />
-        </div>
-        <div className="min-w-0">
-          <div className="text-sm font-semibold text-gray-800">Descargar archivo</div>
-          <div className="text-xs text-gray-500 truncate">{fileName} <span className="text-rose-500 font-medium">{ext}</span></div>
-        </div>
+        <span className="flex items-center gap-3 min-w-0">
+          <span className="w-9 h-9 rounded-[10px] bg-gray-100 grid place-items-center flex-shrink-0">
+            <FileDown className="w-4 h-4 text-gray-500" />
+          </span>
+          <span className="min-w-0">
+            <span className="block text-[13.5px] font-semibold text-gray-800 truncate">{fileName}</span>
+            <span className="block font-mono text-[10.5px] text-gray-400 mt-0.5">{ext || 'Archivo'}</span>
+          </span>
+        </span>
+        <span className="flex-shrink-0 text-[12.5px] font-semibold text-gray-600 px-3.5 py-1.5 rounded-[9px] border border-gray-200">
+          Descargar
+        </span>
       </a>
     )
   }
@@ -171,15 +177,18 @@ function ContentBlock({ content }) {
       href={content.content_value}
       target="_blank"
       rel="noopener noreferrer"
-      className="flex items-center gap-4 px-5 py-4 bg-gradient-to-r from-blue-50 to-blue-50 hover:from-blue-100 hover:to-blue-100 rounded-xl border border-blue-200/60 transition-all group"
+      className="flex items-center justify-between gap-4 px-4 py-3.5 rounded-xl border border-gray-200 bg-white hover:border-gray-300 transition-colors"
     >
-      <div className="w-11 h-11 rounded-lg bg-white shadow-sm flex items-center justify-center border border-blue-200/50 flex-shrink-0">
-        <ExternalLink className="w-5 h-5 text-blue-500 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
-      </div>
-      <div className="min-w-0">
-        <div className="text-sm font-semibold text-gray-800">Abrir recurso externo</div>
-        <div className="text-xs text-blue-500 truncate">{content.content_value}</div>
-      </div>
+      <span className="flex items-center gap-3 min-w-0">
+        <span className="w-9 h-9 rounded-[10px] bg-indigo-50 grid place-items-center flex-shrink-0">
+          <ExternalLink className="w-4 h-4 text-indigo-500" />
+        </span>
+        <span className="min-w-0">
+          <span className="block text-[13.5px] font-semibold text-gray-800">Recurso externo</span>
+          <span className="block font-mono text-[10.5px] text-gray-400 mt-0.5 truncate">{content.content_value}</span>
+        </span>
+      </span>
+      <ChevronRight className="w-4 h-4 text-gray-300 flex-shrink-0" />
     </a>
   )
 }
@@ -339,6 +348,42 @@ export function ContentViewer({
   const isLastUnit = currentUnitIndex === (allUnits?.length - 1)
   const isQuizPassed = hasQuiz && isQuizCompleted?.(quiz?.id)
 
+  const nextUnit = currentUnitIndex >= 0 ? allUnits?.[currentUnitIndex + 1] : null
+  const nextModule = useMemo(
+    () => (nextUnit ? modules?.find(m => m.units?.some(u => u.id === nextUnit.id)) : null),
+    [modules, nextUnit],
+  )
+  const moduleIndex = modules?.findIndex(m => m.id === currentModule?.id) ?? -1
+
+  // How many units of this module are still pending, counting the current one by
+  // its live state so the button can offer to close the module on the last one.
+  const pendingInModule = (currentModule?.units || []).filter(u => {
+    if (u.id === unit?.id) return !allContentsCompleted
+    const p = getUnitProgress?.(u.id)
+    return !(p && p.total > 0 && p.percentage === 100)
+  }).length
+
+  // Estimated reading time: what the content declares, or a word-count estimate.
+  const readingMinutes = useMemo(() => {
+    const declared = contents.reduce((sum, c) => sum + (Number(c.duration_minutes) || 0), 0)
+    if (declared > 0) return declared
+    if (!hasRichBody) return null
+    const words = processedHtml.replace(/<[^>]+>/g, ' ').trim().split(/\s+/).filter(Boolean).length
+    return words > 0 ? Math.max(1, Math.round(words / 200)) : null
+  }, [contents, hasRichBody, processedHtml])
+
+  // "Video · Documento · Evaluación", or "Solo lectura" when there is none.
+  const materialLabel = useMemo(() => {
+    const labels = []
+    const types = new Set(contents.map(c => c.content_type))
+    if (types.has('video')) labels.push('Video')
+    if (types.has('file')) labels.push('Documento')
+    if (types.has('resource')) labels.push('Recurso')
+    if (types.has('simulator')) labels.push('Simulador')
+    if (hasQuiz) labels.push('Evaluación')
+    return labels.length ? labels.join(' · ') : 'Solo lectura'
+  }, [contents, hasQuiz])
+
   // Transition animation on unit change. Also scroll the content pane back to the
   // top for the new unit: doing it here (after the new unit renders) instead of in
   // the nav handlers means the content swap can't leave the reader stuck at the
@@ -399,6 +444,18 @@ export function ContentViewer({
     setNavigating(false)
   }
 
+  // Demonstrated interaction completes the unit: passing the quiz is a stronger
+  // signal than the "mark as read" click, so asking for it afterwards is just
+  // paperwork. Guarded per unit so a slow write can't retrigger the loop.
+  const autoCompletedUnitRef = useRef(null)
+  useEffect(() => {
+    if (!isQuizPassed || allContentsCompleted || contents.length === 0) return
+    if (autoCompletedUnitRef.current === unit?.id) return
+    autoCompletedUnitRef.current = unit?.id
+    handleMarkAllComplete()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isQuizPassed, allContentsCompleted, unit?.id])
+
   // Scroll back to top is handled centrally by the unit-change effect above.
   const handleNextUnit = () => {
     if (currentUnitIndex !== -1 && currentUnitIndex < (allUnits?.length - 1)) {
@@ -422,6 +479,26 @@ export function ContentViewer({
     }
   }
 
+  // One primary action, five states. Order matters: closing the module wins over
+  // the generic "mark as read", and opening the next module over "next unit".
+  // Only this control moves the reader forward, so advancing always records.
+  const primaryAction = (() => {
+    if (!allContentsCompleted) {
+      const closesModule = pendingInModule === 1 && moduleIndex >= 0
+      return {
+        label: closesModule ? `Completar módulo ${moduleIndex + 1}` : 'Marcar como leído',
+        onClick: handleMarkAllComplete,
+        leadingIcon: true,
+      }
+    }
+    if (nextUnit && nextModule && nextModule.id !== currentModule?.id) {
+      const nextModuleNumber = modules.findIndex(m => m.id === nextModule.id) + 1
+      return { label: `Empezar módulo ${nextModuleNumber}`, onClick: handleNextUnit }
+    }
+    if (nextUnit) return { label: 'Siguiente unidad', onClick: handleNextUnit }
+    return { label: 'Finalizar curso', onClick: handleFinish }
+  })()
+
   // ── Empty state ──
   if (!unit || (!unit.contents?.length && !hasQuiz)) {
     return (
@@ -439,7 +516,7 @@ export function ContentViewer({
 
   return (
     <>
-      <div className={`max-w-[720px] mx-auto space-y-5 transition-all duration-300 ${visible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'}`}>
+      <div className={`max-w-[704px] mx-auto space-y-5 transition-all duration-300 ${visible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'}`}>
         {/* ── Breadcrumbs + status ── */}
         <div className="flex items-center justify-between px-1">
           <nav className="flex items-center gap-1.5 text-[11px] uppercase tracking-wide font-mono text-gray-400 min-w-0">
@@ -466,6 +543,22 @@ export function ContentViewer({
         >
           {unit.title}
         </h1>
+
+        {/* ── Lesson meta: reading time · material ── */}
+        <div className="px-1 flex items-center gap-3.5 text-[12.5px] text-gray-500">
+          {readingMinutes && (
+            <>
+              <span className="inline-flex items-center gap-1.5">
+                <Clock className="w-3.5 h-3.5" />
+                {readingMinutes} min de lectura
+              </span>
+              <span className="w-[3px] h-[3px] rounded-full bg-gray-300" aria-hidden="true" />
+            </>
+          )}
+          <span>{materialLabel}</span>
+        </div>
+
+        <div className="mx-1 h-px bg-gray-200" />
 
         {/* ── Lesson content — de-boxed, flows on the page (no card) ── */}
         {(hasRichBody || legacyContents.length > 0) && (
@@ -500,14 +593,14 @@ export function ContentViewer({
 
         {/* ── Simulator section (de-boxed, editorial) ── */}
         {simulatorContent && (
-          <div className="flex items-start justify-between gap-4 flex-wrap rounded-xl border border-gray-200 bg-white p-5">
-            <div className="flex items-start gap-3 min-w-0">
-              <div className="w-10 h-10 rounded-lg bg-indigo-50 flex items-center justify-center flex-shrink-0">
-                <Cpu className="w-5 h-5 text-indigo-600" />
+          <div className="flex items-start justify-between gap-5 flex-wrap rounded-xl bg-gray-950 p-6 text-white">
+            <div className="flex items-start gap-3.5 min-w-0">
+              <div className="w-10 h-10 rounded-[11px] bg-white/10 border border-white/20 flex items-center justify-center flex-shrink-0">
+                <Cpu className="w-5 h-5 text-white" />
               </div>
               <div className="min-w-0">
-                <h3 className="text-sm font-semibold text-gray-900">Simulador 3D</h3>
-                <p className="text-xs text-gray-500 mt-0.5">
+                <h3 className="text-[15px] font-semibold">Simulador 3D</h3>
+                <p className="text-[13px] leading-relaxed text-white/60 mt-1">
                   {simulatorContent.content_value?.trim()
                     || 'Practica con el robot en el simulador antes de continuar.'}
                 </p>
@@ -523,7 +616,7 @@ export function ContentViewer({
                 sessionStorage.setItem('sim_access', '1')
                 navigate('/simulator')
               }}
-              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-semibold text-white bg-gray-900 hover:bg-gray-800 transition-colors flex-shrink-0"
+              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-[11px] text-sm font-semibold text-gray-950 bg-white hover:bg-gray-100 transition-colors flex-shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-gray-950 focus-visible:ring-white"
             >
               Abrir simulador
               <ChevronRight className="w-4 h-4" />
@@ -549,43 +642,30 @@ export function ContentViewer({
             )}
           </div>
 
-          {/* Center: primary action */}
-          <div className="flex items-center gap-2">
-            {!allContentsCompleted ? (
-              <button
-                onClick={handleMarkAllComplete}
-                disabled={navigating}
-                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold text-white bg-gray-900 hover:bg-gray-800 disabled:opacity-60 transition-colors"
-              >
-                {navigating ? 'Guardando…' : (<><CheckCircle className="w-4 h-4" /> Marcar como leído</>)}
-              </button>
-            ) : !hasQuiz ? (
-              <button
-                onClick={handleFinish}
-                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold text-white bg-gray-900 hover:bg-gray-800 transition-colors"
-              >
-                {isLastUnit ? 'Finalizar curso' : 'Siguiente unidad'}
-                <ChevronRight className="w-4 h-4" />
-              </button>
-            ) : null}
-          </div>
-
-          {/* Next unit */}
-          <div className="flex-1 flex justify-end">
-            {!isLastUnit && (
-              <button
-                onClick={handleNextUnit}
-                className="flex items-center gap-1.5 text-sm text-gray-400 hover:text-gray-800 transition-colors"
-              >
-                <span className="hidden sm:inline truncate max-w-[140px]">
-                  {allUnits[currentUnitIndex + 1]?.title || 'Siguiente'}
-                </span>
-                <span className="sm:hidden">Siguiente</span>
-                <ChevronRight className="w-4 h-4" />
-              </button>
+          {/* The only way forward — and the only one that records progress.
+              Jumping to any other unit stays available from the index. */}
+          <button
+            onClick={primaryAction.onClick}
+            disabled={navigating}
+            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold text-white bg-gray-900 hover:bg-gray-800 disabled:opacity-60 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-gray-900"
+          >
+            {navigating ? 'Guardando…' : (
+              <>
+                {primaryAction.leadingIcon && <CheckCircle className="w-4 h-4" />}
+                {primaryAction.label}
+                {!primaryAction.leadingIcon && <ChevronRight className="w-4 h-4" />}
+              </>
             )}
-          </div>
+          </button>
+
+          {/* Balances the previous-unit link so the button stays centred. */}
+          <div className="flex-1" aria-hidden="true" />
         </div>
+
+        {/* Announced to screen readers when the unit becomes complete. */}
+        <p className="sr-only" role="status" aria-live="polite">
+          {allContentsCompleted ? 'Unidad completada' : ''}
+        </p>
 
         {/* ── Quiz section ── */}
         {hasQuiz && (
@@ -614,42 +694,21 @@ export function ContentViewer({
                 )}
               </div>
 
-              {/* Action area */}
+              {/* Action area. Moving on afterwards is the footer's job — this
+                  card only opens the assessment. */}
               {allContentsCompleted ? (
-                <div className="flex items-center gap-3 flex-wrap">
-                  <button
-                    onClick={() => navigate(`/courses/${courseId}/quiz/${quiz.id}`)}
-                    className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-semibold text-white bg-gray-900 hover:bg-gray-800 transition-colors"
-                  >
-                    {isQuizPassed ? 'Repetir evaluación' : 'Comenzar evaluación'}
-                    <ChevronRight className="w-4 h-4" />
-                  </button>
-
-                  {isQuizPassed && !isLastUnit && (
-                    <button
-                      onClick={handleFinish}
-                      className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-lg text-sm font-medium text-gray-600 hover:text-gray-800 hover:bg-gray-100 transition-colors"
-                    >
-                      Siguiente unidad
-                      <ChevronRight className="w-3.5 h-3.5" />
-                    </button>
-                  )}
-
-                  {isQuizPassed && isLastUnit && (
-                    <button
-                      onClick={handleFinish}
-                      className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-lg text-sm font-medium text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 transition-colors"
-                    >
-                      Finalizar curso
-                      <ChevronRight className="w-3.5 h-3.5" />
-                    </button>
-                  )}
-                </div>
+                <button
+                  onClick={() => navigate(`/courses/${courseId}/quiz/${quiz.id}`)}
+                  className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-semibold text-white bg-gray-900 hover:bg-gray-800 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-gray-900"
+                >
+                  {isQuizPassed ? 'Repetir evaluación' : 'Comenzar evaluación'}
+                  <ChevronRight className="w-4 h-4" />
+                </button>
               ) : (
-                <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-amber-50 border border-amber-100">
-                  <div className="w-1.5 h-1.5 rounded-full bg-amber-400 flex-shrink-0" />
-                  <p className="text-xs text-amber-700">
-                    Completa el contenido de la unidad para desbloquear la evaluación.
+                <div className="flex items-center gap-2.5 px-3.5 py-2.5 rounded-lg bg-gray-50 border border-gray-200">
+                  <Lock className="w-3.5 h-3.5 text-gray-400 flex-shrink-0" />
+                  <p className="text-xs text-gray-600">
+                    Bloqueada — completa el contenido de la unidad para abrir la evaluación.
                   </p>
                 </div>
               )}
