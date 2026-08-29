@@ -7,21 +7,7 @@
  */
 
 import { useState } from 'react'
-import { CheckCircle, ChevronDown, ChevronRight, PlayCircle, FileText, Link2, BookOpen, ClipboardCheck } from 'lucide-react'
-
-const getUnitIcon = (unit) => {
-  // If unit has a quiz, show quiz icon
-  if (unit.quizzes?.length > 0 && (!unit.contents || unit.contents.length === 0)) {
-    return <ClipboardCheck className="w-3.5 h-3.5 flex-shrink-0" />
-  }
-  const type = unit.contents?.[0]?.content_type
-  switch (type) {
-    case 'video': return <PlayCircle className="w-3.5 h-3.5 flex-shrink-0" />
-    case 'text': return <FileText className="w-3.5 h-3.5 flex-shrink-0" />
-    case 'resource': return <Link2 className="w-3.5 h-3.5 flex-shrink-0" />
-    default: return <BookOpen className="w-3.5 h-3.5 flex-shrink-0" />
-  }
-}
+import { BookOpen } from 'lucide-react'
 
 export function ModuleSidebar({ modules, selectedUnitId, onUnitClick, getModuleProgress, getUnitProgress, progressData }) {
   const [expandedModules, setExpandedModules] = useState(
@@ -72,58 +58,39 @@ export function ModuleSidebar({ modules, selectedUnitId, onUnitClick, getModuleP
   }
 
   return (
-    <div>
-      {/* Modules list */}
-      {modules.map((module, moduleIndex) => {
+    <div className="px-3">
+      {modules.map((module) => {
         const progress = computeModuleProgress(module)
         const isCompleted = progress && progress.percentage === 100 && progress.total > 0
         const isExpanded = expandedModules[module.id]
         const percentage = progress?.percentage ?? 0
 
         return (
-          <div key={module.id} className="border-b border-gray-100 last:border-b-0">
-            {/* Module header */}
-            <button
-              className="w-full text-left px-4 py-3 flex items-start gap-2.5 hover:bg-gray-50/80 transition-colors group"
-              onClick={() => toggleModule(module.id)}
-            >
-              <div className="mt-0.5 flex-shrink-0">
-                {isExpanded
-                  ? <ChevronDown className="w-3.5 h-3.5 text-gray-400 group-hover:text-gray-600 transition-colors" />
-                  : <ChevronRight className="w-3.5 h-3.5 text-gray-400 group-hover:text-gray-600 transition-colors" />
-                }
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center justify-between gap-2">
-                  <span className="text-sm font-medium text-gray-800 leading-snug">
-                    {module.title}
-                  </span>
-                  {isCompleted && (
-                    <CheckCircle className="w-4 h-4 text-emerald-500 flex-shrink-0" />
-                  )}
-                </div>
-                <div className="text-[11px] text-gray-400 mt-0.5">
-                  Módulo {moduleIndex + 1} · {module.units?.length || 0} unidades
-                  {progress && progress.total > 0 && (
-                    <span className="ml-1">· {progress.completed}/{progress.total}</span>
-                  )}
-                </div>
-                {/* Mini progress bar */}
+          <div key={module.id} className="mb-5">
+            {/* Module: name + mono count + thin progress rule (no verbose subtitle) */}
+            <button className="w-full text-left px-1 group" onClick={() => toggleModule(module.id)}>
+              <div className="flex items-baseline justify-between gap-2">
+                <span className="text-[13.5px] font-semibold text-gray-800 leading-snug">
+                  {module.title}
+                </span>
                 {progress && progress.total > 0 && (
-                  <div className="mt-1.5 w-full bg-gray-100 rounded-full h-1 overflow-hidden">
-                    <div
-                      className={`h-1 rounded-full transition-all duration-500 ${isCompleted ? 'bg-emerald-500' : 'bg-blue-400'}`}
-                      style={{ width: `${percentage}%` }}
-                    />
-                  </div>
+                  <span className="font-mono text-[10.5px] text-gray-400 flex-shrink-0 tabular-nums">
+                    {progress.completed}/{progress.total}
+                  </span>
                 )}
+              </div>
+              <div className="mt-1.5 h-[3px] rounded-full bg-gray-200/70 overflow-hidden">
+                <div
+                  className={`h-full rounded-full transition-all duration-500 ${isCompleted ? 'bg-emerald-500' : 'bg-emerald-400'}`}
+                  style={{ width: `${percentage}%` }}
+                />
               </div>
             </button>
 
-            {/* Units list */}
+            {/* Units: clean rows, check circle, indigo accent on current */}
             {isExpanded && module.units && module.units.length > 0 && (
-              <div className="pb-1">
-                {module.units.map((unit, unitIndex) => {
+              <div className="mt-2.5 space-y-0.5">
+                {module.units.map((unit) => {
                   const unitProgress = computeUnitProgress(unit)
                   const isUnitCompleted = unitProgress && unitProgress.percentage === 100 && unitProgress.total > 0
                   const isSelected = selectedUnitId === unit.id
@@ -131,37 +98,19 @@ export function ModuleSidebar({ modules, selectedUnitId, onUnitClick, getModuleP
                   return (
                     <button
                       key={unit.id}
-                      className={`w-full text-left px-4 py-2 pl-9 flex items-center gap-2.5 transition-all border-l-[3px] ${isSelected
-                        ? 'bg-blue-50 border-l-blue-500'
-                        : 'border-l-transparent hover:bg-gray-50'
-                        }`}
                       onClick={() => onUnitClick(unit.id)}
+                      className={`w-full text-left flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-[13.5px] transition-colors ${isSelected
+                        ? 'bg-indigo-50 text-indigo-700 font-medium shadow-[inset_2.5px_0_0_0_#6366f1]'
+                        : isUnitCompleted ? 'text-gray-700 hover:bg-gray-100/70' : 'text-gray-500 hover:bg-gray-100/70'
+                        }`}
                     >
-                      {/* Icon */}
-                      <div className={`${isSelected ? 'text-blue-600' : isUnitCompleted ? 'text-emerald-500' : 'text-gray-400'
+                      <span className={`w-[16px] h-[16px] rounded-full flex-shrink-0 grid place-items-center text-[9px] border ${isUnitCompleted
+                        ? 'bg-emerald-500 border-emerald-500 text-white'
+                        : isSelected ? 'border-indigo-400 text-indigo-500' : 'border-gray-300 text-transparent'
                         }`}>
-                        {isUnitCompleted
-                          ? <CheckCircle className="w-3.5 h-3.5 flex-shrink-0" />
-                          : getUnitIcon(unit)
-                        }
-                      </div>
-
-                      {/* Text */}
-                      <div className="flex-1 min-w-0">
-                        <div className={`text-[13px] leading-snug truncate ${isSelected ? 'text-blue-700 font-medium' : 'text-gray-700'
-                          }`}>
-                          {unit.title}
-                        </div>
-                        <div className={`text-[10px] mt-0.5 ${isSelected ? 'text-blue-400' : 'text-gray-400'}`}>
-                          {moduleIndex + 1}.{unitIndex + 1}
-                          {unit.contents?.length > 0 && (
-                            <span> · {unit.contents.length} contenido{unit.contents.length !== 1 ? 's' : ''}</span>
-                          )}
-                          {unit.quizzes?.length > 0 && (
-                            <span> · {unit.quizzes.length} eval.</span>
-                          )}
-                        </div>
-                      </div>
+                        {isUnitCompleted ? '✓' : '•'}
+                      </span>
+                      <span className="truncate">{unit.title}</span>
                     </button>
                   )
                 })}

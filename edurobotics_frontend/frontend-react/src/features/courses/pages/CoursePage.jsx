@@ -15,7 +15,7 @@ import { getStoredUser } from '@/features/auth/services/auth'
 import { getCourseDetail, checkPrerequisites, enrollCourse } from '@/features/courses/services/courses'
 import { Button } from '@/shared/components/button'
 import {
-  Loader2, BookOpen, ArrowLeft, Shield, Menu, X
+  Loader2, BookOpen, ArrowLeft, Shield, Menu, X, PanelLeftOpen
 } from 'lucide-react'
 import { CourseSidebar } from '@/features/courses/components/CourseSidebar'
 import { ContentViewer } from '@/features/courses/components/ContentViewer'
@@ -85,6 +85,7 @@ function CoursePage() {
   const [user, setUser] = useState(() => getStoredUser())
   const [selectedUnitId, setSelectedUnitId] = useState(null)
   const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false) // desktop "modo foco"
   const mainRef = useRef(null)
   const [readProgress, setReadProgress] = useState(0)
 
@@ -237,6 +238,7 @@ function CoursePage() {
           fixed lg:relative inset-y-0 left-0 z-40
           transform transition-transform duration-200 ease-in-out
           ${sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
+          ${sidebarCollapsed ? 'lg:hidden' : ''}
           top-0 lg:top-auto pt-14 lg:pt-0
         `}>
           <CourseSidebar
@@ -246,11 +248,20 @@ function CoursePage() {
             getModuleProgress={progressHook.getModuleProgress}
             getUnitProgress={progressHook.getUnitProgress}
             progressData={progressHook.progress}
-            userId={user?.id}
-            courseId={numericCourseId}
-            onNavigateUnit={(id) => { setSelectedUnitId(id); setSidebarOpen(false) }}
+            onHide={() => setSidebarCollapsed(true)}
           />
         </aside>
+
+        {/* Restore index (desktop focus mode) */}
+        {sidebarCollapsed && (
+          <button
+            onClick={() => setSidebarCollapsed(false)}
+            className="hidden lg:flex items-center gap-2 fixed bottom-5 left-5 z-50 pl-3 pr-4 py-2.5 rounded-full bg-white border border-gray-200 shadow-sm text-sm text-gray-600 hover:text-gray-900 hover:shadow-md transition-all"
+          >
+            <PanelLeftOpen className="w-4 h-4" />
+            Mostrar índice
+          </button>
+        )}
 
         {/* ── Main content ── */}
         <main ref={mainRef} className="flex-1 overflow-y-auto p-3 lg:p-6">
