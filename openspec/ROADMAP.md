@@ -147,6 +147,28 @@ Evaluar **React Flow** (ya identificado como candidato) si el grafo actual se qu
 
 ---
 
+## F9 — Tramo de diseño: una sola aplicación
+
+Nace del canvas «Modo estudio EduRobotics» (artifact `c82ae7d9-48bd-4fc8-a55f-18531fdc0f8c`),
+que además del modo estudio incorporó los artboards de **preview del curso, dashboard, perfil**
+y una hoja de **«Fundamentos»** (color, tipografía, componentes y los seis archivos a tocar).
+
+Orden obligatorio — cada uno depende del anterior:
+
+1. `study-mode-redesign` — **hecho** (falta el riel lateral de secciones, anotado en su
+   `tasks.md`).
+2. `design-system-foundations` — tokens, `button`, `card`, header y grid del alumno. Retira los
+   tres primarios y los cuatro degradados de relleno que hacen que la app parezca varias apps.
+3. `student-pages-redesign` — preview, dashboard y perfil. **Dos desviaciones deliberadas del
+   canvas:** las especializaciones conservan su **foto** (decisión de Mario), y la tarjeta
+   «Continúa donde quedaste» exige enriquecer `GET /api/progress/{user_id}/last-accessed`, que
+   hoy devuelve sólo `content_id` sin curso/módulo/unidad.
+4. `theme-switching` (modo claro/oscuro) — **por escribir**. Va al final a propósito: si los
+   tokens quedan centralizados en `@theme` (paso 2), el modo oscuro es un cambio de paleta; si
+   se hace antes, hay que perseguir colores hardcodeados por toda la app.
+
+---
+
 ## Reglas permanentes del proyecto (para cualquier change)
 
 - Proposal aprobado por Mario ANTES de codear. Sin excepciones.
