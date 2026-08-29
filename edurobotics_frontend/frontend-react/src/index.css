@@ -112,8 +112,9 @@
   max-width: 100%;
 }
 
-/* Editorial reading treatment for lesson content (viewer redesign):
-   serif headings, comfortable body, and a de-boxed pull-quote. */
+/* Reading treatment for lesson content (viewer redesign): comfortable body
+   measure and a de-boxed pull-quote. The typeface stays the app's own sans —
+   the redesign changes structure, spacing and colour, never the letter. */
 .rich-content {
   font-size: 1.0625rem;      /* ~17px */
   line-height: 1.75;
@@ -123,7 +124,6 @@
 .rich-content h1,
 .rich-content h2,
 .rich-content h3 {
-  font-family: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
   letter-spacing: -0.01em;
   color: #16151b;
   text-wrap: balance;
@@ -182,7 +182,6 @@
   margin: 1.6em 0;
   background: none;
   border-radius: 0;
-  font-family: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
   font-style: italic;
   font-size: 1.22em;
   line-height: 1.5;

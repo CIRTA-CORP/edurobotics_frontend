@@ -33,8 +33,9 @@ El módulo actual se abre y muestra todas sus unidades con su barra de progreso;
 terminados se cierran con el nodo en verde y check; los que vienen quedan atenuados. Cada
 unidad muestra su duración estimada.
 
-### Tipografía editorial
-Serif (`Iowan Old Style`/`Palatino`/`Georgia`) para h1 (42 px) y h2 (25 px); cuerpo 17 px /
+### Tipografía
+**Sin cambio de familia tipográfica** (decisión de Mario, 2026-08-29): la escala crece —h1 42 px,
+h2 25 px— pero en la sans de la app, no en la serif que proponía el canvas. Cuerpo 17 px /
 1.75; monoespaciada para migas, contadores y metadatos. Cita destacada con barra de acento.
 
 ### Bloques de material unificados

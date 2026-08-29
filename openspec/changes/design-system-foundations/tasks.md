@@ -36,9 +36,13 @@
 
 ## 4. Tipografía
 
-- [ ] 4.1 Serif (Iowan/Georgia) para títulos de página, no solo dentro de `.rich-content`.
-- [ ] 4.2 Mono para **todo lo contable**: progresos, duraciones, versiones, contadores.
-      Etiquetas de sección en mono 10 px, `0.14em`, mayúsculas.
+- [x] 4.1 **La familia tipográfica NO cambia** (decisión de Mario). Se queda la sans de
+      producción en toda la app, incluida la lección. La serif editorial del canvas se descarta
+      y la que se había colado en la rama del visor ya se retiró (`.rich-content` y el título
+      de unidad). No reintroducirla en ninguna pantalla.
+- [ ] 4.2 Mono **solo** para lo contable: progresos, duraciones, versiones, contadores.
+      Etiquetas de sección en mono 10 px, `0.14em`, mayúsculas. Esto no cambia la familia del
+      texto, solo distingue los números.
 
 ## 5. Verificación
 

@@ -13,7 +13,8 @@ El canvas `c82ae7d9-48bd-4fc8-a55f-18531fdc0f8c` incorporó los tres artboards
 
 ### Preview del curso (`Preview.dc.html`)
 - La banda oscura del `HeroBand` pasa a ser **el hero de verdad**: badges de nivel y versión,
-  título en serif, las cifras (módulos · unidades · contenidos · evaluaciones) en mono, tu
+  título grande en la sans de la app, las cifras (módulos · unidades · contenidos ·
+  evaluaciones) en mono, tu
   progreso, y **una sola acción** en blanco sobre la banda.
 - El programa usa **la misma línea de módulos del modo estudio**, con el tipo de material y los
   minutos de cada unidad: lo que ves antes de entrar es exactamente lo que verás dentro
@@ -31,7 +32,7 @@ El canvas `c82ae7d9-48bd-4fc8-a55f-18531fdc0f8c` incorporó los tres artboards
 
 ### Perfil del alumno (`Perfil.dc.html`)
 - Mismas pestañas de shadcn (Resumen · Configuración) con el lenguaje nuevo: avatar sólido,
-  nombre en serif, cifras en mono.
+  nombre en grande (sans de la app), cifras en mono.
 - Resumen: inscritos / completados / en progreso y **las mismas tarjetas de curso del
   dashboard**, agrupadas por estado.
 - Configuración: los dos formularios reales (datos personales y cambio de contraseña) con sus

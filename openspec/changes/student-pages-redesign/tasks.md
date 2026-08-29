@@ -22,7 +22,8 @@
 
 ## 2. Preview del curso
 
-- [ ] 2.1 Hero sobre la banda `#0a0a0c`: badges de nivel y versión, título en serif, cifras
+- [ ] 2.1 Hero sobre la banda `#0a0a0c`: badges de nivel y versión, título grande (en la
+      **sans de la app**, sin serif), cifras
       (módulos · unidades · contenidos · evaluaciones) en mono, progreso propio y **una sola
       acción** en blanco.
 - [ ] 2.2 Programa con la línea de módulos (1.2), módulos plegables.
@@ -45,7 +46,8 @@
 
 ## 4. Perfil del alumno
 
-- [ ] 4.1 Cabecera: avatar sólido, nombre en serif, usuario/correo/fecha de alta, cifras en mono.
+- [ ] 4.1 Cabecera: avatar sólido, nombre en grande (sans de la app), usuario/correo/fecha de
+      alta, cifras en mono.
 - [ ] 4.2 Pestaña Resumen: inscritos / completados / en progreso y las **mismas tarjetas de
       curso del dashboard**, agrupadas por estado.
 - [ ] 4.3 Pestaña Configuración: datos personales y cambio de contraseña con sus estados de

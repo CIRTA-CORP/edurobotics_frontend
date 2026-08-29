@@ -38,7 +38,8 @@
 
 ## 3. Lección: tipografía y bloques
 
-- [x] 3.1 Escala tipográfica editorial: serif para h1 (42 px) y h2 (25 px), cuerpo 17 px/1.75,
+- [x] 3.1 Escala tipográfica: h1 y h2 grandes en la **sans de la app** (la serif del canvas se
+      descartó por decisión de Mario, 2026-08-29), cuerpo 17 px/1.75,
       monoespaciada para migas y metadatos, cita con barra de acento.
 - [x] 3.2 Migas (módulo › unidad), título, tiempo de lectura y etiqueta de material; indicador
       «Completado» cuando corresponde.

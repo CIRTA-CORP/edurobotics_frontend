@@ -34,10 +34,20 @@ Un solo azul-violeta para lo interactivo (`#4b46d6`), verde **solo** para avance
 paleta de 8 colores de especializaciones (`specStyle.js`): ahí el color sí significa algo
 distinto en cada valor.
 
-### Tipografía
-Serif (Iowan/Georgia) sube de `.rich-content` a los títulos de página; sans para interfaz a
-13,5 px; **mono para todo lo contable** (progresos, duraciones, versiones, contadores) para que
-los números no se lean como texto. Columna de lectura 704 px, cuerpo 17/1.75 — ya vigente.
+### Tipografía — NO cambia (decisión de Mario, 2026-08-29)
+La familia tipográfica se queda **exactamente como está en producción**: la sans propia de la
+app en toda la interfaz y en la lección. El canvas proponía una serif editorial (Iowan/Georgia)
+para títulos de unidad y encabezados: **se descarta por completo**, y la que se había
+introducido en la rama del visor ya fue retirada.
+
+Dato verificado al decidirlo: producción cargaba Inter desde Google Fonts pero **ningún CSS la
+declaraba**, así que el navegador la descargaba sin usarla y la página siempre se vio con la
+sans del sistema. El commit `c71b366` que quitó ese enlace fue correcto y **no cambió nada
+visualmente**; no hay que "restaurar Inter".
+
+Lo que sí se mantiene de esta sección: **mono para todo lo contable** (progresos, duraciones,
+versiones, contadores), porque eso distingue números de prosa sin cambiar de familia de texto.
+Columna de lectura 704 px y cuerpo 17/1.75 — ya vigentes.
 
 ### Componentes
 Una sola acción primaria por vista, siempre `#16151b`, radio 11–12 px y **altura 44 px** (que es

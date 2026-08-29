@@ -536,11 +536,9 @@ export function ContentViewer({
           )}
         </div>
 
-        {/* ── Lesson title (editorial serif) ── */}
-        <h1
-          className="px-1 text-3xl md:text-[2.6rem] font-bold tracking-tight leading-[1.1] text-gray-900"
-          style={{ fontFamily: '"Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif' }}
-        >
+        {/* ── Lesson title. Same typeface as the rest of the app: the redesign
+             changes scale and structure, not the letter. ── */}
+        <h1 className="px-1 text-3xl md:text-[2.6rem] font-bold tracking-tight leading-[1.1] text-gray-900">
           {unit.title}
         </h1>
 
