@@ -1,25 +1,39 @@
 @import 'tailwindcss';
 
+/* Design tokens — one warm grey, one accent, two states.
+   A single blue-violet for anything interactive, green only for real progress
+   and amber only for locks. Replaces the three competing primaries (#0f172a,
+   #2563eb, slate-900) that made each screen read as a different app.
+   The typeface is deliberately not set here: it stays the app's own sans. */
 @theme {
-  --color-border: #e5e7eb;
-  --color-input: #e5e7eb;
-  --color-ring: #0f172a;
+  --color-border: #ececf1;
+  --color-input: #ececf1;
+  --color-ring: #4b46d6;
   --color-background: #ffffff;
-  --color-foreground: #0f172a;
-  --color-primary: #0f172a;
+  --color-foreground: #16151b;
+  --color-primary: #16151b;
   --color-primary-foreground: #ffffff;
-  --color-secondary: #f5f5f5;
-  --color-secondary-foreground: #0f172a;
-  --color-muted: #f5f5f5;
-  --color-muted-foreground: #737373;
-  --color-accent: #f5f5f5;
-  --color-accent-foreground: #0f172a;
-  --color-destructive: #ef4444;
-  --color-destructive-foreground: #fafafa;
+  --color-secondary: #f4f3f8;
+  --color-secondary-foreground: #16151b;
+  --color-muted: #fafafa;
+  --color-muted-foreground: #8b8a95;
+  --color-accent: #f4f3f8;
+  --color-accent-foreground: #16151b;
+  --color-destructive: #b4425a;
+  --color-destructive-foreground: #ffffff;
   --color-card: #ffffff;
-  --color-card-foreground: #0f172a;
+  --color-card-foreground: #16151b;
   --color-popover: #ffffff;
-  --color-popover-foreground: #0f172a;
+  --color-popover-foreground: #16151b;
+
+  /* Shared surface values used outside the shadcn primitives. */
+  --color-brand-band: #0a0a0c;   /* dark hero band */
+  --color-card-line: #e9e9ee;    /* card border */
+  --color-prose: #33323b;        /* lesson body */
+  --color-progress: #10b981;     /* real progress only */
+  --color-lock: #b45309;         /* locked states only */
+  --color-lock-bg: #fffbeb;
+
   --radius: 0.5rem;
 }
 
@@ -28,9 +42,15 @@
    specificity at 0 so components can still override it, and `:focus-visible`
    means mouse clicks don't show the ring — only keyboard navigation does. */
 :where(a, button, [role='button'], [role='radio'], input, select, textarea, summary, [tabindex]):focus-visible {
-  outline: 2px solid #2563eb;
+  outline: 2px solid #4b46d6;
   outline-offset: 2px;
   border-radius: 0.375rem;
+}
+
+/* Over the dark brand band the accent ring loses contrast, so the ring goes
+   white there instead. Keeps the focus indicator visible on both surfaces. */
+:where(.on-brand-band) :where(a, button, [role='button'], input, [tabindex]):focus-visible {
+  outline-color: #ffffff;
 }
 
 .feature-card:hover {
