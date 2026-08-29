@@ -24,7 +24,7 @@ const LEVEL_CONFIG = {
 
 const STATE_CONFIG = {
   completed: { label: 'Completado', color: 'text-emerald-600', bg: 'bg-emerald-50', barColor: 'bg-emerald-500', icon: Check },
-  in_progress: { label: 'En progreso', color: 'text-blue-600', bg: 'bg-blue-50', barColor: 'bg-blue-500', icon: PlayCircle },
+  in_progress: { label: 'En progreso', color: 'text-[#4b46d6]', bg: 'bg-[#4b46d6]/[0.07]', barColor: 'bg-[#10b981]', icon: PlayCircle },
   not_started: { label: 'No iniciado', color: 'text-gray-500', bg: 'bg-gray-50', barColor: 'bg-gray-300', icon: Clock },
 }
 
@@ -87,7 +87,7 @@ export function CourseGrid({ courses, onCourseClick, specMap = {}, orderMap = {}
                 />
               ) : (
                 <div className="absolute inset-0 flex items-center justify-center bg-[#0a0a0c]">
-                  <BookOpen className="h-12 w-12 text-blue-300" strokeWidth={1.5} />
+                  <BookOpen className="h-12 w-12 text-white/30" strokeWidth={1.5} />
                 </div>
               )}
 

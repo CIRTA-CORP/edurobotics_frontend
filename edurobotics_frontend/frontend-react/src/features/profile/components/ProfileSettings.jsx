@@ -16,7 +16,7 @@ function Field({ label, ...props }) {
       <span className="mb-1 block text-xs font-medium text-gray-600">{label}</span>
       <input
         {...props}
-        className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/30 disabled:bg-gray-50"
+        className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#4b46d6]/30 disabled:bg-gray-50"
       />
     </label>
   )
@@ -52,7 +52,7 @@ function EditNameForm({ profile, onUpdated }) {
   return (
     <form onSubmit={handleSubmit} className="rounded-2xl border border-gray-200 bg-white p-6">
       <div className="mb-4 flex items-center gap-2">
-        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-50 text-blue-600">
+        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#f4f3f8] text-[#16151b]">
           <User className="h-4 w-4" />
         </div>
         <h3 className="text-sm font-semibold text-gray-900">Datos personales</h3>
@@ -62,7 +62,7 @@ function EditNameForm({ profile, onUpdated }) {
         <Field label="Apellido" value={lastName} onChange={(e) => setLastName(e.target.value)} disabled={saving} />
       </div>
       <div className="mt-4 flex justify-end">
-        <Button type="submit" disabled={!dirty || saving} className="gap-1.5 bg-blue-600 hover:bg-blue-700">
+        <Button type="submit" disabled={!dirty || saving} className="gap-1.5">
           {saving ? <><Loader2 className="h-4 w-4 animate-spin" /> Guardando…</> : 'Guardar cambios'}
         </Button>
       </div>
@@ -105,7 +105,7 @@ function ChangePasswordForm() {
   return (
     <form onSubmit={handleSubmit} className="rounded-2xl border border-gray-200 bg-white p-6">
       <div className="mb-4 flex items-center gap-2">
-        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-50 text-blue-600">
+        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#f4f3f8] text-[#16151b]">
           <Lock className="h-4 w-4" />
         </div>
         <h3 className="text-sm font-semibold text-gray-900">Cambiar contraseña</h3>
@@ -123,7 +123,7 @@ function ChangePasswordForm() {
       </div>
       <div className="mt-4 flex justify-end">
         <Button type="submit" disabled={saving || !current || !next || !confirm}
-          className="gap-1.5 bg-blue-600 hover:bg-blue-700">
+          className="gap-1.5">
           {saving ? <><Loader2 className="h-4 w-4 animate-spin" /> Cambiando…</> : 'Cambiar contraseña'}
         </Button>
       </div>

@@ -135,7 +135,7 @@ function ContentBlock({ content }) {
                   target="_blank"
                   rel="noopener noreferrer"
                   download
-                  className="px-5 py-2.5 text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-xl transition-colors shadow-sm"
+                  className="px-5 py-2.5 text-sm font-semibold text-white bg-[#16151b] hover:bg-[#2b2b26] rounded-xl transition-colors shadow-sm"
                 >
                   Descargar el archivo PDF directamente
                 </a>
@@ -180,8 +180,8 @@ function ContentBlock({ content }) {
       className="flex items-center justify-between gap-4 px-4 py-3.5 rounded-xl border border-gray-200 bg-white hover:border-gray-300 transition-colors"
     >
       <span className="flex items-center gap-3 min-w-0">
-        <span className="w-9 h-9 rounded-[10px] bg-indigo-50 grid place-items-center flex-shrink-0">
-          <ExternalLink className="w-4 h-4 text-indigo-500" />
+        <span className="w-9 h-9 rounded-[10px] bg-[#4b46d6]/[0.07] grid place-items-center flex-shrink-0">
+          <ExternalLink className="w-4 h-4 text-[#4b46d6]" />
         </span>
         <span className="min-w-0">
           <span className="block text-[13.5px] font-semibold text-gray-800">Recurso externo</span>
@@ -229,7 +229,7 @@ function TableOfContents({ headings }) {
   return (
     <nav className="mb-8 px-5 py-4 bg-gray-50/80 rounded-xl border border-gray-100">
       <div className="flex items-center gap-2 mb-3">
-        <ListTree className="w-4 h-4 text-blue-500" />
+        <ListTree className="w-4 h-4 text-[#4b46d6]" />
         <span className="text-xs font-bold text-gray-600 uppercase tracking-wide">Contenido</span>
       </div>
       <ul className="space-y-1">
@@ -237,7 +237,7 @@ function TableOfContents({ headings }) {
           <li key={h.id}>
             <button
               onClick={() => scrollToHeading(h.id)}
-              className={`text-left w-full text-sm hover:text-blue-600 transition-colors truncate ${
+              className={`text-left w-full text-sm hover:text-[#4b46d6] transition-colors truncate ${
                 h.level === 1 ? 'font-semibold text-gray-800' :
                 h.level === 2 ? 'pl-4 text-gray-600' :
                 'pl-8 text-gray-500 text-xs'
@@ -284,7 +284,7 @@ function ScrollToTop({ scrollRef }) {
   return (
     <button
       onClick={() => scrollRef.current?.scrollTo({ top: 0, behavior: 'smooth' })}
-      className="fixed bottom-6 right-6 z-40 w-10 h-10 bg-white border border-gray-200 rounded-full shadow-lg flex items-center justify-center text-gray-500 hover:text-blue-600 hover:border-blue-200 transition-all animate-fade-in"
+      className="fixed bottom-6 right-6 z-40 w-10 h-10 bg-white border border-gray-200 rounded-full shadow-lg flex items-center justify-center text-gray-500 hover:text-[#4b46d6] hover:border-[#4b46d6]/30 transition-all animate-fade-in"
       title="Volver arriba"
     >
       <ArrowUp className="w-4 h-4" />
@@ -675,9 +675,9 @@ export function ContentViewer({
               <div className="flex items-start justify-between gap-4 mb-4">
                 <div className="flex items-start gap-3 min-w-0">
                   <div className={`w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 ${
-                    isQuizPassed ? 'bg-emerald-100' : 'bg-indigo-50'
+                    isQuizPassed ? 'bg-emerald-100' : 'bg-[#4b46d6]/[0.07]'
                   }`}>
-                    <ClipboardCheck className={`w-5 h-5 ${isQuizPassed ? 'text-emerald-600' : 'text-indigo-600'}`} />
+                    <ClipboardCheck className={`w-5 h-5 ${isQuizPassed ? 'text-emerald-600' : 'text-[#4b46d6]'}`} />
                   </div>
                   <div className="min-w-0">
                     <h3 className="text-sm font-bold text-gray-900">Evaluación</h3>

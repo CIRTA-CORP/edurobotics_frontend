@@ -72,7 +72,7 @@ export function QuizView({ quizId, userId, onComplete }) {
     // ── LOADING ──
     if (loading) return (
         <div className="flex flex-col items-center justify-center py-20">
-            <Loader2 className="w-8 h-8 animate-spin text-blue-500 mb-3" />
+            <Loader2 className="w-8 h-8 animate-spin text-[#4b46d6] mb-3" />
             <p className="text-sm text-gray-500">Cargando evaluación...</p>
         </div>
     );
@@ -215,7 +215,7 @@ export function QuizView({ quizId, userId, onComplete }) {
                 </div>
                 <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
                     <div
-                        className="h-full bg-blue-500 rounded-full transition-all duration-500 ease-out"
+                        className="h-full bg-[#4b46d6] rounded-full transition-all duration-500 ease-out"
                         style={{ width: `${((currentIndex + 1) / totalQuestions) * 100}%` }}
                     />
                 </div>
@@ -226,9 +226,9 @@ export function QuizView({ quizId, userId, onComplete }) {
                             key={q.id}
                             onClick={() => setCurrentIndex(i)}
                             className={`w-2.5 h-2.5 rounded-full transition-all ${i === currentIndex
-                                ? 'bg-blue-500 scale-125'
+                                ? 'bg-[#4b46d6] scale-125'
                                 : answers[q.id]
-                                    ? 'bg-blue-300'
+                                    ? 'bg-[#4b46d6]/40'
                                     : 'bg-gray-200'
                                 }`}
                         />
@@ -276,13 +276,13 @@ export function QuizView({ quizId, userId, onComplete }) {
                                 tabIndex={isSelected || (noneSelected && idx === 0) ? 0 : -1}
                                 onKeyDown={handleKeyDown}
                                 onClick={() => handleSelectAnswer(currentQuestion.id, a.id)}
-                                className={`w-full px-4 py-3.5 rounded-xl border-2 text-left transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 ${isSelected
-                                    ? 'border-blue-500 bg-blue-50 text-blue-800 shadow-sm shadow-blue-100'
+                                className={`w-full px-4 py-3.5 rounded-xl border-2 text-left transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4b46d6] focus-visible:ring-offset-2 ${isSelected
+                                    ? 'border-[#4b46d6] bg-[#4b46d6]/[0.07] text-[#16151b] shadow-sm shadow-[#4b46d6]/10'
                                     : 'border-gray-100 bg-gray-50 hover:border-gray-200 hover:bg-gray-100 text-gray-700'
                                     }`}
                             >
                                 <div className="flex items-center gap-3">
-                                    <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-colors ${isSelected ? 'border-blue-500 bg-blue-500' : 'border-gray-300'
+                                    <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-colors ${isSelected ? 'border-[#4b46d6] bg-[#4b46d6]' : 'border-gray-300'
                                         }`}>
                                         {isSelected && <div className="w-2 h-2 rounded-full bg-white" />}
                                     </div>
@@ -310,7 +310,7 @@ export function QuizView({ quizId, userId, onComplete }) {
                         onClick={handleSubmit}
                         disabled={submitQuizMutation.isPending || !allAnswered}
                         className={`gap-1.5 px-6 ${allAnswered
-                            ? 'bg-blue-600 hover:bg-blue-700 shadow-lg shadow-blue-200'
+                            ? 'bg-[#4b46d6] hover:bg-[#3f3ac0] shadow-lg shadow-[#4b46d6]/20'
                             : 'bg-gray-300 cursor-not-allowed'
                             }`}
                     >

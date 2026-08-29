@@ -67,7 +67,7 @@ function SpecializationCard({ spec, progress, onClick }) {
             </div>
             <div className="h-1.5 w-full overflow-hidden rounded-full bg-gray-100">
               <div
-                className={`h-full rounded-full transition-all duration-700 ${done ? 'bg-emerald-500' : 'bg-blue-500'}`}
+                className={`h-full rounded-full transition-all duration-700 ${done ? 'bg-emerald-500' : 'bg-[#10b981]'}`}
                 style={{ width: `${Math.max(pct, 2)}%` }}
               />
             </div>
@@ -79,7 +79,7 @@ function SpecializationCard({ spec, progress, onClick }) {
             <BookOpen className="h-3.5 w-3.5" />
             {count} {count === 1 ? 'curso' : 'cursos'}
           </span>
-          <span className="flex items-center gap-1 text-xs font-semibold text-blue-600 opacity-0 transition-opacity group-hover:opacity-100">
+          <span className="flex items-center gap-1 text-xs font-semibold text-[#4b46d6] opacity-0 transition-opacity group-hover:opacity-100">
             Ver ruta
             <ArrowRight className="h-3.5 w-3.5" />
           </span>

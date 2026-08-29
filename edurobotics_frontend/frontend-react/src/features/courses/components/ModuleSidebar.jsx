@@ -88,7 +88,7 @@ export function ModuleSidebar({ modules, selectedUnitId, onUnitClick, getModuleP
             <button
               onClick={() => toggleModule(module.id, isExpanded)}
               aria-expanded={isExpanded}
-              className="w-full text-left block py-2.5 group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 rounded-lg"
+              className="w-full text-left block py-2.5 group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4b46d6] rounded-lg"
             >
               {/* Node */}
               <span
@@ -96,7 +96,7 @@ export function ModuleSidebar({ modules, selectedUnitId, onUnitClick, getModuleP
                   isCompleted
                     ? 'bg-emerald-500 border-emerald-500 text-white'
                     : isCurrent
-                      ? 'bg-white border-indigo-500 text-indigo-600'
+                      ? 'bg-white border-[#4b46d6] text-[#4b46d6]'
                       : 'bg-white border-gray-200 text-gray-400'
                 }`}
                 aria-hidden="true"
@@ -151,9 +151,9 @@ export function ModuleSidebar({ modules, selectedUnitId, onUnitClick, getModuleP
                         <button
                           onClick={() => onUnitClick(unit.id)}
                           aria-current={isSelected ? 'true' : undefined}
-                          className={`w-full text-left flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-[13.5px] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 ${
+                          className={`w-full text-left flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-[13.5px] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4b46d6] ${
                             isSelected
-                              ? 'bg-indigo-50 text-indigo-700 font-medium shadow-[inset_2.5px_0_0_0_#6366f1]'
+                              ? 'bg-[#4b46d6]/[0.07] text-[#4b46d6] font-medium shadow-[inset_2.5px_0_0_0_#4b46d6]'
                               : isUnitCompleted
                                 ? 'text-gray-700 hover:bg-gray-100/70'
                                 : 'text-gray-500 hover:bg-gray-100/70'
@@ -164,7 +164,7 @@ export function ModuleSidebar({ modules, selectedUnitId, onUnitClick, getModuleP
                               isUnitCompleted
                                 ? 'bg-emerald-500 border-emerald-500 text-white'
                                 : isSelected
-                                  ? 'border-indigo-300 text-indigo-500'
+                                  ? 'border-[#4b46d6]/40 text-[#4b46d6]'
                                   : 'border-gray-200 text-gray-400'
                             }`}
                             aria-hidden="true"

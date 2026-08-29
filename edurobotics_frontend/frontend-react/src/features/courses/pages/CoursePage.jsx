@@ -372,7 +372,7 @@ function CourseTopBar({ course, user, onBack, unitsDone = 0, unitsTotal = 0, onR
         {onRoadmap && (
           <button
             onClick={onRoadmap}
-            className="hidden md:inline-flex items-center gap-1.5 text-xs font-medium text-gray-500 hover:text-gray-900 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 rounded"
+            className="hidden md:inline-flex items-center gap-1.5 text-xs font-medium text-gray-500 hover:text-gray-900 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4b46d6] rounded"
           >
             <Map className="w-3.5 h-3.5" />
             Ver la malla

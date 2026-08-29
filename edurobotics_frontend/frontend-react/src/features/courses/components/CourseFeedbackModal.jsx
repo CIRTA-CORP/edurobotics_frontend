@@ -63,7 +63,7 @@ export function CourseFeedbackModal({ courseId, userId, onComplete, onSkip }) {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
             <div className="bg-white rounded-2xl shadow-2xl max-w-sm w-full p-8">
                 <div className="text-center mb-8">
-                    <div className="w-12 h-12 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center mx-auto mb-3">
+                    <div className="w-12 h-12 rounded-xl bg-[#4b46d6]/[0.07] text-[#4b46d6] flex items-center justify-center mx-auto mb-3">
                         <MessageSquare className="w-6 h-6" />
                     </div>
                     <h2 className="text-lg font-bold text-gray-900">¡Curso finalizado!</h2>
@@ -101,7 +101,7 @@ export function CourseFeedbackModal({ courseId, userId, onComplete, onSkip }) {
                     <Button
                         onClick={handleSubmit}
                         disabled={submitting || usefulness === 0 || difficulty === 0}
-                        className="flex-1 gap-2 bg-blue-600 hover:bg-blue-700"
+                        className="flex-1 gap-2 bg-[#16151b] hover:bg-[#2b2b26]"
                     >
                         {submitting ? (
                             <><Loader2 className="w-4 h-4 animate-spin" /> Enviando...</>

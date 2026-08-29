@@ -29,7 +29,7 @@ export function CourseSidebar({
                         onClick={onHide}
                         title="Ocultar índice (modo foco)"
                         aria-label="Ocultar índice"
-                        className="text-gray-400 hover:text-gray-800 transition-colors p-1 -mr-1 rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
+                        className="text-gray-400 hover:text-gray-800 transition-colors p-1 -mr-1 rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4b46d6]"
                     >
                         <PanelLeftClose className="w-4 h-4" />
                     </button>
