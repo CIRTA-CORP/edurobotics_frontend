@@ -1,10 +1,10 @@
 /**
  * HeroSection — the student's welcome band.
  *
- * The band now states real numbers instead of a generic slogan, and carries the
- * "resume where you left off" card when the student has a recorded visit. When
- * there is no visit yet the card is simply absent: no invented course, no empty
- * placeholder.
+ * Two columns inside the dark band: the greeting with real numbers on the left,
+ * and the "resume where you left off" panel on the right. When the student has
+ * no recorded visit the panel is simply absent — no invented course, no empty
+ * placeholder — and the greeting takes the full width.
  */
 
 import { useQuery } from '@tanstack/react-query'
@@ -28,39 +28,52 @@ function summaryLine({ unitsDone, unitsTotal, activeCourses }) {
   return `${units} en ${activeCourses} ${activeCourses === 1 ? 'curso activo' : 'cursos activos'}.`
 }
 
-function ResumeCard({ last, onOpen }) {
+function ResumeCard({ last, percentage, onOpen }) {
   const { course, module, unit } = last
   const position = unit.position && unit.total_in_module
     ? `Unidad ${unit.position} de ${unit.total_in_module}`
     : null
 
   return (
-    <div className="mt-8 rounded-2xl border border-white/15 bg-white/[0.06] p-5 backdrop-blur-sm sm:p-6">
-      <p className="font-mono text-[10px] font-semibold uppercase tracking-[0.14em] text-white/50">
+    <aside className="w-full flex-shrink-0 rounded-2xl border border-white/10 bg-white/[0.04] p-5 backdrop-blur-sm lg:w-[430px]">
+      <p className="font-mono text-[10px] font-semibold uppercase tracking-[0.14em] text-white/45">
         Continúa donde quedaste
       </p>
-      <div className="mt-3 flex flex-wrap items-end justify-between gap-4">
-        <div className="min-w-0">
-          <p className="text-lg font-semibold text-white">{course.title}</p>
-          <p className="mt-1 text-sm text-white/60">
-            {module.title}
-            {position && <> · {position}</>}
-            {unit.title && <> — {unit.title}</>}
-          </p>
-        </div>
+
+      <p className="mt-3 text-[17px] font-semibold leading-snug text-white">{course.title}</p>
+      <p className="mt-1.5 text-[13px] leading-relaxed text-white/55">
+        {module.title}
+        {position && <> · {position}</>}
+        {unit.title && <> — {unit.title}</>}
+      </p>
+
+      <div className="mt-5 flex items-center gap-4">
+        {percentage !== null && (
+          <>
+            <div className="h-1 min-w-0 flex-1 overflow-hidden rounded-full bg-white/15">
+              <div
+                className="h-full rounded-full bg-[#10b981] transition-all duration-700"
+                style={{ width: `${percentage}%` }}
+              />
+            </div>
+            <span className="flex-shrink-0 font-mono text-[13px] tabular-nums text-white/70">
+              {percentage}%
+            </span>
+          </>
+        )}
         <button
           onClick={() => onOpen(course.id)}
-          className="inline-flex h-11 flex-shrink-0 items-center gap-2 rounded-xl bg-white px-5 text-sm font-semibold text-[#16151b] transition-colors hover:bg-white/90"
+          className="ml-auto inline-flex h-11 flex-shrink-0 items-center gap-2 rounded-xl bg-white px-5 text-sm font-semibold text-[#16151b] transition-colors hover:bg-white/90"
         >
           Continuar
           <ChevronRight className="h-4 w-4" />
         </button>
       </div>
-    </div>
+    </aside>
   )
 }
 
-export function HeroSection({ user, unitsDone = 0, unitsTotal = 0, activeCourses = 0 }) {
+export function HeroSection({ user, unitsDone = 0, unitsTotal = 0, activeCourses = 0, roadmap = [] }) {
   const navigate = useNavigate()
 
   const { data: lastResp } = useQuery({
@@ -70,29 +83,41 @@ export function HeroSection({ user, unitsDone = 0, unitsTotal = 0, activeCourses
     staleTime: 30_000,
   })
 
-  // Only render the card when the backend resolved the full context.
+  // Only render the panel when the backend resolved the full context.
   const last = lastResp?.last_accessed
   const canResume = !!(last?.course && last?.unit)
+
+  // The course's own progress, read from the roadmap the dashboard already has.
+  const percentage = canResume
+    ? (roadmap.find(c => c.id === last.course.id)?.percentage ?? null)
+    : null
 
   return (
     <HeroBand className="on-brand-band">
       <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
-        <p className="mb-1 text-sm font-medium text-white/60">{greeting()}</p>
-        <h2 className="text-3xl font-bold text-white">
-          {user.first_name} {user.last_name}
-        </h2>
-        <p className="mt-1.5 text-white/60">
-          {summaryLine({ unitsDone, unitsTotal, activeCourses })}
-        </p>
+        <div className="flex flex-col gap-8 lg:flex-row lg:items-start lg:justify-between lg:gap-12">
+          <div className="lg:pt-6">
+            <p className="font-mono text-[11px] font-semibold uppercase tracking-[0.16em] text-white/45">
+              {greeting()}
+            </p>
+            <h2 className="mt-2 text-4xl font-bold tracking-tight text-white">
+              {user.first_name} {user.last_name}
+            </h2>
+            <p className="mt-2 text-white/55">
+              {summaryLine({ unitsDone, unitsTotal, activeCourses })}
+            </p>
+          </div>
 
-        {canResume && (
-          <ResumeCard
-            last={last}
-            // Carry the unit so "continue" lands where they actually stopped,
-            // instead of dropping them back at the first unit of the course.
-            onOpen={(id) => navigate(`/courses/${id}/study?unit=${last.unit.id}`)}
-          />
-        )}
+          {canResume && (
+            <ResumeCard
+              last={last}
+              percentage={percentage}
+              // Carry the unit so "continue" lands where they actually stopped,
+              // instead of dropping them back at the first unit of the course.
+              onOpen={(id) => navigate(`/courses/${id}/study?unit=${last.unit.id}`)}
+            />
+          )}
+        </div>
       </div>
     </HeroBand>
   )

@@ -152,6 +152,7 @@ function StudentDashboardPage({ userOverride = null, hideLogout = false, hideHea
             unitsDone={unitsSummary.done}
             unitsTotal={unitsSummary.total}
             activeCourses={unitsSummary.activeCourses}
+            roadmap={roadmapResp?.roadmap || []}
           />
         </>
       )}
