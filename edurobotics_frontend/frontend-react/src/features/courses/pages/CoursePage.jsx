@@ -9,7 +9,7 @@
  */
 
 import { useEffect, useState, useRef } from 'react'
-import { useNavigate, useParams } from 'react-router-dom'
+import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { getStoredUser } from '@/features/auth/services/auth'
 import { getCourseDetail, checkPrerequisites, enrollCourse } from '@/features/courses/services/courses'
@@ -83,6 +83,7 @@ function CoursePage() {
   const { courseId } = useParams()
   const numericCourseId = Number.parseInt(courseId, 10)
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
   const [user, setUser] = useState(() => getStoredUser())
   const [selectedUnitId, setSelectedUnitId] = useState(null)
   const [sidebarOpen, setSidebarOpen] = useState(false)
@@ -122,11 +123,15 @@ function CoursePage() {
     }
   }, [prereqResult, user?.role, navigate, courseId])
 
+  // Open the unit named in the URL when there is one (that's how "continue
+  // where you left off" lands on the right unit); otherwise start at the first.
   useEffect(() => {
     if (!course || selectedUnitId) return
-    const firstUnit = course.modules?.[0]?.units?.[0]
-    if (firstUnit) setSelectedUnitId(firstUnit.id)
-  }, [course, selectedUnitId])
+    const units = course.modules?.flatMap(m => m.units || []) || []
+    const requested = Number.parseInt(searchParams.get('unit'), 10)
+    const target = units.find(u => u.id === requested) || units[0]
+    if (target) setSelectedUnitId(target.id)
+  }, [course, selectedUnitId, searchParams])
 
   // Enroll the student when they open the course (idempotent, fire-and-forget).
   useEffect(() => {
@@ -221,7 +226,7 @@ function CoursePage() {
         {/* Reading progress bar */}
         <div className="absolute top-0 left-0 right-0 z-50 h-0.5 bg-gray-100">
           <div
-            className="h-full bg-gradient-to-r from-blue-500 to-indigo-500 transition-all duration-150 ease-out"
+            className="h-full bg-[#4b46d6] transition-all duration-150 ease-out"
             style={{ width: `${readProgress}%` }}
           />
         </div>
@@ -384,7 +389,7 @@ function CourseTopBar({ course, user, onBack, unitsDone = 0, unitsTotal = 0, onR
         {/* User info */}
         {user && (
           <div className="flex items-center gap-2">
-            <div className="w-7 h-7 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white text-[10px] font-bold">
+            <div className="w-7 h-7 rounded-full bg-[#16151b] flex items-center justify-center text-white text-[10px] font-bold">
               {(user.first_name?.[0] || '') + (user.last_name?.[0] || '')}
             </div>
             {user.role === 'admin' && (

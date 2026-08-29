@@ -86,7 +86,7 @@ export function CourseGrid({ courses, onCourseClick, specMap = {}, orderMap = {}
                   className={`absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-105 ${locked ? 'grayscale' : ''}`}
                 />
               ) : (
-                <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-slate-700 to-slate-900">
+                <div className="absolute inset-0 flex items-center justify-center bg-[#0a0a0c]">
                   <BookOpen className="h-12 w-12 text-blue-300" strokeWidth={1.5} />
                 </div>
               )}
@@ -99,7 +99,7 @@ export function CourseGrid({ courses, onCourseClick, specMap = {}, orderMap = {}
                 <div className="flex items-center gap-1.5">
                   {order != null && (
                     <span
-                      className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-white text-xs font-bold text-slate-900 shadow-sm"
+                      className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-white text-xs font-bold text-[#16151b] shadow-sm"
                       title={`Curso ${order} de la ruta`}
                     >
                       {order}
@@ -163,7 +163,7 @@ export function CourseGrid({ courses, onCourseClick, specMap = {}, orderMap = {}
                     </div>
                   )}
 
-                  <span className={`flex w-full items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-sm font-semibold shadow-sm transition-colors ${locked ? 'bg-white/15 text-white backdrop-blur-sm' : 'bg-white text-slate-900 group-hover:bg-white/95'}`}>
+                  <span className={`flex w-full items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-sm font-semibold shadow-sm transition-colors ${locked ? 'bg-white/15 text-white backdrop-blur-sm' : 'bg-white text-[#16151b] group-hover:bg-white/95'}`}>
                     {locked ? <Lock className="h-4 w-4" /> : null}
                     {ctaLabel}
                     {!locked && <ArrowRight className="h-4 w-4" />}

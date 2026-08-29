@@ -30,7 +30,7 @@ function UserAvatar({ user, compact = false }) {
 
   return (
     <div className="flex items-center gap-2.5">
-      <div className="w-8 h-8 rounded-full bg-gradient-to-br from-slate-700 to-slate-900 flex items-center justify-center text-white text-xs font-bold shadow-sm ring-2 ring-white">
+      <div className="w-8 h-8 rounded-full bg-[#16151b] flex items-center justify-center text-white text-xs font-bold shadow-sm ring-2 ring-white">
         {initials || '?'}
       </div>
       {!compact && (
