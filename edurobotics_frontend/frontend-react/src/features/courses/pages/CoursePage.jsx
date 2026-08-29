@@ -15,11 +15,12 @@ import { getStoredUser } from '@/features/auth/services/auth'
 import { getCourseDetail, checkPrerequisites, enrollCourse } from '@/features/courses/services/courses'
 import { Button } from '@/shared/components/button'
 import {
-  Loader2, BookOpen, ArrowLeft, Shield, Menu, X, PanelLeftOpen
+  BookOpen, ArrowLeft, Shield, Menu, X, PanelLeftOpen, Map
 } from 'lucide-react'
 import { CourseSidebar } from '@/features/courses/components/CourseSidebar'
 import { ContentViewer } from '@/features/courses/components/ContentViewer'
 import { useProgress } from '@/shared/hooks/useProgress'
+import { countCompletedUnits } from '@/features/courses/lib/unitCompletion'
 import { COURSE_LEVELS } from '@/shared/lib/courseLevel'
 
 const LEVEL_CONFIG = {
@@ -135,6 +136,7 @@ function CoursePage() {
   const allUnits = course?.modules?.flatMap(m => m.units || []) || []
   const currentUnit = allUnits.find(u => u.id === selectedUnitId)
   const isEmpty = !course?.modules || course.modules.length === 0 || allUnits.length === 0
+  const unitsDone = countCompletedUnits(allUnits, progressHook.progress, progressHook.getUnitProgress)
 
   // ── Reading progress bar (scroll-based) ──
   useEffect(() => {
@@ -205,7 +207,14 @@ function CoursePage() {
   return (
     <div className="min-h-screen bg-white flex flex-col">
       {/* Top bar */}
-      <CourseTopBar course={course} user={user} onBack={() => navigate('/dashboard')} />
+      <CourseTopBar
+        course={course}
+        user={user}
+        onBack={() => navigate('/dashboard')}
+        unitsDone={unitsDone}
+        unitsTotal={allUnits.length}
+        onRoadmap={() => navigate('/roadmap')}
+      />
 
       {/* Body: sidebar + content */}
       <div className="flex flex-1 overflow-hidden relative">
@@ -216,12 +225,14 @@ function CoursePage() {
             style={{ width: `${readProgress}%` }}
           />
         </div>
-        {/* Mobile sidebar toggle */}
+        {/* Mobile: open the index as a bottom sheet */}
         <button
           onClick={() => setSidebarOpen(!sidebarOpen)}
-          className="lg:hidden fixed bottom-4 left-4 z-50 w-12 h-12 bg-blue-600 text-white rounded-full shadow-lg flex items-center justify-center hover:bg-blue-700 transition-colors"
+          aria-expanded={sidebarOpen}
+          className="lg:hidden fixed bottom-4 left-4 z-50 inline-flex items-center gap-2 pl-3 pr-4 py-2.5 bg-gray-900 text-white rounded-full shadow-lg text-sm font-medium hover:bg-gray-800 transition-colors"
         >
-          {sidebarOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+          {sidebarOpen ? <X className="w-4 h-4" /> : <Menu className="w-4 h-4" />}
+          Índice
         </button>
 
         {/* Mobile backdrop */}
@@ -232,15 +243,21 @@ function CoursePage() {
           />
         )}
 
-        {/* ── Sidebar ── */}
+        {/* ── Index: bottom sheet on mobile, column on desktop ── */}
         <aside className={`
-          w-72 flex-shrink-0 bg-gray-50/70 border-r border-gray-200 overflow-y-auto
-          fixed lg:relative inset-y-0 left-0 z-40
-          transform transition-transform duration-200 ease-in-out
-          ${sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
+          bg-gray-50 overflow-y-auto z-40
+          fixed inset-x-0 bottom-0 max-h-[78vh] rounded-t-2xl border-t border-gray-200 shadow-2xl
+          transition-transform duration-200 ease-out
+          ${sidebarOpen ? 'translate-y-0' : 'translate-y-full'}
+          lg:static lg:translate-y-0 lg:max-h-none lg:w-80 lg:flex-shrink-0
+          lg:rounded-none lg:border-t-0 lg:border-r lg:shadow-none lg:bg-gray-50/70
           ${sidebarCollapsed ? 'lg:hidden' : ''}
-          top-0 lg:top-auto pt-14 lg:pt-0
         `}>
+          {/* Grab handle (mobile sheet only) */}
+          <div className="lg:hidden flex justify-center pt-2.5 pb-1" aria-hidden="true">
+            <div className="w-9 h-1 rounded-full bg-gray-300" />
+          </div>
+
           <CourseSidebar
             modules={course.modules || []}
             selectedUnitId={selectedUnitId}
@@ -285,8 +302,34 @@ function CoursePage() {
   )
 }
 
+// ── Progress ring: units done out of total ──
+function ProgressRing({ done, total }) {
+  const pct = total > 0 ? done / total : 0
+  const radius = 10.5
+  const circumference = 2 * Math.PI * radius
+
+  return (
+    <div className="hidden sm:flex items-center gap-2.5">
+      <svg width="26" height="26" viewBox="0 0 26 26" className="-rotate-90" aria-hidden="true">
+        <circle cx="13" cy="13" r={radius} fill="none" stroke="#eceaf5" strokeWidth="3" />
+        <circle
+          cx="13" cy="13" r={radius} fill="none" stroke="#6366f1" strokeWidth="3"
+          strokeLinecap="round"
+          strokeDasharray={`${circumference * pct} ${circumference}`}
+        />
+      </svg>
+      <div className="leading-tight">
+        <div className="font-mono text-xs font-semibold text-gray-700 tabular-nums">
+          {done}/{total}
+        </div>
+        <div className="text-[10px] text-gray-400">unidades</div>
+      </div>
+    </div>
+  )
+}
+
 // ── Top bar component ──
-function CourseTopBar({ course, user, onBack }) {
+function CourseTopBar({ course, user, onBack, unitsDone = 0, unitsTotal = 0, onRoadmap }) {
   const level = LEVEL_CONFIG[course.level] || LEVEL_CONFIG.beginner
   const LevelIcon = level.icon
 
@@ -319,20 +362,40 @@ function CourseTopBar({ course, user, onBack }) {
         </div>
       </div>
 
-      {/* User info */}
-      {user && (
-        <div className="flex items-center gap-2">
-          <div className="w-7 h-7 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white text-[10px] font-bold">
-            {(user.first_name?.[0] || '') + (user.last_name?.[0] || '')}
+      <div className="flex items-center gap-3.5 flex-shrink-0">
+        {/* The index no longer carries this link, so the course map lives here. */}
+        {onRoadmap && (
+          <button
+            onClick={onRoadmap}
+            className="hidden md:inline-flex items-center gap-1.5 text-xs font-medium text-gray-500 hover:text-gray-900 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 rounded"
+          >
+            <Map className="w-3.5 h-3.5" />
+            Ver la malla
+          </button>
+        )}
+
+        {unitsTotal > 0 && (
+          <>
+            <ProgressRing done={unitsDone} total={unitsTotal} />
+            <div className="hidden sm:block h-5 w-px bg-gray-200" />
+          </>
+        )}
+
+        {/* User info */}
+        {user && (
+          <div className="flex items-center gap-2">
+            <div className="w-7 h-7 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white text-[10px] font-bold">
+              {(user.first_name?.[0] || '') + (user.last_name?.[0] || '')}
+            </div>
+            {user.role === 'admin' && (
+              <span className="inline-flex items-center gap-0.5 text-[9px] font-semibold px-1.5 py-0.5 rounded bg-slate-800 text-white">
+                <Shield className="w-2 h-2" />
+                ADMIN
+              </span>
+            )}
           </div>
-          {user.role === 'admin' && (
-            <span className="inline-flex items-center gap-0.5 text-[9px] font-semibold px-1.5 py-0.5 rounded bg-slate-800 text-white">
-              <Shield className="w-2 h-2" />
-              ADMIN
-            </span>
-          )}
-        </div>
-      )}
+        )}
+      </div>
     </header>
   )
 }

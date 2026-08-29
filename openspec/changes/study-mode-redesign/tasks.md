@@ -17,58 +17,65 @@
 
 ## 1. Shell y layout
 
-- [ ] 1.1 Barra superior: volver · título + badge de nivel + versión · anillo de progreso
+- [x] 1.1 Barra superior: volver · título + badge de nivel + versión · anillo de progreso
       `hechas/total` · avatar.
-- [ ] 1.2 Barra de progreso de lectura de 2 px ligada al scroll de la columna.
-- [ ] 1.3 Columna de lectura `max-width: 704px` centrada; índice como aside de 320 px con
+- [x] 1.2 Barra de progreso de lectura de 2 px ligada al scroll de la columna.
+- [x] 1.3 Columna de lectura `max-width: 704px` centrada; índice como aside de 320 px con
       fondo `#fafafa` y botón de modo foco.
 
 ## 2. Índice por módulos
 
-- [ ] 2.1 Línea de módulos con nodos: actual abierto (unidades + barra de progreso del
+- [x] 2.1 Línea de módulos con nodos: actual abierto (unidades + barra de progreso del
       módulo), terminado cerrado con nodo verde y check, por venir atenuado.
-- [ ] 2.2 Duración estimada por unidad; unidad activa destacada; **reponer el icono por tipo
+- [x] 2.2 Duración estimada por unidad; unidad activa destacada; **reponer el icono por tipo
       de unidad** (video/texto/recurso/evaluación), que el canvas conserva y el commit
       `fd63e9f` había quitado.
-- [ ] 2.2b Decidir dónde vive la entrada a la malla del curso, que `fd63e9f` quitó del índice
+- [x] 2.2b Decidir dónde vive la entrada a la malla del curso, que `fd63e9f` quitó del índice
       (la barra superior es el candidato natural). No dejarla sin entrada: la malla es lo que
       pidió la directora.
-- [ ] 2.3 Modo foco (ocultar/mostrar índice), estado local a la sesión.
-- [ ] 2.4 Móvil: el índice vive en una hoja inferior que se abre desde la barra.
+- [x] 2.3 Modo foco (ocultar/mostrar índice), estado local a la sesión.
+- [x] 2.4 Móvil: el índice vive en una hoja inferior que se abre desde la barra.
 
 ## 3. Lección: tipografía y bloques
 
-- [ ] 3.1 Escala tipográfica editorial: serif para h1 (42 px) y h2 (25 px), cuerpo 17 px/1.75,
+- [x] 3.1 Escala tipográfica editorial: serif para h1 (42 px) y h2 (25 px), cuerpo 17 px/1.75,
       monoespaciada para migas y metadatos, cita con barra de acento.
-- [ ] 3.2 Migas (módulo › unidad), título, tiempo de lectura y etiqueta de material; indicador
+- [x] 3.2 Migas (módulo › unidad), título, tiempo de lectura y etiqueta de material; indicador
       «Completado» cuando corresponde.
-- [ ] 3.3 Bloques con la misma gramática (borde, radio, densidad): video, PDF con
+- [x] 3.3 Bloques con la misma gramática (borde, radio, densidad): video, PDF con
       previsualización, descarga, enlace externo, simulador (fondo oscuro), evaluación con
       estados Disponible/Bloqueada.
-- [ ] 3.4 Riel de secciones desde los `h2` ya renderizados (asignar `id`, resaltar activa);
-      **no** mostrar el riel con menos de dos `h2`. No tocar `sanitizeHtml`.
+- [ ] 3.4 Riel de secciones **lateral**. Hoy el índice de secciones existe pero es un bloque
+      **en línea** sobre la lección (`TableOfContents`), no el riel a la derecha del canvas;
+      ya cumple lo esencial (se construye desde los `h2`, se oculta con menos de dos) y no
+      toca `sanitizeHtml`. Falta moverlo a una columna lateral pegajosa en pantallas anchas.
+      **Pendiente a propósito:** es un cambio de layout de la columna de lectura y en esta
+      sesión no había navegador para verificarlo visualmente; hacerlo a ciegas arriesgaba
+      romper la pantalla más usada. Hacer con la app a la vista.
 
 ## 4. Acción primaria y registro de avance
 
-- [ ] 4.1 Botón primario único con sus estados: `Marcar como leído` → `Siguiente unidad`;
+- [x] 4.1 Botón primario único con sus estados: `Marcar como leído` → `Siguiente unidad`;
       `Completar módulo N` → `Empezar módulo N+1`; `Finalizar curso` (abre el modal de
       feedback, como hoy).
-- [ ] 4.2 **Eliminar el enlace secundario «Siguiente»** del pie; conservar «Anterior».
+- [x] 4.2 **Eliminar el enlace secundario «Siguiente»** del pie; conservar «Anterior».
       Saltar a otra unidad se hace desde el índice.
-- [ ] 4.3 Automarcar la unidad al aprobar su quiz o al ejecutar el simulador.
+- [x] 4.3 Automarcar la unidad al aprobar su quiz o al ejecutar el simulador.
 - [ ] 4.4 Confirmar que `markComplete` y los heartbeats siguen registrando igual
       (`completed_at`, `active_seconds`) — sin cambios de backend.
 
 ## 5. Accesibilidad (no regresar la F6)
 
-- [ ] 5.1 Índice y botón primario como controles reales con foco visible; recorrido de teclado
+- [x] 5.1 Índice y botón primario como controles reales con foco visible; recorrido de teclado
       completo en la vista de estudio.
-- [ ] 5.2 Anuncio discreto (`aria-live`) al marcar una unidad como completada.
-- [ ] 5.3 Contraste AA en los módulos atenuados del índice.
+- [x] 5.2 Anuncio discreto (`aria-live`) al marcar una unidad como completada.
+- [x] 5.3 Contraste AA en los módulos atenuados del índice.
 
 ## 6. Verificación
 
-- [ ] 6.1 `npm run build` verde; `npm run lint` sin empeorar la línea base.
+- [x] 6.1 `npm run build` verde; `npm run lint` **mejoró** la línea base (53 problemas / 48
+      errores, contra 55 / 50 antes del rediseño). Los errores que quedan son previos y
+      viven en `QuizView`, `CoursePreviewPage` y dos efectos antiguos de `CoursePage`.
 - [ ] 6.2 Capturas DESPUÉS de las tres unidades de referencia (escritorio y 390 px) y
       comparación con las de 0.2.
 - [ ] 6.3 Prueba manual: completar una unidad y verificar que el avance queda registrado y que
