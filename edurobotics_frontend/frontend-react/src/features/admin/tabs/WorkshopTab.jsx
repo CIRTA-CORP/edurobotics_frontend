@@ -12,10 +12,8 @@
 import { useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Check, Eye, FileText } from 'lucide-react'
-import { Drawer } from '@/shared/components/Drawer'
 import { ContentForm } from '@/features/admin/features/content/ContentForm'
 import { QuizEditor } from '@/features/admin/features/quizzes/QuizEditor'
-import { ModuleForm } from '@/features/admin/features/modules/ModuleForm'
 import { UnitForm } from '@/features/admin/features/units/UnitForm'
 import { useAdmin } from '@/features/admin/context/AdminContext'
 
@@ -43,54 +41,13 @@ export function WorkshopTab() {
   const {
     selectedCourse, selectedModule, selectedUnit,
     expandedSections, toggleSection, handleContentDelete, contentHooks,
-    isModuleModalOpen, setIsModuleModalOpen,
-    isModuleEditModalOpen, setIsModuleEditModalOpen,
-    editingModule, setEditingModule, moduleHooks, handleModuleSelect,
-    isUnitModalOpen, setIsUnitModalOpen,
-    isUnitEditModalOpen, setIsUnitEditModalOpen,
-    editingUnit, setEditingUnit, unitHooks, handleUnitSelect,
+    unitHooks,
   } = useAdmin()
 
   const [editorTab, setEditorTab] = useState('contenido')
   const navigate = useNavigate()
   const richEditorRef = useRef(null)
   const [lastSavedAt, setLastSavedAt] = useState(null)
-
-  // ── Módulo: crear / editar (mismos hooks que la pestaña antigua) ──
-  const moduleDrawerOpen = isModuleModalOpen || isModuleEditModalOpen
-  const moduleMode = isModuleEditModalOpen ? 'edit' : 'create'
-  const closeModuleDrawer = () => {
-    setIsModuleModalOpen(false)
-    setIsModuleEditModalOpen(false)
-    setEditingModule(null)
-  }
-  const submitModule = async (e) => {
-    if (moduleMode === 'create') {
-      const created = await moduleHooks.handleModuleCreate(e, selectedCourse)
-      if (created) handleModuleSelect(created)
-    } else {
-      await moduleHooks.handleModuleUpdate(e, editingModule.id, selectedCourse)
-    }
-    closeModuleDrawer()
-  }
-
-  // ── Unidad: crear / editar ──
-  const unitDrawerOpen = isUnitModalOpen || isUnitEditModalOpen
-  const unitMode = isUnitEditModalOpen ? 'edit' : 'create'
-  const closeUnitDrawer = () => {
-    setIsUnitModalOpen(false)
-    setIsUnitEditModalOpen(false)
-    setEditingUnit(null)
-  }
-  const submitUnit = async (e) => {
-    if (unitMode === 'create') {
-      const created = await unitHooks.handleUnitCreate(e, selectedModule, selectedCourse)
-      if (created) handleUnitSelect(created)
-    } else {
-      await unitHooks.handleUnitUpdate(e, editingUnit.id, selectedCourse)
-    }
-    closeUnitDrawer()
-  }
 
   const quizCount = selectedUnit?.quizzes?.length || 0
   const hasModules = (selectedCourse?.modules || []).length > 0
@@ -210,37 +167,6 @@ export function WorkshopTab() {
           )}
         </div>
       </div>
-
-      {/* Los formularios de módulo y unidad siguen siendo los mismos */}
-      <Drawer
-        open={moduleDrawerOpen}
-        onClose={closeModuleDrawer}
-        title={moduleMode === 'create' ? 'Crear nuevo módulo' : 'Editar módulo'}
-        width="max-w-md"
-      >
-        <ModuleForm
-          mode={moduleMode}
-          isSubmitting={moduleHooks.isSubmitting}
-          moduleForm={moduleHooks.moduleForm}
-          setModuleForm={moduleHooks.setModuleForm}
-          onSubmit={submitModule}
-        />
-      </Drawer>
-
-      <Drawer
-        open={unitDrawerOpen}
-        onClose={closeUnitDrawer}
-        title={unitMode === 'create' ? 'Crear nueva unidad' : 'Editar unidad'}
-        width="max-w-md"
-      >
-        <UnitForm
-          mode={unitMode}
-          isSubmitting={unitHooks.isSubmitting}
-          unitForm={unitHooks.unitForm}
-          setUnitForm={unitHooks.setUnitForm}
-          onSubmit={submitUnit}
-        />
-      </Drawer>
     </>
   )
 }

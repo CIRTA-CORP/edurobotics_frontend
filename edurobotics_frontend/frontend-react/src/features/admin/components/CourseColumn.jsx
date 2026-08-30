@@ -23,7 +23,7 @@ const LEVEL_DOT = {
 export function CourseColumn() {
   const {
     courses, isCoursesLoading, selectedCourse, handleCourseSelect,
-    setIsCourseModalOpen, setActiveTab, isTeacher,
+    setIsCourseModalOpen, setActiveTab, isTeacher, courseHooks,
   } = useAdmin()
 
   const queryClient = useQueryClient()
@@ -55,7 +55,13 @@ export function CourseColumn() {
       {!isTeacher && (
         <div className="flex items-center gap-2 border-b border-[#ececf1] p-3">
           <button
-            onClick={() => setIsCourseModalOpen(true)}
+            onClick={() => {
+              // Abrir "Crear curso" SIEMPRE en blanco: el formulario retiene los
+              // valores del último curso editado, lo que prellenaba cursos nuevos.
+              courseHooks.setCourseForm({ title: '', description: '', image_url: '', level: 'beginner', version: 1, is_published: true })
+              courseHooks.setPrereqIds([])
+              setIsCourseModalOpen(true)
+            }}
             className="flex h-10 flex-1 items-center justify-center gap-2 rounded-xl bg-[#16151b] text-[13.5px] font-semibold text-white transition-colors hover:bg-[#2b2b26] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4b46d6] focus-visible:ring-offset-2"
           >
             <Plus className="h-4 w-4" /> Crear curso

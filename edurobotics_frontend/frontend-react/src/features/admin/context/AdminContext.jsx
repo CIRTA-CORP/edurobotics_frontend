@@ -252,6 +252,13 @@ export function AdminProvider({ children }) {
 
   const handleUnitSelect = (unit) => {
     setSelectedUnit(unit)
+    // Poblar el formulario de Ajustes con la unidad elegida (sin esto, la
+    // pestaña Ajustes muestra campos vacíos aunque la unidad tenga nombre).
+    unitHooks.setUnitForm({
+      title: unit.title || '',
+      description: unit.description || '',
+      order_index: unit.order_index ?? 1,
+    })
     setActiveTab('taller')
   }
 

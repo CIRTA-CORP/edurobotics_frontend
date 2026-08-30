@@ -16,6 +16,7 @@ import { ErrorBoundary } from '@/shared/components/ErrorBoundary'
 import { AdminProvider, useAdmin } from '@/features/admin/context/AdminContext'
 import { AdminSidebarNav } from '@/features/admin/components/AdminSidebarNav'
 import { CourseCreateDrawer } from '@/features/admin/components/CourseCreateDrawer'
+import { WorkshopDrawers } from '@/features/admin/components/WorkshopDrawers'
 import { CourseColumn } from '@/features/admin/components/CourseColumn'
 
 // Lazy-load each tab so the admin shell stays light. The heavy Content tab
@@ -106,6 +107,7 @@ function AdminDashboardLayout() {
         {/* The rail is a column of the shell, not a card floating in a grid:
             it runs the full height with a hairline against the work area. */}
         <CourseCreateDrawer />
+        <WorkshopDrawers />
         <div className="flex min-h-[calc(100vh-3.5rem)] flex-col lg:flex-row">
           <AdminSidebarNav />
 
