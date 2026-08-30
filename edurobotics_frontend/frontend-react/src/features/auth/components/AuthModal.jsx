@@ -41,7 +41,11 @@ export function AuthModal({ isOpen, onClose, initialView = 'login' }) {
   return (
     <Modal isOpen={isOpen} onClose={onClose} title="" size="sm">
       <div className="-mt-2 mb-5 text-center">
-        <img src="/cirtanitido.svg" alt="CIRTA" className="mx-auto h-7" />
+        <span className="flex items-center justify-center gap-3">
+          <img src="/cirtanitido.svg" alt="CIRTA" className="h-8" />
+          <span className="h-6 w-px bg-[#ececf1]" aria-hidden="true" />
+          <span className="text-[15px] font-bold tracking-[-0.015em] text-[#16151b]">EduRobotics</span>
+        </span>
         <h2 className="mt-4 text-[22px] font-bold tracking-[-0.012em] text-[#16151b]">
           {isLogin ? 'Entra a la plataforma' : 'Crea tu cuenta'}
         </h2>

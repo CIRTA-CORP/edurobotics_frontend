@@ -15,8 +15,15 @@ export function AuthLayout({ title, claims = [], children }) {
     <div className="flex min-h-screen bg-white">
       <HeroBand className="on-brand-band hidden w-[46%] max-w-[620px] flex-shrink-0 lg:block">
         <div className="flex h-full min-h-screen flex-col p-11 xl:p-14">
-          <Link to="/" className="flex items-center gap-2.5">
-            <img src="/cirtanitido.svg" alt="CIRTA" className="h-7" />
+          {/* El SVG de CIRTA es negro puro: sobre la banda hay que invertirlo o
+              desaparece. Mismo tratamiento que usa el simulador. */}
+          <Link to="/" className="flex items-center gap-3">
+            <img
+              src="/cirtanitido.svg"
+              alt="CIRTA"
+              className="h-8 brightness-0 invert"
+            />
+            <span className="h-6 w-px bg-white/20" aria-hidden="true" />
             <span className="text-[16px] font-bold tracking-[-0.015em] text-white">EduRobotics</span>
           </Link>
 
@@ -35,7 +42,7 @@ export function AuthLayout({ title, claims = [], children }) {
           </div>
 
           <div className="flex items-center gap-5 text-[12.5px] text-white/40">
-            <span>© {new Date().getFullYear()} CIRTA CORP</span>
+            <span>Una plataforma de CIRTA CORP</span>
             <Link to="/legal" className="text-white/50 hover:text-white/80">Términos</Link>
             <Link to="/privacidad" className="text-white/50 hover:text-white/80">Privacidad</Link>
           </div>
@@ -45,8 +52,9 @@ export function AuthLayout({ title, claims = [], children }) {
       <div className="flex min-w-0 flex-1 items-center justify-center p-6 sm:p-10">
         <div className="w-full max-w-[400px]">
           {/* La marca solo aquí cuando la banda no se ve */}
-          <Link to="/" className="mb-8 flex items-center gap-2.5 lg:hidden">
-            <img src="/cirtanitido.svg" alt="CIRTA" className="h-7" />
+          <Link to="/" className="mb-8 flex items-center gap-3 lg:hidden">
+            <img src="/cirtanitido.svg" alt="CIRTA" className="h-8" />
+            <span className="h-6 w-px bg-[#ececf1]" aria-hidden="true" />
             <span className="text-[16px] font-bold tracking-[-0.015em] text-[#16151b]">EduRobotics</span>
           </Link>
           {children}
