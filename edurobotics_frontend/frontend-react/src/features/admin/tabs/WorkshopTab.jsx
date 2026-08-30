@@ -134,7 +134,8 @@ export function WorkshopTab() {
                     onRichContentSave={(html) =>
                       contentHooks
                         .handleRichContentSave(html, selectedUnit, selectedCourse)
-                        .then(() => setLastSavedAt(new Date()))
+                        // Only stamp the time when the save really landed.
+                        .then((saved) => { if (saved) setLastSavedAt(new Date()) })
                     }
                     onContentDelete={handleContentDelete}
                     onMigrateLegacy={() => contentHooks.handleMigrateLegacy(selectedUnit, selectedCourse)}

@@ -23,6 +23,7 @@ import {
   getCoursePerformanceAnalytics,
   getCourseContentAnalytics,
   getDailySessions,
+  getInteractionAnalytics,
 } from '@/features/admin/services/analytics'
 
 const fmtPct = (value) => (value == null ? '—' : `${Math.round(value)}%`)
@@ -134,6 +135,14 @@ export function AnalyticsTab() {
     enabled: !isTeacher,
     staleTime: 30_000,
   })
+  // Días activos, tiempo entre sesiones y avance por login: existían en la
+  // pantalla anterior y la consolidación los había dejado fuera.
+  const interactionQ = useQuery({
+    queryKey: ['analytics-interaction'],
+    queryFn: getInteractionAnalytics,
+    enabled: !isTeacher,
+    staleTime: 30_000,
+  })
   const feedbackQ = useQuery({
     queryKey: ['course-feedback-summary', courseId],
     queryFn: () => getCourseFeedbackSummary(courseId),
@@ -146,6 +155,7 @@ export function AnalyticsTab() {
   const content = contentQ.data?.success ? contentQ.data : null
   const sessions = sessionsQ.data?.success ? sessionsQ.data : null
   const feedback = feedbackQ.data?.success ? feedbackQ.data : null
+  const interaction = interactionQ.data?.success ? interactionQ.data : null
 
   const insufficient =
     (progress?.insufficient_data ?? false) ||
@@ -271,6 +281,45 @@ export function AnalyticsTab() {
             </div>
             <span className="text-[12.5px] text-[#8b8a95]">Toda la plataforma · últimos {periodDays} días</span>
           </div>
+          <div className="mt-5 grid grid-cols-1 gap-4 border-b border-[#f2f1f6] pb-5 sm:grid-cols-3">
+            {[
+              // El backend devuelve {avg, median} en los tres: se toma el promedio.
+              {
+                label: 'Días activos / semana',
+                value: interaction?.insufficient_data
+                  ? '…'
+                  : (interaction?.active_days_per_week?.avg ?? '—'),
+                sub: 'promedio, últimos 28 días',
+              },
+              {
+                label: 'Tiempo entre sesiones',
+                value: interaction?.insufficient_data
+                  ? '…'
+                  : fmtHours(
+                      interaction?.time_between_sessions_hours?.avg != null
+                        ? interaction.time_between_sessions_hours.avg * 3600
+                        : null
+                    ),
+                sub: 'promedio entre inicios de sesión',
+              },
+              {
+                label: 'Avance por login',
+                value: interaction?.insufficient_data
+                  ? '…'
+                  : (interaction?.progress_per_login?.avg ?? '—'),
+                sub: 'contenidos completados entre logins',
+              },
+            ].map((m) => (
+              <div key={m.label}>
+                <SectionLabel>{m.label}</SectionLabel>
+                <div className="mt-2 font-mono text-[22px] font-bold leading-none tracking-[-0.02em] text-[#16151b]">
+                  {m.value}
+                </div>
+                <div className="mt-1.5 text-[11.5px] text-[#a9a8b4]">{m.sub}</div>
+              </div>
+            ))}
+          </div>
+
           <div className="mt-5 flex h-[140px] items-end gap-1.5">
             {series.map((s) => {
               const d = new Date(s.date)

@@ -17,8 +17,13 @@ export function useContent(adminToken, refreshSelectedCourse) {
    * Save rich_text content for a unit.
    * Creates a new rich_text content if none exists, or updates the existing one.
    */
+  /**
+   * Saves the lesson body. Returns true only when the write actually landed —
+   * the caller stamps "último guardado" from that, and a swallowed error used to
+   * make the stamp appear on a failed save.
+   */
   const handleRichContentSave = async (html, selectedUnit, selectedCourse) => {
-    if (!selectedUnit || !selectedCourse) return
+    if (!selectedUnit || !selectedCourse) return false
 
     setSaving(true)
     try {
@@ -39,8 +44,10 @@ export function useContent(adminToken, refreshSelectedCourse) {
 
       await refreshSelectedCourse(selectedCourse.id)
       toast.success('Contenido guardado')
+      return true
     } catch (error) {
       toast.error(error.message)
+      return false
     } finally {
       setSaving(false)
     }

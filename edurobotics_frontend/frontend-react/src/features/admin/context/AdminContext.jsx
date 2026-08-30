@@ -322,16 +322,6 @@ export function AdminProvider({ children }) {
     setIsUnitEditModalOpen(true)
   }
 
-  const handleUnitQuiz = (unit) => {
-    setSelectedUnit(unit)
-    setActiveTab('taller')
-  }
-
-  const handleModuleQuiz = (module) => {
-    setSelectedModule(module)
-    setActiveTab('taller')
-  }
-
   const value = {
     // User and view state
     user,
@@ -397,8 +387,6 @@ export function AdminProvider({ children }) {
     handleUnitDelete,
     handleModuleEdit,
     handleUnitEdit,
-    handleUnitQuiz,
-    handleModuleQuiz,
   }
 
   return (
