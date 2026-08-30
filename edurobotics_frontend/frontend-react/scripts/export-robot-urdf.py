@@ -40,11 +40,20 @@ import tempfile
 import xml.etree.ElementTree as ET
 from pathlib import Path
 
-# Dónde vive cada malla ya convertida, por nombre de archivo sin extensión.
-MESH_WEB_DIRS = {
-    "arms/ur5e": "/meshes/ur5",
-    "grippers/robotiq": "/meshes/robotiq",
+# Las mallas ya convertidas a .glb viven hoy en carpetas planas, heredadas del visor
+# anterior. El URDF conserva sus URIs `package://` —como en ROS— y este mapa dice de dónde
+# sacar cada archivo para copiarlo al layout espejo bajo `public/robots/`.
+#
+# Espejar el paquete, en vez de reescribir rutas a carpetas planas, es lo que hace que el
+# URDF de cualquier robot futuro funcione sin tocar nada: sus `package://` se resuelven
+# solos.
+MESH_SOURCE_DIRS = {
+    "arms/ur5e": "meshes/ur5",
+    "grippers/robotiq": "meshes/robotiq",
 }
+
+# Prefijo web al que se mapea `package://robot_description/`.
+PACKAGE_WEB_ROOT = "robots/robot_description"
 
 WRAPPER = """<?xml version="1.0"?>
 <robot xmlns:xacro="http://ros.org/wiki/xacro" name="{name}">
@@ -75,28 +84,58 @@ def run_xacro(wrapper_path: Path, out_path: Path) -> None:
         sys.exit(f"xacro falló:\n{result.stderr}")
 
 
+MESH_PATTERN = re.compile(
+    r"package://robot_description/meshes/(?P<group>[^\"']+?)/visual/(?P<name>[^/\"']+?)\.dae"
+)
+
+
 def rewrite_meshes(urdf_path: Path) -> int:
-    """`package://robot_description/meshes/<grupo>/visual/<n>.dae` → `<ruta web>/<n>.glb`."""
+    """Cambia solo la extensión: `…/visual/<n>.dae` → `…/visual/<n>.glb`.
+
+    Las URIs `package://` se conservan tal cual, que es como ROS las escribe. El visor las
+    resuelve configurando `loader.packages`, de modo que el URDF de otro robot no necesite
+    ninguna reescritura de rutas.
+    """
     text = urdf_path.read_text(encoding="utf-8")
-    pattern = re.compile(
-        r"package://robot_description/meshes/(?P<group>[^\"']+?)/visual/(?P<name>[^/\"']+?)\.dae"
+    text, count = MESH_PATTERN.subn(
+        lambda m: f"package://robot_description/meshes/{m.group('group')}"
+                  f"/visual/{m.group('name')}.glb",
+        text,
     )
-
-    missing = []
-
-    def replace(match):
-        group, name = match.group("group"), match.group("name")
-        web_dir = MESH_WEB_DIRS.get(group)
-        if web_dir is None:
-            missing.append(f"{group}/{name}")
-            return match.group(0)
-        return f"{web_dir}/{name}.glb"
-
-    text, count = pattern.subn(replace, text)
-    if missing:
-        sys.exit(f"Grupos de malla sin ruta web conocida: {sorted(set(missing))}")
     urdf_path.write_text(text, encoding="utf-8")
     return count
+
+
+def copy_meshes(urdf_path: Path, public_dir: Path) -> int:
+    """Copia los .glb al layout espejo del paquete, bajo `public/robots/robot_description/`."""
+    root = ET.parse(urdf_path).getroot()
+    copied = 0
+    missing = []
+
+    for mesh in root.iter("mesh"):
+        filename = mesh.get("filename", "")
+        if not filename.startswith("package://robot_description/"):
+            continue
+        relative = filename.replace("package://robot_description/", "")
+        group = Path(relative).parent.parent.parent.name + "/" + Path(relative).parent.parent.name
+        source_dir = MESH_SOURCE_DIRS.get(group)
+        if source_dir is None:
+            missing.append(group)
+            continue
+
+        source = public_dir / source_dir / Path(relative).name
+        if not source.is_file():
+            missing.append(str(source.relative_to(public_dir)))
+            continue
+
+        destination = public_dir / PACKAGE_WEB_ROOT / relative
+        destination.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copyfile(source, destination)
+        copied += 1
+
+    if missing:
+        sys.exit(f"Mallas que no se pudieron resolver: {sorted(set(missing))}")
+    return copied
 
 
 def strip_collisions(urdf_path: Path) -> int:
@@ -114,14 +153,18 @@ def strip_collisions(urdf_path: Path) -> int:
 
 
 def verify(urdf_path: Path, public_dir: Path) -> None:
-    """Comprueba que cada malla referenciada existe realmente en public/."""
+    """Comprueba que cada malla referenciada existe realmente donde el visor la buscará."""
     root = ET.parse(urdf_path).getroot()
     refs = {
         mesh.get("filename")
         for mesh in root.iter("mesh")
-        if mesh.get("filename", "").startswith("/")
+        if mesh.get("filename", "").startswith("package://robot_description/")
     }
-    missing = [ref for ref in sorted(refs) if not (public_dir / ref.lstrip("/")).is_file()]
+    missing = [
+        ref for ref in sorted(refs)
+        if not (public_dir / PACKAGE_WEB_ROOT
+                / ref.replace("package://robot_description/", "")).is_file()
+    ]
     if missing:
         sys.exit(f"El URDF referencia mallas que no existen en public/: {missing}")
 
@@ -177,7 +220,9 @@ def main() -> None:
 
     meshes = rewrite_meshes(out_path)
     collisions = strip_collisions(out_path)
-    print(f"  {meshes} rutas de malla reescritas a .glb, {collisions} <collision> eliminados")
+    copied = copy_meshes(out_path, public_dir)
+    print(f"  {meshes} mallas .dae → .glb, {collisions} <collision> eliminados, "
+          f"{copied} mallas copiadas al layout del paquete")
     verify(out_path, public_dir)
     print(f"✓ {out_path.relative_to(frontend)}")
 

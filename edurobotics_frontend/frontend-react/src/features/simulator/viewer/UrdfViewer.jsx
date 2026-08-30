@@ -12,7 +12,7 @@
  * Misma interfaz que el visor anterior (`{ jointAngles, cameraView }`), para poder
  * intercambiarlos sin tocar nada aguas arriba.
  */
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import {
   AmbientLight, Color, DirectionalLight, GridHelper, LoadingManager,
   PerspectiveCamera, Scene, Vector3, WebGLRenderer,
@@ -25,6 +25,8 @@ import {
 } from '@/features/simulator/viewer/jointNames'
 
 const ROBOT_URDF = '/robots/ur5e/ur5e_robotiq.urdf'
+// Espejo web del paquete `robot_description` de ROS.
+const PACKAGE_ROOT = '/robots/robot_description'
 
 // Constante de tiempo del seguimiento suavizado, en segundos. Igual que en el visor
 // anterior: el robot se acerca al último objetivo cada frame, independiente del framerate.
@@ -60,6 +62,9 @@ export default function UrdfViewer({ jointAngles, cameraView = 'free' }) {
   const latestAnglesRef = useRef(null)
   const controlsRef = useRef(null)
   const cameraRef = useRef(null)
+  // Estado visible en pantalla: durante el spike hace falta poder ver desde una captura
+  // si el robot cargó, cuántas mallas entraron, o qué falló.
+  const [status, setStatus] = useState('cargando…')
 
   useEffect(() => {
     const canvas = canvasRef.current
@@ -98,6 +103,15 @@ export default function UrdfViewer({ jointAngles, cameraView = 'free' }) {
     const gltfLoader = new GLTFLoader(manager)
     const loader = new URDFLoader(manager)
 
+    // El URDF conserva las URIs `package://robot_description/…` tal como las escribe ROS, y
+    // `public/robots/robot_description/` espeja ese paquete. Así el URDF de cualquier robot
+    // futuro se resuelve solo, sin reescribir rutas.
+    //
+    // Sin esto, urdf-loader antepone el directorio del propio URDF a cualquier ruta que no
+    // empiece por `package://`, y todas las mallas dan 404 en silencio: el robot carga con
+    // sus 22 juntas y cero geometría.
+    loader.packages = { robot_description: PACKAGE_ROOT }
+
     // Las mallas ya están convertidas a .glb y el URDF exportado apunta a ellas. El loader
     // por defecto de urdf-loader solo entiende .stl y .dae, así que hay que darle el de
     // glTF. La firma es (ruta, manager, material, onComplete): el tercer argumento es el
@@ -115,13 +129,31 @@ export default function UrdfViewer({ jointAngles, cameraView = 'free' }) {
     }
 
     let disposed = false
-    loader.load(ROBOT_URDF, (robot) => {
-      if (disposed) return
-      // El URDF viene en la convención de ROS (Z arriba); three.js usa Y arriba.
-      robot.rotation.x = -Math.PI / 2
-      scene.add(robot)
-      robotRef.current = robot
-    })
+    try {
+      loader.load(
+        ROBOT_URDF,
+        (robot) => {
+          if (disposed) return
+          // El URDF viene en la convención de ROS (Z arriba); three.js usa Y arriba.
+          robot.rotation.x = -Math.PI / 2
+          scene.add(robot)
+          robotRef.current = robot
+
+          // Las mallas llegan después: se cuentan cuando el manager termina, no aquí.
+          manager.onLoad = () => {
+            let meshes = 0
+            robot.traverse((node) => { if (node.isMesh) meshes += 1 })
+            setStatus(`${Object.keys(robot.joints).length} juntas · ${meshes} mallas`)
+          }
+        },
+        undefined,
+        (error) => setStatus(`error al cargar: ${error?.message ?? error}`),
+      )
+    } catch (error) {
+      // Diferido a propósito: actualizar estado de forma síncrona dentro del efecto
+      // provoca renders en cascada. Los callbacks de arriba ya son asíncronos.
+      queueMicrotask(() => setStatus(`excepción: ${error?.message ?? error}`))
+    }
 
     // ── Bucle de render ────────────────────────────────────────────────
     let last = performance.now()
@@ -217,7 +249,7 @@ export default function UrdfViewer({ jointAngles, cameraView = 'free' }) {
     <div className="relative h-full w-full">
       <canvas ref={canvasRef} className="block h-full w-full outline-none" style={{ touchAction: 'none' }} />
       <div className="pointer-events-none absolute left-2 top-2 rounded bg-black/60 px-2 py-1 font-mono text-[11px] text-emerald-300">
-        visor URDF · ur5e
+        visor URDF · ur5e · {status}
       </div>
     </div>
   )

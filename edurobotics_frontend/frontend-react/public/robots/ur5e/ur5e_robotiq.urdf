@@ -7,7 +7,7 @@
     <visual>
       <origin rpy="0 0 3.141592653589793" xyz="0 0 0" />
       <geometry>
-        <mesh filename="/meshes/ur5/base.glb" />
+        <mesh filename="package://robot_description/meshes/arms/ur5e/visual/base.glb" />
       </geometry>
       
     </visual>
@@ -21,7 +21,7 @@
     <visual>
       <origin rpy="0 0 3.141592653589793" xyz="0 0 0" />
       <geometry>
-        <mesh filename="/meshes/ur5/shoulder.glb" />
+        <mesh filename="package://robot_description/meshes/arms/ur5e/visual/shoulder.glb" />
       </geometry>
       
     </visual>
@@ -35,7 +35,7 @@
     <visual>
       <origin rpy="1.5707963267948966 0 -1.5707963267948966" xyz="0 0 0.138" />
       <geometry>
-        <mesh filename="/meshes/ur5/upperarm.glb" />
+        <mesh filename="package://robot_description/meshes/arms/ur5e/visual/upperarm.glb" />
       </geometry>
       
     </visual>
@@ -49,7 +49,7 @@
     <visual>
       <origin rpy="1.5707963267948966 0 -1.5707963267948966" xyz="0 0 0.007" />
       <geometry>
-        <mesh filename="/meshes/ur5/forearm.glb" />
+        <mesh filename="package://robot_description/meshes/arms/ur5e/visual/forearm.glb" />
       </geometry>
       
     </visual>
@@ -64,7 +64,7 @@
       
       <origin rpy="1.5707963267948966 0 0" xyz="0 0 -0.127" />
       <geometry>
-        <mesh filename="/meshes/ur5/wrist1.glb" />
+        <mesh filename="package://robot_description/meshes/arms/ur5e/visual/wrist1.glb" />
       </geometry>
       
     </visual>
@@ -78,7 +78,7 @@
     <visual>
       <origin rpy="0 0 0" xyz="0 0 -0.0997" />
       <geometry>
-        <mesh filename="/meshes/ur5/wrist2.glb" />
+        <mesh filename="package://robot_description/meshes/arms/ur5e/visual/wrist2.glb" />
       </geometry>
       
     </visual>
@@ -92,7 +92,7 @@
     <visual>
       <origin rpy="1.5707963267948966 0 0" xyz="0 0 -0.0989" />
       <geometry>
-        <mesh filename="/meshes/ur5/wrist3.glb" />
+        <mesh filename="package://robot_description/meshes/arms/ur5e/visual/wrist3.glb" />
       </geometry>
       
     </visual>
@@ -194,7 +194,7 @@
     <visual>
       <origin rpy="0 0 0" xyz="0 0 0" />
       <geometry>
-        <mesh filename="/meshes/robotiq/robotiq_gripper_coupling.glb" />
+        <mesh filename="package://robot_description/meshes/grippers/robotiq/visual/robotiq_gripper_coupling.glb" />
       </geometry>
       <material name="">
         <color rgba="0.2 0.2 0.2 1" />
@@ -209,7 +209,7 @@
   <link name="robotiq_85_base_link">
     <visual>
       <geometry>
-        <mesh filename="/meshes/robotiq/robotiq_85_base_link.glb" />
+        <mesh filename="package://robot_description/meshes/grippers/robotiq/visual/robotiq_85_base_link.glb" />
       </geometry>
     </visual>
     <inertial>
@@ -236,7 +236,7 @@
   <link name="robotiq_85_left_knuckle_link">
     <visual>
       <geometry>
-        <mesh filename="/meshes/robotiq/robotiq_85_knuckle_link.glb" />
+        <mesh filename="package://robot_description/meshes/grippers/robotiq/visual/robotiq_85_knuckle_link.glb" />
       </geometry>
     </visual>
     <inertial>
@@ -248,7 +248,7 @@
   <link name="robotiq_85_right_knuckle_link">
     <visual>
       <geometry>
-        <mesh filename="/meshes/robotiq/robotiq_85_knuckle_link.glb" />
+        <mesh filename="package://robot_description/meshes/grippers/robotiq/visual/robotiq_85_knuckle_link.glb" />
       </geometry>
     </visual>
     <inertial>
@@ -270,7 +270,7 @@
   <link name="robotiq_85_left_finger_link">
     <visual>
       <geometry>
-        <mesh filename="/meshes/robotiq/robotiq_85_finger_link.glb" />
+        <mesh filename="package://robot_description/meshes/grippers/robotiq/visual/robotiq_85_finger_link.glb" />
       </geometry>
     </visual>
     <inertial>
@@ -282,7 +282,7 @@
   <link name="robotiq_85_right_finger_link">
     <visual>
       <geometry>
-        <mesh filename="/meshes/robotiq/robotiq_85_finger_link.glb" />
+        <mesh filename="package://robot_description/meshes/grippers/robotiq/visual/robotiq_85_finger_link.glb" />
       </geometry>
     </visual>
     <inertial>
@@ -310,7 +310,7 @@
   <link name="robotiq_85_left_inner_knuckle_link">
     <visual>
       <geometry>
-        <mesh filename="/meshes/robotiq/robotiq_85_inner_knuckle_link.glb" />
+        <mesh filename="package://robot_description/meshes/grippers/robotiq/visual/robotiq_85_inner_knuckle_link.glb" />
       </geometry>
     </visual>
     <inertial>
@@ -322,7 +322,7 @@
   <link name="robotiq_85_right_inner_knuckle_link">
     <visual>
       <geometry>
-        <mesh filename="/meshes/robotiq/robotiq_85_inner_knuckle_link.glb" />
+        <mesh filename="package://robot_description/meshes/grippers/robotiq/visual/robotiq_85_inner_knuckle_link.glb" />
       </geometry>
     </visual>
     <inertial>
@@ -350,7 +350,7 @@
   <link name="robotiq_85_left_finger_tip_link">
     <visual>
       <geometry>
-        <mesh filename="/meshes/robotiq/robotiq_85_basic_finger_tip_link.glb" />
+        <mesh filename="package://robot_description/meshes/grippers/robotiq/visual/robotiq_85_basic_finger_tip_link.glb" />
       </geometry>
     </visual>
     <inertial>
@@ -362,7 +362,7 @@
   <link name="robotiq_85_right_finger_tip_link">
     <visual>
       <geometry>
-        <mesh filename="/meshes/robotiq/robotiq_85_basic_finger_tip_link.glb" />
+        <mesh filename="package://robot_description/meshes/grippers/robotiq/visual/robotiq_85_basic_finger_tip_link.glb" />
       </geometry>
     </visual>
     <inertial>
