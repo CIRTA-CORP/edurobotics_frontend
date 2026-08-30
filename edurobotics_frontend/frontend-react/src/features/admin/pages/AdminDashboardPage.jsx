@@ -14,8 +14,8 @@ import { AdminHeader } from '@/features/admin/components/AdminHeader'
 import { LogoutModal } from '@/shared/components/LogoutModal'
 import { ErrorBoundary } from '@/shared/components/ErrorBoundary'
 import { AdminProvider, useAdmin } from '@/features/admin/context/AdminContext'
-import { AdminBreadcrumbs } from '@/features/admin/components/AdminBreadcrumbs'
 import { AdminSidebarNav } from '@/features/admin/components/AdminSidebarNav'
+import { CourseCreateDrawer } from '@/features/admin/components/CourseCreateDrawer'
 
 // Lazy-load each tab so the admin shell stays light. The heavy Content tab
 // (TipTap editor) and the student preview only download when actually opened.
@@ -23,10 +23,7 @@ const named = (p, name) => lazy(() => p().then((m) => ({ default: m[name] })))
 const StudentDashboardPage = lazy(() => import('@/features/student/pages/StudentDashboardPage'))
 const DashboardTab = named(() => import('@/features/admin/tabs/DashboardTab'), 'DashboardTab')
 const CoursesTab = named(() => import('@/features/admin/tabs/CoursesTab'), 'CoursesTab')
-const ModulesTab = named(() => import('@/features/admin/tabs/ModulesTab'), 'ModulesTab')
-const UnitsTab = named(() => import('@/features/admin/tabs/UnitsTab'), 'UnitsTab')
-const ContentTab = named(() => import('@/features/admin/tabs/ContentTab'), 'ContentTab')
-const EvaluationsTab = named(() => import('@/features/admin/tabs/EvaluationsTab'), 'EvaluationsTab')
+const WorkshopTab = named(() => import('@/features/admin/tabs/WorkshopTab'), 'WorkshopTab')
 const LandingTab = named(() => import('@/features/admin/tabs/LandingTab'), 'LandingTab')
 const SpecializationsTab = named(() => import('@/features/admin/tabs/SpecializationsTab'), 'SpecializationsTab')
 const UsersTab = named(() => import('@/features/admin/tabs/UsersTab'), 'UsersTab')
@@ -105,21 +102,19 @@ function AdminDashboardLayout() {
         />
         {/* The rail is a column of the shell, not a card floating in a grid:
             it runs the full height with a hairline against the work area. */}
+        <CourseCreateDrawer />
         <div className="flex min-h-[calc(100vh-3.5rem)] flex-col lg:flex-row">
           <AdminSidebarNav />
 
           <main className="min-w-0 flex-1 p-3 lg:p-6">
             <div className="mx-auto max-w-6xl">
-              <AdminBreadcrumbs />
-
+              {/* Sin barra de migas: el árbol del taller dice dónde estás y el
+                  editor lleva su propia línea de contexto. */}
               <div className="space-y-6">
                 <Suspense fallback={<TabLoader />}>
                   {activeTab === 'dashboard' && <DashboardTab />}
                   {activeTab === 'cursos' && <CoursesTab />}
-                  {activeTab === 'modulos' && <ModulesTab />}
-                  {activeTab === 'unidades' && <UnitsTab />}
-                  {activeTab === 'contenido' && <ContentTab />}
-                  {activeTab === 'evaluaciones' && <EvaluationsTab />}
+                  {activeTab === 'taller' && <WorkshopTab />}
                   {activeTab === 'especializaciones' && <SpecializationsTab />}
                   {activeTab === 'landing' && <LandingTab />}
                   {activeTab === 'usuarios' && <UsersTab />}

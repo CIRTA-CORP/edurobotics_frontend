@@ -247,12 +247,12 @@ export function AdminProvider({ children }) {
       setSelectedUnit(null)
     }
 
-    setActiveTab('unidades')
+    setActiveTab('taller')
   }
 
   const handleUnitSelect = (unit) => {
     setSelectedUnit(unit)
-    setActiveTab('contenido')
+    setActiveTab('taller')
   }
 
   const handleCourseCreate = async (e) => {
@@ -317,12 +317,12 @@ export function AdminProvider({ children }) {
 
   const handleUnitQuiz = (unit) => {
     setSelectedUnit(unit)
-    setActiveTab('evaluaciones')
+    setActiveTab('taller')
   }
 
   const handleModuleQuiz = (module) => {
     setSelectedModule(module)
-    setActiveTab('evaluaciones')
+    setActiveTab('taller')
   }
 
   const value = {

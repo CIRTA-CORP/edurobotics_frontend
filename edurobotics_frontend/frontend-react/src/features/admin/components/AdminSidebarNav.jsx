@@ -13,9 +13,13 @@
 import { useEffect, useState } from 'react'
 import { useAdmin } from '@/features/admin/context/AdminContext'
 import {
-  BarChart3, BookOpen, Layers, FileText, Package, ClipboardCheck,
-  GraduationCap, Globe, ChevronDown, ChevronRight, Settings, Users,
+  BarChart3, BookOpen, Layers, GraduationCap, Globe,
+  ChevronDown, ChevronRight, Plus, Settings, Upload, Users,
 } from 'lucide-react'
+import { useRef, useState as useLocalState } from 'react'
+import { useQueryClient } from '@tanstack/react-query'
+import { toast } from 'sonner'
+import { importCourse } from '@/features/courses/services/courses'
 
 const LEVEL_DOT = {
   beginner: 'bg-emerald-500',
@@ -62,8 +66,34 @@ function SectionLabel({ children }) {
 export function AdminSidebarNav() {
   const {
     activeTab, setActiveTab, courses, isCoursesLoading, isTeacher,
-    selectedCourse, handleCourseSelect, selectedModule, selectedUnit,
+    selectedCourse, handleCourseSelect, setIsCourseModalOpen,
   } = useAdmin()
+
+  // Creating and importing courses sit with the list, which lives here.
+  const queryClient = useQueryClient()
+  const importInputRef = useRef(null)
+  const [importing, setImporting] = useLocalState(false)
+
+  const handleImportFile = async (e) => {
+    const file = e.target.files?.[0]
+    if (importInputRef.current) importInputRef.current.value = ''
+    if (!file) return
+    setImporting(true)
+    try {
+      const data = JSON.parse(await file.text())
+      const res = await importCourse(data)
+      toast.success(`Curso "${res.title}" importado (queda despublicado para revisar)`)
+      queryClient.invalidateQueries({ queryKey: ['admin-courses'] })
+    } catch (err) {
+      toast.error(
+        err?.message?.includes('JSON')
+          ? 'El archivo no es un respaldo válido'
+          : (err.message || 'No se pudo importar')
+      )
+    } finally {
+      setImporting(false)
+    }
+  }
 
   const [coursesOpen, setCoursesOpen] = useState(true) // acordeón de la lista
   const [openCourseId, setOpenCourseId] = useState(selectedCourse?.id ?? null)
@@ -77,11 +107,11 @@ export function AdminSidebarNav() {
   }, [selectedCourse?.id])
 
   const onCourseClick = (course) => {
-    setOpenCourseId((prev) => (prev === course.id ? null : course.id)) // expandir al instante
+    setOpenCourseId(course.id)
     handleCourseSelect(course)
-    // Teachers don't manage the course meta (that's admin) — land them on Módulos,
-    // not the "Detalle del curso" tab, which would be empty for them.
-    setActiveTab(isTeacher ? 'modulos' : 'cursos')
+    // The workshop holds the tree, so picking a course lands straight in it —
+    // no intermediate list, no "Gestionar" step.
+    setActiveTab('taller')
   }
 
   return (
@@ -126,6 +156,33 @@ export function AdminSidebarNav() {
         </span>
       </button>
 
+      {coursesOpen && !isTeacher && (
+        <div className="mt-1 flex items-center gap-1 px-1">
+          <button
+            onClick={() => setIsCourseModalOpen(true)}
+            className="flex flex-1 items-center justify-center gap-1.5 rounded-lg border border-[#e9e9ee] bg-white py-1.5 text-[12px] font-semibold text-[#55545f] transition-colors hover:border-[#c4c3cd] hover:text-[#16151b] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4b46d6]"
+          >
+            <Plus className="h-3.5 w-3.5" /> Crear curso
+          </button>
+          <input
+            ref={importInputRef}
+            type="file"
+            accept="application/json,.json"
+            onChange={handleImportFile}
+            className="hidden"
+          />
+          <button
+            onClick={() => importInputRef.current?.click()}
+            disabled={importing}
+            title="Importar respaldo (.json)"
+            aria-label="Importar respaldo"
+            className="grid h-[30px] w-[30px] flex-shrink-0 place-items-center rounded-lg border border-[#e9e9ee] bg-white text-[#8b8a95] transition-colors hover:border-[#c4c3cd] hover:text-[#16151b] disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4b46d6]"
+          >
+            <Upload className="h-3.5 w-3.5" />
+          </button>
+        </div>
+      )}
+
       {/* Lista de cursos */}
       {coursesOpen && (
         <div className="mt-1 space-y-0.5">
@@ -150,25 +207,15 @@ export function AdminSidebarNav() {
                     <span className="truncate">{course.title}</span>
                   </button>
 
-                  {/* Sub-secciones del curso */}
-                  {isOpen && (
+                  {/* El árbol del taller sustituye a las sub-pestañas: aquí solo
+                      queda el detalle del curso, que no vive en el árbol. */}
+                  {isOpen && isSel && !isTeacher && (
                     <div className="my-1 ml-4 space-y-0.5 border-l border-[#ececf1] pl-2">
-                      {!isTeacher && (
-                        <NavButton active={activeTab === 'cursos'} onClick={() => setActiveTab('cursos')} icon={Settings}>
-                          Detalle del curso
-                        </NavButton>
-                      )}
-                      <NavButton active={activeTab === 'modulos'} onClick={() => setActiveTab('modulos')} icon={Layers}>
-                        Módulos
+                      <NavButton active={activeTab === 'taller'} onClick={() => setActiveTab('taller')} icon={Layers}>
+                        Taller del curso
                       </NavButton>
-                      <NavButton active={activeTab === 'unidades'} disabled={!selectedModule} onClick={() => setActiveTab('unidades')} icon={FileText}>
-                        Unidades
-                      </NavButton>
-                      <NavButton active={activeTab === 'contenido'} disabled={!selectedUnit} onClick={() => setActiveTab('contenido')} icon={Package}>
-                        Contenido
-                      </NavButton>
-                      <NavButton active={activeTab === 'evaluaciones'} disabled={!selectedUnit} onClick={() => setActiveTab('evaluaciones')} icon={ClipboardCheck}>
-                        Evaluaciones
+                      <NavButton active={activeTab === 'cursos'} onClick={() => setActiveTab('cursos')} icon={Settings}>
+                        Detalle del curso
                       </NavButton>
                     </div>
                   )}

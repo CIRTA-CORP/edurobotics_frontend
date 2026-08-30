@@ -1,63 +1,22 @@
-// Courses tab: the course detail view — create/edit a course, its feedback and
-// time metrics, plus PDF/backup export and course import.
-import { useRef, useState } from 'react'
+// Detalle del curso: lo que antes vivía en un panel deslizante ahora está a la
+// vista. Crear curso e importar respaldo subieron al rail, que es donde está la
+// lista; eliminar bajó a su propia tarjeta, separada de la edición.
+import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
-import { Plus, Printer, Download, Upload, Pencil } from 'lucide-react'
+import { Printer, Download, Trash2 } from 'lucide-react'
 import { Button } from '@/shared/components/button'
-import { Drawer } from '@/shared/components/Drawer'
 import { CourseForm } from '@/features/admin/features/courses/CourseForm'
 import { CourseFeedbackSummary } from '@/features/admin/features/courses/CourseFeedbackSummary'
 import { CourseTimeMetrics } from '@/features/admin/features/courses/CourseTimeMetrics'
-import { downloadCourseBackup, importCourse } from '@/features/courses/services/courses'
+import { downloadCourseBackup } from '@/features/courses/services/courses'
 import { useAdmin } from '@/features/admin/context/AdminContext'
 
 export function CoursesTab() {
-  const {
-    selectedCourse,
-    courses,
-    isCourseModalOpen,
-    setIsCourseModalOpen,
-    courseHooks,
-    isTeacher,
-  } = useAdmin()
+  const { selectedCourse, courses, courseHooks, isTeacher } = useAdmin()
 
   const navigate = useNavigate()
-  const queryClient = useQueryClient()
-  const importInputRef = useRef(null)
   const [downloading, setDownloading] = useState(false)
-  const [importing, setImporting] = useState(false)
-  const [editOpen, setEditOpen] = useState(false)
-
-  // One drawer handles both create and edit.
-  const drawerOpen = isCourseModalOpen || editOpen
-  const drawerMode = editOpen ? 'edit' : 'create'
-  const closeDrawer = () => { setIsCourseModalOpen(false); setEditOpen(false) }
-
-  const handleCourseCreate = async (e) => {
-    e.preventDefault()
-    await courseHooks.handleCourseCreate(e)
-    setIsCourseModalOpen(false)
-  }
-
-  const handleImportFile = async (e) => {
-    const file = e.target.files?.[0]
-    if (importInputRef.current) importInputRef.current.value = ''
-    if (!file) return
-    setImporting(true)
-    try {
-      const text = await file.text()
-      const data = JSON.parse(text)
-      const res = await importCourse(data)
-      toast.success(`Curso "${res.title}" importado (queda despublicado para revisar)`)
-      queryClient.invalidateQueries({ queryKey: ['admin-courses'] })
-    } catch (err) {
-      toast.error(err?.message?.includes('JSON') ? 'El archivo no es un respaldo válido' : (err.message || 'No se pudo importar'))
-    } finally {
-      setImporting(false)
-    }
-  }
 
   const handleBackup = async () => {
     setDownloading(true)
@@ -71,105 +30,77 @@ export function CoursesTab() {
     }
   }
 
-  const handleCourseDelete = (course) => {
-    if (window.confirm(`¿Eliminar el curso "${course.title}"?`)) {
-      courseHooks.handleCourseDelete(course)
+  const handleCourseDelete = () => {
+    if (window.confirm(`¿Eliminar el curso "${selectedCourse.title}"? Esta acción no se puede deshacer.`)) {
+      courseHooks.handleCourseDelete(selectedCourse)
     }
+  }
+
+  if (isTeacher) return null
+
+  if (!selectedCourse) {
+    return (
+      <div className="rounded-2xl border border-[#e9e9ee] bg-white p-10 text-center">
+        <p className="text-[14px] font-medium text-[#55545f]">Elige un curso en el panel de la izquierda</p>
+        <p className="mt-1 text-[13px] text-[#a9a8b4]">Aquí verás y editarás sus datos.</p>
+      </div>
+    )
   }
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <h3 className="text-lg font-semibold text-gray-900">{isTeacher ? 'Mis cursos' : 'Gestión de Cursos'}</h3>
-        {/* Global actions stay admin-only: creating/importing courses is not for teachers. */}
-        {!isTeacher && (
-          <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center">
-            <input
-              ref={importInputRef}
-              type="file"
-              accept="application/json,.json"
-              onChange={handleImportFile}
-              className="hidden"
-            />
-            <Button
-              variant="outline"
-              onClick={() => importInputRef.current?.click()}
-              disabled={importing}
-              className="w-full justify-center gap-1.5 sm:w-auto"
-            >
-              <Upload className="w-4 h-4" />
-              {importing ? 'Importando…' : 'Importar respaldo'}
-            </Button>
-            <Button onClick={() => setIsCourseModalOpen(true)} className="w-full justify-center gap-1.5 sm:w-auto">
-              <Plus className="w-4 h-4" />
-              Crear Curso
-            </Button>
+      <div className="flex flex-wrap items-end justify-between gap-3">
+        <div className="min-w-0">
+          <div className="font-mono text-[10px] font-semibold uppercase tracking-[0.14em] text-[#a9a8b4]">
+            Detalle del curso
           </div>
-        )}
-      </div>
-
-      {selectedCourse && !isTeacher && (
-        <div className="flex flex-wrap items-center gap-2 rounded-xl border border-gray-200 bg-white p-3">
-          <span className="mr-auto px-1 text-sm text-gray-500">
-            <span className="font-medium text-gray-700">“{selectedCourse.title}”</span>
-          </span>
-          <Button size="sm" className="gap-1.5 bg-blue-600 hover:bg-blue-700" onClick={() => setEditOpen(true)}>
-            <Pencil className="h-4 w-4" /> Editar curso
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            className="gap-1.5"
-            onClick={() => navigate(`/courses/${selectedCourse.id}/print`)}
-          >
+          <h2 className="mt-2 truncate text-[24px] font-bold tracking-[-0.012em] text-[#16151b]">
+            {selectedCourse.title}
+          </h2>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          <Button variant="outline" size="sm" className="gap-1.5" onClick={() => navigate(`/courses/${selectedCourse.id}/print`)}>
             <Printer className="h-4 w-4" /> Descargar PDF
           </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            className="gap-1.5"
-            onClick={handleBackup}
-            disabled={downloading}
-          >
+          <Button variant="outline" size="sm" className="gap-1.5" onClick={handleBackup} disabled={downloading}>
             <Download className="h-4 w-4" />
             {downloading ? 'Descargando…' : 'Descargar respaldo'}
           </Button>
         </div>
-      )}
+      </div>
 
-      {/* Course-level metrics/feedback come from admin endpoints. */}
-      {selectedCourse && !isTeacher && (
-        <CourseTimeMetrics courseId={selectedCourse.id} />
-      )}
+      {/* El formulario ya no vive en un panel deslizante: está siempre a la vista. */}
+      <div className="rounded-2xl border border-[#e9e9ee] bg-white p-5 sm:p-6">
+        <CourseForm
+          bare
+          mode="edit"
+          courseForm={courseHooks.courseForm}
+          setCourseForm={courseHooks.setCourseForm}
+          prereqIds={courseHooks.prereqIds}
+          setPrereqIds={courseHooks.setPrereqIds}
+          isSubmitting={courseHooks.isSubmitting}
+          onSubmit={(e) => courseHooks.handleCourseUpdate(e, selectedCourse)}
+          selectedCourse={selectedCourse}
+          allCourses={courses}
+        />
+      </div>
 
-      {selectedCourse && !isTeacher && (
-        <CourseFeedbackSummary courseId={selectedCourse.id} />
-      )}
+      <CourseTimeMetrics courseId={selectedCourse.id} />
+      <CourseFeedbackSummary courseId={selectedCourse.id} />
 
-      {/* Create / edit course — slide-over drawer (admin only) */}
-      {!isTeacher && (
-        <Drawer
-          open={drawerOpen}
-          onClose={closeDrawer}
-          title={drawerMode === 'create' ? 'Crear nuevo curso' : `Editar curso`}
-        >
-          <CourseForm
-            bare
-            mode={drawerMode}
-            courseForm={courseHooks.courseForm}
-            setCourseForm={courseHooks.setCourseForm}
-            prereqIds={courseHooks.prereqIds}
-            setPrereqIds={courseHooks.setPrereqIds}
-            isSubmitting={courseHooks.isSubmitting}
-            onSubmit={drawerMode === 'create'
-              ? handleCourseCreate
-              : (e) => courseHooks.handleCourseUpdate(e, selectedCourse)}
-            onDelete={() => handleCourseDelete(selectedCourse)}
-            selectedCourse={selectedCourse}
-            allCourses={courses}
-          />
-        </Drawer>
-      )}
+      {/* Zona sensible: eliminar se separa de la edición a propósito, y recuerda
+          descargar el respaldo antes de que sea tarde. */}
+      <div className="rounded-2xl border border-[#b4425a]/25 bg-[#b4425a]/[0.03] p-5 sm:p-6">
+        <h3 className="text-[15px] font-semibold text-[#16151b]">Zona sensible</h3>
+        <p className="mt-1.5 max-w-2xl text-[13.5px] leading-relaxed text-[#55545f]">
+          Eliminar el curso borra sus módulos, unidades, contenidos y evaluaciones, y el avance
+          que los alumnos llevaban en él. <strong className="font-semibold">Descarga el respaldo antes</strong> —
+          es la única forma de recuperarlo.
+        </p>
+        <Button variant="destructive" size="sm" className="mt-4 gap-1.5" onClick={handleCourseDelete}>
+          <Trash2 className="h-4 w-4" /> Eliminar este curso
+        </Button>
+      </div>
     </div>
   )
 }
