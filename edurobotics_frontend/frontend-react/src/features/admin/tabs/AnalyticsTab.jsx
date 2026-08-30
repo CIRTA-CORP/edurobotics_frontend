@@ -1,33 +1,39 @@
 /**
- * AnalyticsTab — "Seguimiento" admin (#25): progress, interaction, performance
- * and content metrics for a course, computed on-demand by /api/analytics.
+ * AnalyticsTab — the consolidated analytics screen (canvas AdminAnalitica, §8.5).
  *
- * Honesty rules (from the change spec):
- *  - every card shows "datos insuficientes" when the aggregate rests on n < 3
- *    students — never a 1-person average dressed as a trend;
- *  - per-question metrics disclose when data collection started;
- *  - "sin actividad reciente" = enrolled, not completed, no signal in 14 days
- *    (threshold explained in a tooltip).
+ * One screen, ordered by question, combining what used to live in Dashboard, the
+ * Cursos metrics/feedback tabs and the old three-section analytics:
+ *   1. figure cards → 2. sessions per day → 3. dedication + who opens/finishes
+ *   → 4. quiz performance + most-failed questions → 5. inactivity + feedback.
+ *
+ * Honesty rules (from learning-analytics): aggregates under 3 students read
+ * "datos insuficientes"; per-question metrics disclose their data start date;
+ * green/amber only as state and always labelled.
+ *
+ * Admin sees the platform-wide chart (sessions per day) and the course feedback;
+ * a teacher sees the same screen scoped to their own courses without those two.
  */
 import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { BarChart3, Loader2, Users, ClipboardCheck, Timer, AlertTriangle, MousePointerClick, Award, FileText, Info } from 'lucide-react'
+import { AlertTriangle, BarChart3, Clock, Info } from 'lucide-react'
 import { useAdmin } from '@/features/admin/context/AdminContext'
+import { getCourseFeedbackSummary } from '@/features/courses/services/courses'
 import {
   getCourseProgressAnalytics,
-  getInteractionAnalytics,
   getCoursePerformanceAnalytics,
   getCourseContentAnalytics,
+  getDailySessions,
 } from '@/features/admin/services/analytics'
 
-const fmtPct = (value) => (value == null ? '—' : `${value}%`)
+const fmtPct = (value) => (value == null ? '—' : `${Math.round(value)}%`)
 
-const fmtDuration = (seconds) => {
+const fmtHours = (seconds) => {
   if (seconds == null) return '—'
-  if (seconds < 60) return `${Math.round(seconds)} s`
   if (seconds < 3600) return `${Math.round(seconds / 60)} min`
-  return `${(seconds / 3600).toFixed(1)} h`
+  return `${Math.round(seconds / 3600)} h`
 }
+
+const fmtMin = (minutes) => (minutes == null ? '—' : `${Math.round(minutes)} min`)
 
 const fmtDate = (iso) => {
   if (!iso) return null
@@ -38,355 +44,422 @@ const fmtDate = (iso) => {
   }
 }
 
-const fmtHours = (h) => (h == null ? '—' : h < 24 ? `${h} h` : `${(h / 24).toFixed(1)} días`)
-
-function Card({ icon, label, value, sub }) {
-  const Icon = icon
-  return (
-    <div className="rounded-xl border border-gray-200 bg-white p-4">
-      <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-gray-400">
-        <Icon className="h-3.5 w-3.5" />
-        {label}
-      </div>
-      <div className="mt-1 text-2xl font-bold text-gray-900">{value}</div>
-      {sub && <div className="text-xs text-gray-400">{sub}</div>}
-    </div>
-  )
+const daysAgo = (iso) => {
+  if (!iso) return null
+  const diff = Date.now() - new Date(iso).getTime()
+  const days = Math.max(0, Math.floor(diff / 86400000))
+  if (days === 0) return 'hoy'
+  if (days === 1) return 'hace 1 día'
+  return `hace ${days} días`
 }
 
-function InsufficientData({ note }) {
+const SERIF = { fontFamily: "'Iowan Old Style', 'Palatino Linotype', Palatino, Georgia, serif" }
+
+function SectionLabel({ children }) {
+  return <span className="font-mono text-[9.5px] font-semibold uppercase tracking-[0.14em] text-[#a9a8b4]">{children}</span>
+}
+
+function CardTitle({ children }) {
+  return <h3 className="mt-2 text-[16px] font-semibold text-[#16151b]">{children}</h3>
+}
+
+function Card({ children, className = '' }) {
+  return <div className={`rounded-[14px] border border-[#e9e9ee] bg-white p-[22px] ${className}`}>{children}</div>
+}
+
+function InsufficientBanner() {
   return (
-    <div className="flex items-start gap-2 rounded-lg border border-[#b45309]/25 bg-[#fffbeb] px-3 py-2 text-xs text-[#b45309]">
+    <div className="flex items-start gap-2 rounded-[10px] border border-amber-200 bg-amber-50 px-3.5 py-2.5 text-[12px] text-amber-700">
       <Info className="mt-0.5 h-3.5 w-3.5 flex-shrink-0" />
-      <span>
-        Datos insuficientes: este curso tiene menos de 3 alumnos con señal, así que no mostramos
-        promedios (serían números de una sola persona).{note ? ` ${note}` : ''}
+      <span>Datos insuficientes: menos de 3 alumnos con señal, así que no mostramos promedios.</span>
+    </div>
+  )
+}
+
+/** Horizontal bar row: label + bar + mono value (+ optional sub value). */
+function BarRow({ label, widthPct, value, sub, barClass = 'bg-[#4b46d6]' }) {
+  return (
+    <div className="flex items-center gap-3.5">
+      <span className="w-[190px] flex-shrink-0 truncate text-[13px] text-[#33323b]">{label}</span>
+      <span className="h-[9px] flex-1 overflow-hidden rounded-[4px] bg-[#f2f1f6]">
+        <span className={`block h-full rounded-[4px] ${barClass}`} style={{ width: `${Math.max(0, Math.min(100, widthPct))}%` }} />
       </span>
+      {value !== undefined && <span className="w-[52px] flex-shrink-0 font-mono text-[12px] font-semibold text-[#16151b]">{value}</span>}
+      {sub !== undefined && <span className="flex-shrink-0 font-mono text-[10.5px] text-[#a9a8b4]">{sub}</span>}
     </div>
   )
 }
 
-function SectionTitle({ icon, children }) {
-  const Icon = icon
+function StatCard({ label, value, unit, sub }) {
   return (
-    <div className="flex items-center gap-2">
-      <Icon className="h-4 w-4 text-gray-700" />
-      <h4 className="text-sm font-semibold text-gray-900">{children}</h4>
-    </div>
-  )
-}
-
-function ProgressSection({ courseId }) {
-  const { data, isLoading, isError } = useQuery({
-    queryKey: ['analytics-progress', courseId],
-    queryFn: () => getCourseProgressAnalytics(courseId),
-    enabled: !!courseId,
-    staleTime: 30_000,
-  })
-
-  if (isLoading) return <div className="flex justify-center py-8"><Loader2 className="h-5 w-5 animate-spin text-gray-400" /></div>
-  if (isError || !data?.success) return <p className="text-sm text-gray-400">No se pudo cargar el progreso.</p>
-
-  const insufficient = data.insufficient_data
-  const steps = data.funnel?.steps || []
-  const dropIndex = data.funnel?.biggest_drop_index
-  const courseTime = data.time_metrics?.course || {}
-
-  return (
-    <div className="space-y-3">
-      {insufficient && <InsufficientData />}
-      <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
-        <Card icon={Users} label="Inscritos" value={insufficient ? '…' : data.enrolled} />
-        <Card icon={ClipboardCheck} label="Completaron" value={insufficient ? '…' : data.completed} />
-        <Card icon={Award} label="Finalización" value={insufficient ? '…' : fmtPct(data.completion_rate)} />
-        <Card
-          icon={Timer}
-          label="Tiempo activo (mediana)"
-          value={insufficient ? '…' : courseTime.median_minutes != null ? `${courseTime.median_minutes} min` : '—'}
-        />
+    <Card className="p-[18px_20px]">
+      <SectionLabel>{label}</SectionLabel>
+      <div className="mt-3 flex items-baseline gap-1.5">
+        <span className="font-mono text-[30px] font-bold leading-none tracking-[-0.025em]">{value}</span>
+        {unit && <span className="text-[13px] text-[#8b8a95]">{unit}</span>}
       </div>
-
-      {/* Dropout funnel — bar per content in course order */}
-      <div className="rounded-xl border border-gray-200 bg-white p-4">
-        <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-gray-400">
-          Embudo de contenidos (% de inscritos que completó cada uno)
-        </p>
-        {steps.length === 0 ? (
-          <p className="text-sm text-gray-400">Este curso aún no tiene contenidos.</p>
-        ) : (
-          <div className="space-y-2">
-            {steps.map((step, i) => {
-              const afterDrop = dropIndex != null && i === dropIndex + 1
-              return (
-                <div key={step.content_id}>
-                  <div className="mb-0.5 flex items-center justify-between text-xs">
-                    <span className="flex min-w-0 items-center gap-2 pr-2">
-                      <span className={`truncate ${afterDrop ? 'font-semibold text-[#b45309]' : 'text-[#55545f]'}`} title={step.title}>
-                        {step.title}
-                      </span>
-                      {/* El color nunca va solo: el estado se dice. */}
-                      {afterDrop && (
-                        <span className="flex-shrink-0 rounded-full bg-[#b45309]/[0.12] px-2 py-0.5 text-[10px] font-semibold text-[#b45309]">
-                          Mayor caída
-                        </span>
-                      )}
-                    </span>
-                    <span className={`flex-shrink-0 font-mono tabular-nums ${afterDrop ? 'font-semibold text-[#b45309]' : 'text-[#a9a8b4]'}`}>
-                      {insufficient ? '…' : step.pct == null ? '—' : `${step.pct}% · ${step.completed}`}
-                    </span>
-                  </div>
-                  <div className="h-2 overflow-hidden rounded-full bg-gray-100">
-                    <div
-                      className={`h-full rounded-full ${afterDrop ? 'bg-[#b45309]' : 'bg-[#4b46d6]'}`}
-                      style={{ width: `${insufficient ? 0 : Math.max(step.pct || 0, 3)}%` }}
-                    />
-                  </div>
-                </div>
-              )
-            })}
-          </div>
-        )}
-      </div>
-
-      {/* At-risk learners — 14-day inactivity, single definition */}
-      <div className="rounded-xl border border-gray-200 bg-white p-4">
-        <div className="flex items-center gap-2">
-          <p className="text-xs font-semibold uppercase tracking-wide text-gray-400">Sin actividad reciente</p>
-          <span
-            className="flex cursor-help items-center gap-1 rounded-full bg-gray-100 px-2 py-0.5 text-[10px] text-gray-500"
-            title={`Inscritos que no han completado el curso y no registran ninguna señal (clase, quiz o inicio de sesión) en ${data.inactivity_days ?? 14} días. Umbral de piloto, no una verdad científica.`}
-          >
-            <Info className="h-3 w-3" />
-            {data.inactivity_days ?? 14} días
-          </span>
-        </div>
-        {(data.at_risk || []).length === 0 ? (
-          <p className="mt-2 text-sm text-gray-400">Nadie está sin actividad reciente.</p>
-        ) : (
-          <ul className="mt-2 space-y-1">
-            {data.at_risk.map((r) => (
-              <li key={r.user_id} className="flex items-center justify-between rounded-lg bg-gray-50 px-3 py-2 text-sm">
-                <span className="flex items-center gap-2 text-gray-700">
-                  <AlertTriangle className="h-3.5 w-3.5 text-[#b45309]" />
-                  {r.name || `Usuario ${r.user_id}`}
-                </span>
-                <span className="text-xs text-gray-400">{r.last_activity ? `última: ${fmtDate(r.last_activity)}` : 'sin señal'}</span>
-              </li>
-            ))}
-          </ul>
-        )}
-      </div>
-    </div>
-  )
-}
-
-function InteractionSection() {
-  const { data, isLoading, isError } = useQuery({
-    queryKey: ['analytics-interaction'],
-    queryFn: getInteractionAnalytics,
-    staleTime: 30_000,
-  })
-
-  if (isLoading) return <div className="flex justify-center py-8"><Loader2 className="h-5 w-5 animate-spin text-gray-400" /></div>
-  if (isError || !data?.success) return <p className="text-sm text-gray-400">No se pudo cargar la interacción.</p>
-
-  const insufficient = data.insufficient_data
-  const value = (metric) => (insufficient ? '…' : metric?.avg != null ? String(metric.avg) : '—')
-
-  return (
-    <div className="space-y-3">
-      {insufficient && <InsufficientData note="Mismo umbral en toda la plataforma." />}
-      <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
-        <Card icon={MousePointerClick} label="Días activos / semana" value={value(data.active_days_per_week)} sub="promedio, últimos 28 días" />
-        <Card icon={Timer} label="Tiempo entre sesiones" value={insufficient ? '…' : fmtHours(data.time_between_sessions_hours?.avg)} sub="promedio entre inicios de sesión" />
-        <Card icon={FileText} label="Avance por login" value={value(data.progress_per_login)} sub="contenidos completados entre logins" />
-      </div>
-      <p className="text-[11px] text-gray-400">
-        Aproximación honesta: una "sesión" equivale a un inicio de sesión (si alguien deja la pestaña
-        abierta días, cuenta como una sola). La sesionización real por heartbeats queda diferida.
-      </p>
-    </div>
-  )
-}
-
-function PerformanceSection({ courseId }) {
-  const { data, isLoading, isError } = useQuery({
-    queryKey: ['analytics-performance', courseId],
-    queryFn: () => getCoursePerformanceAnalytics(courseId),
-    enabled: !!courseId,
-    staleTime: 30_000,
-  })
-
-  if (isLoading) return <div className="flex justify-center py-8"><Loader2 className="h-5 w-5 animate-spin text-gray-400" /></div>
-  if (isError || !data?.success) return <p className="text-sm text-gray-400">No se pudo cargar el rendimiento.</p>
-
-  const insufficient = data.insufficient_data
-  const quizzes = data.quizzes || []
-  const questions = data.top_failed_questions || []
-
-  return (
-    <div className="space-y-3">
-      {insufficient && <InsufficientData />}
-      {quizzes.length === 0 ? (
-        <p className="text-sm text-gray-400">Este curso aún no tiene evaluaciones.</p>
-      ) : (
-        <div className="overflow-hidden rounded-xl border border-gray-200 bg-white">
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-gray-100 text-left text-[11px] font-semibold uppercase tracking-wide text-gray-400">
-                  <th className="px-4 py-3">Evaluación</th>
-                  <th className="px-4 py-3 text-center">Intentos</th>
-                  <th className="px-4 py-3 text-center">Promedio</th>
-                  <th className="px-4 py-3 text-center">Aprobación</th>
-                  <th className="px-4 py-3 text-center">Intentos hasta aprobar</th>
-                </tr>
-              </thead>
-              <tbody>
-                {quizzes.map((q) => (
-                  <tr key={q.quiz_id} className="border-b border-gray-50 last:border-0 hover:bg-gray-50/60">
-                    <td className="px-4 py-3 font-medium text-gray-800">{q.title}</td>
-                    <td className="px-4 py-3 text-center text-gray-600">{insufficient ? '…' : q.attempts}</td>
-                    <td className="px-4 py-3 text-center text-gray-600">{insufficient ? '…' : q.avg_score ?? '—'}</td>
-                    <td className="px-4 py-3 text-center text-gray-600">{insufficient ? '…' : fmtPct(q.pass_rate)}</td>
-                    <td className="px-4 py-3 text-center text-gray-600">{insufficient ? '…' : q.attempts_until_pass ?? '—'}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      )}
-
-      {questions.length > 0 && (
-        <div className="rounded-xl border border-gray-200 bg-white p-4">
-          <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-gray-400">Preguntas más falladas</p>
-          {data.per_question_data_start && (
-            <p className="mb-2 text-[11px] text-gray-400">
-              Solo se registran respuestas desde {fmtDate(data.per_question_data_start)} (fecha en que empezó la recolección).
-            </p>
-          )}
-          <ul className="space-y-2">
-            {questions.map((q) => (
-              <li key={q.question_id} className="flex items-center justify-between gap-3 rounded-lg bg-gray-50 px-3 py-2">
-                <span className="truncate text-sm text-gray-700" title={q.question_text}>{q.question_text}</span>
-                <span className="flex-shrink-0 rounded-full bg-[#b45309]/[0.12] px-2 py-0.5 font-mono text-xs font-semibold tabular-nums text-[#b45309]">
-                  {insufficient ? '…' : `${q.error_rate}% error`}
-                </span>
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
-    </div>
-  )
-}
-
-function ContentSection({ courseId }) {
-  const { data, isLoading, isError } = useQuery({
-    queryKey: ['analytics-content', courseId],
-    queryFn: () => getCourseContentAnalytics(courseId),
-    enabled: !!courseId,
-    staleTime: 30_000,
-  })
-
-  if (isLoading) return <div className="flex justify-center py-8"><Loader2 className="h-5 w-5 animate-spin text-gray-400" /></div>
-  if (isError || !data?.success) return <p className="text-sm text-gray-400">No se pudo cargar el contenido.</p>
-
-  const insufficient = data.insufficient_data
-  const top = (data.by_active_time || []).slice(0, 10)
-
-  return (
-    <div className="space-y-3">
-      {insufficient && <InsufficientData />}
-      {top.length === 0 ? (
-        <p className="text-sm text-gray-400">Aún no hay actividad sobre los contenidos.</p>
-      ) : (
-        <div className="overflow-hidden rounded-xl border border-gray-200 bg-white">
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-gray-100 text-left text-[11px] font-semibold uppercase tracking-wide text-gray-400">
-                  <th className="px-4 py-3">Contenido</th>
-                  <th className="px-4 py-3 text-center">Abrieron</th>
-                  <th className="px-4 py-3 text-center">Completaron</th>
-                  <th className="px-4 py-3 text-center">Ratio</th>
-                  <th className="px-4 py-3 text-right">Tiempo activo</th>
-                </tr>
-              </thead>
-              <tbody>
-                {top.map((c) => (
-                  <tr key={c.content_id} className="border-b border-gray-50 last:border-0 hover:bg-gray-50/60">
-                    <td className="max-w-[220px] truncate px-4 py-3 font-medium text-gray-800" title={c.title}>{c.title}</td>
-                    <td className="px-4 py-3 text-center text-gray-600">{insufficient ? '…' : c.opened}</td>
-                    <td className="px-4 py-3 text-center text-gray-600">{insufficient ? '…' : c.completed}</td>
-                    <td className="px-4 py-3 text-center text-gray-600">{insufficient ? '…' : fmtPct(c.completion_ratio)}</td>
-                    <td className="px-4 py-3 text-right text-gray-600">{insufficient ? '…' : fmtDuration(c.active_seconds)}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      )}
-    </div>
+      {sub && <div className="mt-2.5 text-[12px] text-[#a9a8b4]">{sub}</div>}
+    </Card>
   )
 }
 
 export function AnalyticsTab() {
   const { courses, selectedCourseId, setSelectedCourseId, isTeacher } = useAdmin()
   const [localCourseId, setLocalCourseId] = useState(selectedCourseId)
+  const [periodDays, setPeriodDays] = useState(14)
 
   const courseId = localCourseId ?? selectedCourseId ?? courses?.[0]?.id ?? null
-  const current = courses?.find((c) => c.id === courseId)
+
+  const progressQ = useQuery({
+    queryKey: ['analytics-progress', courseId],
+    queryFn: () => getCourseProgressAnalytics(courseId),
+    enabled: !!courseId,
+    staleTime: 30_000,
+  })
+  const performanceQ = useQuery({
+    queryKey: ['analytics-performance', courseId],
+    queryFn: () => getCoursePerformanceAnalytics(courseId),
+    enabled: !!courseId,
+    staleTime: 30_000,
+  })
+  const contentQ = useQuery({
+    queryKey: ['analytics-content', courseId],
+    queryFn: () => getCourseContentAnalytics(courseId),
+    enabled: !!courseId,
+    staleTime: 30_000,
+  })
+  const sessionsQ = useQuery({
+    queryKey: ['analytics-sessions-daily', periodDays],
+    queryFn: () => getDailySessions(periodDays),
+    enabled: !isTeacher,
+    staleTime: 30_000,
+  })
+  const feedbackQ = useQuery({
+    queryKey: ['course-feedback-summary', courseId],
+    queryFn: () => getCourseFeedbackSummary(courseId),
+    enabled: !isTeacher && !!courseId,
+    staleTime: 30_000,
+  })
+
+  const progress = progressQ.data?.success ? progressQ.data : null
+  const performance = performanceQ.data?.success ? performanceQ.data : null
+  const content = contentQ.data?.success ? contentQ.data : null
+  const sessions = sessionsQ.data?.success ? sessionsQ.data : null
+  const feedback = feedbackQ.data?.success ? feedbackQ.data : null
+
+  const insufficient =
+    (progress?.insufficient_data ?? false) ||
+    (performance?.insufficient_data ?? false) ||
+    (content?.insufficient_data ?? false)
+
+  // ── 1. Figure cards (course-scoped, honest about missing data) ──
+  const courseTime = progress?.time_metrics?.course || {}
+  const totalActiveSeconds = (content?.by_active_time || []).reduce((acc, c) => acc + (c.active_seconds || 0), 0)
+  const totalCompleted = (content?.by_active_time || []).reduce((acc, c) => acc + (c.completed || 0), 0)
+  const totalOpened = (content?.by_active_time || []).reduce((acc, c) => acc + (c.opened || 0), 0)
+  const avgQuizScore = performance?.quizzes?.length
+    ? performance.quizzes.reduce((acc, q) => acc + (q.avg_score || 0), 0) / performance.quizzes.length
+    : null
+
+  const withValue = (v) => (insufficient ? '…' : v ?? '—')
+
+  // ── 2. Sessions per day chart (platform-wide, admin only) ──
+  const series = sessions?.series || []
+  const maxCount = Math.max(1, ...series.map((s) => s.count))
+  const DAY_LETTERS = ['L', 'M', 'X', 'J', 'V', 'S', 'D']
+
+  // ── 3. Dedication: time per module with min–max range ──
+  const modules = progress?.time_metrics?.modules || []
+  const maxModuleMedian = Math.max(1, ...modules.map((m) => m.median_minutes || 0))
+  const topContents = (content?.by_openers || []).slice(0, 5)
+
+  // ── 4. Performance ──
+  const quizzes = performance?.quizzes || []
+  const failedQuestions = performance?.top_failed_questions || []
+
+  // ── 5. Inactivity + feedback ──
+  const atRisk = progress?.at_risk || []
+  const feedbackCount = feedback?.total
+  const usefulness = feedback?.avg_usefulness
+  const difficulty = feedback?.avg_difficulty
 
   return (
-    <div className="space-y-4">
-      <div className="flex flex-wrap items-center gap-2">
-        <BarChart3 className="h-5 w-5 text-gray-700" />
-        <h2 className="text-[24px] font-bold tracking-[-0.012em] text-[#16151b]">Analítica</h2>
-        <select
-          value={courseId ?? ''}
-          onChange={(e) => {
-            const id = e.target.value ? parseInt(e.target.value) : null
-            setLocalCourseId(id)
-            setSelectedCourseId(id)
-          }}
-          className="rounded-lg border border-gray-200 bg-white px-2 py-1 text-xs text-gray-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4b46d6]"
-          aria-label="Curso a analizar"
-        >
-          {courses.map((c) => (
-            <option key={c.id} value={c.id}>{c.title}</option>
-          ))}
-        </select>
-        {!courseId && <span className="text-sm text-gray-400">Selecciona un curso para ver sus métricas.</span>}
-      </div>
-
-      {courseId ? (
-        <div className="space-y-6">
-          <div>
-            <div className="mb-2"><SectionTitle icon={BarChart3}>Progreso · {current?.title ?? ''}</SectionTitle></div>
-            <ProgressSection courseId={courseId} />
+    <div className="space-y-5">
+      {/* Header: título + selector de curso + período */}
+      <div className="flex flex-wrap items-end justify-between gap-4">
+        <div>
+          <SectionLabel>Panel</SectionLabel>
+          <h1 className="mt-2 text-[28px] font-bold leading-[1.16] tracking-[-0.014em] text-[#16151b]" style={SERIF}>
+            Analítica
+          </h1>
+        </div>
+        <div className="flex items-center gap-2.5">
+          <div className="relative">
+            <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-[#a9a8b4]"><path d="M6 9l6 6 6-6" /></svg>
+            </span>
+            <select
+              value={courseId ?? ''}
+              onChange={(e) => {
+                const id = e.target.value ? parseInt(e.target.value) : null
+                setLocalCourseId(id)
+                setSelectedCourseId(id)
+              }}
+              aria-label="Curso a analizar"
+              className="h-10 cursor-pointer appearance-none rounded-[10px] border border-[#e3e2ea] bg-white pl-3.5 pr-9 text-[12.5px] font-semibold text-[#55545f] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4b46d6]"
+            >
+              {courses.map((c) => (
+                <option key={c.id} value={c.id}>{c.title}</option>
+              ))}
+            </select>
           </div>
-          <div>
-            <div className="mb-2"><SectionTitle icon={Award}>Rendimiento</SectionTitle></div>
-            <PerformanceSection courseId={courseId} />
-          </div>
-          <div>
-            <div className="mb-2"><SectionTitle icon={FileText}>Contenidos</SectionTitle></div>
-            <ContentSection courseId={courseId} />
-          </div>
-          {/* The interaction summary is platform-wide (LoginEvent) → admin-only. */}
           {!isTeacher && (
-            <div>
-              <div className="mb-2"><SectionTitle icon={MousePointerClick}>Interacción (toda la plataforma)</SectionTitle></div>
-              <InteractionSection />
+            <div className="flex items-center gap-[3px] rounded-[10px] bg-[#f4f3f8] p-[3px]">
+              {[7, 14, 90].map((d) => (
+                <button
+                  key={d}
+                  onClick={() => setPeriodDays(d)}
+                  className={`h-8 rounded-lg px-3 text-[12.5px] font-semibold transition-colors ${
+                    periodDays === d
+                      ? 'bg-white text-[#16151b] shadow-[0_1px_3px_rgba(22,21,27,0.09)]'
+                      : 'text-[#8b8a95] hover:text-[#16151b]'
+                  }`}
+                >
+                  {d} días
+                </button>
+              ))}
             </div>
           )}
         </div>
-      ) : (
-        <p className="text-sm text-gray-400">Aún no hay cursos para analizar.</p>
+      </div>
+
+      {insufficient && <InsufficientBanner />}
+
+      {/* 1 ── Figure cards */}
+      <div className="grid grid-cols-2 gap-4 xl:grid-cols-4">
+        <StatCard
+          label="Alumnos activos"
+          value={withValue(courseTime.learners ?? 0)}
+          unit={!insufficient && progress?.enrolled ? `de ${progress.enrolled}` : undefined}
+          sub={insufficient ? undefined : 'con actividad en el curso'}
+        />
+        <StatCard
+          label="Tiempo activo"
+          value={withValue(fmtHours(totalActiveSeconds))}
+          sub={insufficient ? undefined : 'suma del tiempo real en el curso'}
+        />
+        <StatCard
+          label="Contenidos completados"
+          value={withValue(totalCompleted)}
+          sub={insufficient || totalOpened === 0 ? undefined : `${Math.round((totalCompleted / totalOpened) * 100)} % de los que se abrieron`}
+        />
+        <StatCard
+          label="Aprobación media"
+          value={withValue(avgQuizScore != null ? Math.round(avgQuizScore) : '—')}
+          unit={!insufficient && avgQuizScore != null ? '%' : undefined}
+          sub={insufficient ? undefined : `${quizzes.length} evaluación${quizzes.length === 1 ? '' : 'es'}`}
+        />
+      </div>
+
+      {/* 2 ── Sesiones por día (toda la plataforma · admin) */}
+      {!isTeacher && (
+        <Card>
+          <div className="flex items-baseline justify-between gap-5">
+            <div>
+              <SectionLabel>Interacción</SectionLabel>
+              <CardTitle>Sesiones por día</CardTitle>
+            </div>
+            <span className="text-[12.5px] text-[#8b8a95]">Toda la plataforma · últimos {periodDays} días</span>
+          </div>
+          <div className="mt-5 flex h-[140px] items-end gap-1.5">
+            {series.map((s) => {
+              const d = new Date(s.date)
+              const label = periodDays <= 7 ? DAY_LETTERS[d.getDay() === 0 ? 6 : d.getDay() - 1] : `${d.getDate()}`
+              return (
+                <div key={s.date} className="flex flex-1 flex-col items-center gap-1.5" title={`${s.date} · ${s.count} sesiones`}>
+                  <span className="font-mono text-[9.5px] text-[#c4c3cd]">{s.count > 0 ? s.count : ''}</span>
+                  <div className="flex w-full flex-1 items-end">
+                    <div
+                      className="w-full rounded-[4px] bg-[#7d79e3]"
+                      style={{ height: `${Math.max(2, (s.count / maxCount) * 100)}%` }}
+                    />
+                  </div>
+                  <span className="font-mono text-[10px] text-[#b3b2be]">{label}</span>
+                </div>
+              )
+            })}
+          </div>
+        </Card>
       )}
+
+      {/* 3 ── Dedicación + Contenidos */}
+      <div className="grid grid-cols-1 items-start gap-5 xl:grid-cols-2">
+        <Card>
+          <SectionLabel>Dedicación</SectionLabel>
+          <CardTitle>Tiempo por módulo</CardTitle>
+          <p className="mt-2 text-[12.5px] text-[#8b8a95]">Mediana del tiempo activo; a la derecha el rango mín – máx.</p>
+          <div className="mt-4 flex flex-col gap-3.5">
+            {modules.length === 0 && <p className="text-[13px] text-[#a9a8b4]">Sin actividad por módulo todavía.</p>}
+            {modules.map((m, i) => (
+              <BarRow
+                key={m.id}
+                label={`${i + 1} · ${m.title}`}
+                widthPct={insufficient ? 0 : ((m.median_minutes || 0) / maxModuleMedian) * 100}
+                value={insufficient ? '…' : fmtMin(m.median_minutes)}
+                sub={insufficient || m.min_minutes == null ? undefined : `${Math.round(m.min_minutes)} – ${Math.round(m.max_minutes)} min`}
+              />
+            ))}
+          </div>
+        </Card>
+
+        <Card>
+          <SectionLabel>Contenidos</SectionLabel>
+          <CardTitle>Quién abre y quién termina</CardTitle>
+          <p className="mt-2 text-[12.5px] text-[#8b8a95]">Proporción de quienes lo abrieron y llegaron a completarlo.</p>
+          <div className="mt-4 flex flex-col gap-3.5">
+            {topContents.length === 0 && <p className="text-[13px] text-[#a9a8b4]">Aún no hay actividad sobre los contenidos.</p>}
+            {topContents.map((c) => (
+              <BarRow
+                key={c.content_id}
+                label={c.title}
+                widthPct={insufficient ? 0 : c.completion_ratio || 0}
+                value={insufficient ? '…' : fmtPct(c.completion_ratio)}
+                sub={insufficient ? undefined : `${c.completed} de ${c.opened}`}
+              />
+            ))}
+          </div>
+        </Card>
+      </div>
+
+      {/* 4 ── Rendimiento + Preguntas más falladas */}
+      <div className="grid grid-cols-1 items-start gap-5 xl:grid-cols-2">
+        <Card>
+          <SectionLabel>Evaluaciones</SectionLabel>
+          <CardTitle>Rendimiento</CardTitle>
+          {quizzes.length === 0 ? (
+            <p className="mt-3 text-[13px] text-[#a9a8b4]">Este curso aún no tiene evaluaciones.</p>
+          ) : (
+            <table className="mt-3.5 w-full border-collapse">
+              <thead>
+                <tr>
+                  <th className="pb-2.5 pr-3 text-left font-mono text-[9.5px] font-semibold uppercase tracking-[0.12em] text-[#a9a8b4]">Evaluación</th>
+                  <th className="pb-2.5 pr-3 text-right font-mono text-[9.5px] font-semibold uppercase tracking-[0.12em] text-[#a9a8b4]">Intentos</th>
+                  <th className="pb-2.5 pr-3 text-right font-mono text-[9.5px] font-semibold uppercase tracking-[0.12em] text-[#a9a8b4]">Promedio</th>
+                  <th className="pb-2.5 pr-3 text-right font-mono text-[9.5px] font-semibold uppercase tracking-[0.12em] text-[#a9a8b4]">Aprobación</th>
+                  <th className="pb-2.5 text-right font-mono text-[9.5px] font-semibold uppercase tracking-[0.12em] text-[#a9a8b4]">Hasta aprobar</th>
+                </tr>
+              </thead>
+              <tbody>
+                {quizzes.map((q) => {
+                  const healthy = (q.pass_rate ?? 0) >= 80
+                  return (
+                    <tr key={q.quiz_id} className="border-t border-[#f2f1f6]">
+                      <td className="py-3 pr-3 text-[13.5px] font-semibold text-[#16151b]">{q.title}</td>
+                      <td className="py-3 pr-3 text-right font-mono text-[13.5px]">{insufficient ? '…' : q.attempts}</td>
+                      <td className="py-3 pr-3 text-right font-mono text-[13.5px]">{insufficient ? '…' : fmtPct(q.avg_score)}</td>
+                      <td className="py-3 pr-3 text-right">
+                        <span className="inline-flex items-center gap-1.5">
+                          <span className="font-mono text-[13.5px] font-semibold">{insufficient ? '…' : fmtPct(q.pass_rate)}</span>
+                          <span
+                            className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${
+                              healthy ? 'bg-[#ecfdf5] text-[#047857]' : 'bg-[#fffbeb] text-[#b45309]'
+                            }`}
+                          >
+                            {healthy ? 'Sano' : 'Revisar'}
+                          </span>
+                        </span>
+                      </td>
+                      <td className="py-3 text-right font-mono text-[13.5px]">{insufficient ? '…' : q.attempts_until_pass ?? '—'}</td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
+          )}
+        </Card>
+
+        <Card>
+          <SectionLabel>Evaluaciones</SectionLabel>
+          <CardTitle>Preguntas más falladas</CardTitle>
+          <p className="mt-2 text-[12.5px] text-[#8b8a95]">Porcentaje de respuestas incorrectas.</p>
+          {performance?.per_question_data_start && (
+            <p className="mt-1.5 text-[11px] text-[#a9a8b4]">Desde {fmtDate(performance.per_question_data_start)} (inicio de la recolección).</p>
+          )}
+          <div className="mt-4 flex flex-col gap-3.5">
+            {failedQuestions.length === 0 && <p className="text-[13px] text-[#a9a8b4]">Aún sin intentos registrados.</p>}
+            {failedQuestions.map((q) => (
+              <BarRow
+                key={q.question_id}
+                label={q.question_text}
+                widthPct={insufficient ? 0 : q.error_rate || 0}
+                value={insufficient ? '…' : `${Math.round(q.error_rate)}%`}
+              />
+            ))}
+          </div>
+        </Card>
+      </div>
+
+      {/* 5 ── Sin actividad reciente + Feedback */}
+      <div className="grid grid-cols-1 items-start gap-5 xl:grid-cols-2">
+        <Card>
+          <div className="flex items-center gap-2">
+            <Clock className="h-4 w-4 text-[#b45309]" strokeWidth={1.8} />
+            <SectionLabel>Sin actividad reciente</SectionLabel>
+          </div>
+          <p className="mt-2.5 text-[12.5px] text-[#8b8a95]">
+            Alumnos que empezaron y llevan más de {progress?.inactivity_days ?? 14} días sin entrar.
+          </p>
+          <div className="mt-4 flex flex-col gap-2.5">
+            {atRisk.length === 0 && <p className="text-[13px] text-[#a9a8b4]">Nadie está sin actividad reciente.</p>}
+            {atRisk.map((r) => (
+              <div key={r.user_id} className="flex items-center gap-3 rounded-[10px] border border-[#f2f1f6] px-3 py-2.5">
+                <span className="grid h-7 w-7 flex-shrink-0 place-items-center rounded-full bg-[#16151b] font-mono text-[10px] font-bold text-white">
+                  {((r.name || '?').trim().split(/\s+/)[0]?.[0] || '') + ((r.name || '').trim().split(/\s+/)[1]?.[0] || '')}
+                </span>
+                <span className="min-w-0 flex-1 truncate text-[13px] text-[#33323b]">{r.name || `Usuario ${r.user_id}`}</span>
+                <span className="flex-shrink-0 font-mono text-[11px] text-[#b45309]">
+                  {r.last_activity ? daysAgo(r.last_activity) : 'sin señal'}
+                </span>
+              </div>
+            ))}
+          </div>
+        </Card>
+
+        {!isTeacher && (
+          <Card>
+            <SectionLabel>Feedback del curso</SectionLabel>
+            <CardTitle>Lo que responden al terminar</CardTitle>
+            <p className="mt-2 text-[12.5px] text-[#8b8a95]">
+              {feedbackCount ? `${feedbackCount} respuestas.` : 'Aún no hay respuestas.'}
+            </p>
+            <div className="mt-5 flex flex-col gap-5">
+              {[
+                { label: 'Dificultad percibida', value: difficulty },
+                { label: 'Utilidad percibida', value: usefulness },
+              ].map((f) => (
+                <div key={f.label}>
+                  <div className="flex items-baseline justify-between">
+                    <span className="text-[13px] text-[#33323b]">{f.label}</span>
+                    <span className="font-mono text-[13px] font-bold">
+                      {f.value != null ? f.value.toFixed(1) : '—'}<span className="font-normal text-[#b3b2be]"> / 5</span>
+                    </span>
+                  </div>
+                  <div className="mt-2.5 flex gap-1">
+                    {[1, 2, 3, 4, 5].map((n) => (
+                      <span
+                        key={n}
+                        className={`h-2 w-[26px] rounded-[4px] ${
+                          f.value != null && n <= Math.round(f.value) ? 'bg-[#4b46d6]' : 'bg-[#eceaf2]'
+                        }`}
+                      />
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </Card>
+        )}
+      </div>
     </div>
   )
 }

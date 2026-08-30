@@ -104,10 +104,10 @@
 
 ## 5. Analítica (8 funciones)
 
-- [ ] 5.1 Juntar en una sola pantalla lo de Dashboard, pestaña Cursos y Analítica. **Espec:
-      §8.5 (estructura vertical completa).** **Pendiente:** solo se unificó el color; la
-      consolidación de las tres pantallas no está hecha.
-- [ ] 5.2 Orden por pregunta: **sesiones por día** · fila de tarjetas de cifras globales ·
+- [x] 5.1 Juntar en una sola pantalla lo de Dashboard, pestaña Cursos y Analítica. **Espec: §8.5 (estructura vertical completa).** Pantalla única construida
+      (tarjetas → sesiones por día → dedicación/contenidos → rendimiento/falladas →
+      inactividad/feedback); las vistas anteriores se conservan como respaldo.
+- [x] 5.2 Orden por pregunta: **sesiones por día** · fila de tarjetas de cifras globales ·
       **tiempo por módulo** con rango mín–máx · **quién abre y quién termina** (contenidos) ·
       tabla de **rendimiento** de evaluaciones · **preguntas más falladas** en barras
       horizontales · **alumnos sin actividad reciente** con su antigüedad. **Espec: §8.5.**
