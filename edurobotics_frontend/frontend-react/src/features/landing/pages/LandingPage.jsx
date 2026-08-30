@@ -66,8 +66,7 @@ function Hero({ onAuth, user, data, loading }) {
       <div className="mx-auto grid max-w-6xl items-center gap-14 px-4 py-20 lg:grid-cols-2 lg:py-24">
         <div>
           <div className="mb-6 flex flex-wrap items-center gap-2">
-            <span className="inline-flex h-7 items-center gap-1.5 rounded-full border border-white/15 bg-white/10 px-3 text-[11.5px] font-semibold text-white">
-              <Cpu className="h-3 w-3" />
+            <span className="inline-flex h-7 items-center rounded-full border border-white/15 bg-white/10 px-3 text-[11.5px] font-semibold text-white">
               {data.badge}
             </span>
             <span className="inline-flex h-7 items-center rounded-full bg-emerald-400/[0.16] px-3 text-[11.5px] font-semibold text-emerald-300">
@@ -111,10 +110,11 @@ function Hero({ onAuth, user, data, loading }) {
 }
 
 /**
- * SimulatorMockup — the product panel, not a fake browser window.
+ * SimulatorMockup — the product running in a browser tab.
  *
- * The old macOS title bar (three dots and a URL) pretended to be a screenshot;
- * this shows the two real modes instead, and lets you switch between them.
+ * The chrome earns its place: "sin instalar nada" is the promise, and the URL
+ * is what proves it. The window dots stay neutral instead of the toy-coloured
+ * traffic lights. Below it, the two real modes, switchable.
  */
 function SimulatorMockup({ imageUrl, loading }) {
   const [mode, setMode] = useState('blocks')
@@ -133,6 +133,20 @@ function SimulatorMockup({ imageUrl, loading }) {
 
   return (
     <div className="overflow-hidden rounded-[18px] border border-white/[0.14] bg-[#111114] shadow-2xl">
+      {/* Browser chrome: the address is the proof that nothing gets installed */}
+      <div className="flex h-9 items-center gap-3 border-b border-white/[0.07] px-3.5">
+        <div className="flex flex-shrink-0 items-center gap-[5px]" aria-hidden="true">
+          <span className="h-2.5 w-2.5 rounded-full bg-white/[0.16]" />
+          <span className="h-2.5 w-2.5 rounded-full bg-white/[0.16]" />
+          <span className="h-2.5 w-2.5 rounded-full bg-white/[0.16]" />
+        </div>
+        <div className="flex h-[22px] min-w-0 flex-1 items-center justify-center rounded-md bg-white/[0.05] px-3">
+          <span className="truncate font-mono text-[10.5px] text-white/40">
+            www.edurobotics.cl/simulator
+          </span>
+        </div>
+      </div>
+
       {/* Toolbar: the two modes, the robot, and the run affordance */}
       <div className="flex h-[46px] items-center justify-between border-b border-white/[0.09] px-3.5">
         <div className="flex items-center gap-0.5 rounded-[9px] bg-white/[0.07] p-[3px]">
