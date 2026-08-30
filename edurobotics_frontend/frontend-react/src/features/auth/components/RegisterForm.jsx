@@ -24,6 +24,10 @@ export function RegisterForm({ onSwitchToLogin }) {
     last_name: '',
     password: '',
     password_confirm: '',
+    // Consentimiento (Ley 21.719): el backend rechaza el registro si no llegan
+    // en true, así que viajan en el mismo payload que el resto del formulario.
+    accept_terms: false,
+    accept_privacy: false,
   })
   const [error, setError] = useState(null)
   const [created, setCreated] = useState(null)   // username, once the account exists
@@ -31,8 +35,8 @@ export function RegisterForm({ onSwitchToLogin }) {
   const navigate = useNavigate()
 
   const handleChange = (event) => {
-    const { name, value } = event.target
-    setForm((prev) => ({ ...prev, [name]: value }))
+    const { name, value, type, checked } = event.target
+    setForm((prev) => ({ ...prev, [name]: type === 'checkbox' ? checked : value }))
   }
 
   const handleSubmit = async (event) => {
@@ -184,6 +188,56 @@ export function RegisterForm({ onSwitchToLogin }) {
             required
             autoComplete="new-password"
           />
+        </div>
+
+        {/* Los enlaces abren en pestaña nueva a propósito: en el modal de la
+            landing, navegar a los textos legales descartaría lo ya escrito. */}
+        <div className="space-y-2.5 pt-1">
+          <label htmlFor="accept_terms" className="flex cursor-pointer items-start gap-2.5">
+            <input
+              type="checkbox"
+              id="accept_terms"
+              name="accept_terms"
+              checked={form.accept_terms}
+              onChange={handleChange}
+              required
+              className="mt-0.5 h-4 w-4 flex-shrink-0 cursor-pointer rounded border-input accent-primary"
+            />
+            <span className="text-[13px] leading-snug text-muted-foreground">
+              Acepto los{' '}
+              <Link
+                to="/legal"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="font-medium text-primary hover:underline"
+              >
+                Términos y Condiciones
+              </Link>
+            </span>
+          </label>
+
+          <label htmlFor="accept_privacy" className="flex cursor-pointer items-start gap-2.5">
+            <input
+              type="checkbox"
+              id="accept_privacy"
+              name="accept_privacy"
+              checked={form.accept_privacy}
+              onChange={handleChange}
+              required
+              className="mt-0.5 h-4 w-4 flex-shrink-0 cursor-pointer rounded border-input accent-primary"
+            />
+            <span className="text-[13px] leading-snug text-muted-foreground">
+              He leído la{' '}
+              <Link
+                to="/privacidad"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="font-medium text-primary hover:underline"
+              >
+                Política de Privacidad
+              </Link>
+            </span>
+          </label>
         </div>
 
         <Button type="submit" className="w-full" disabled={loading}>
