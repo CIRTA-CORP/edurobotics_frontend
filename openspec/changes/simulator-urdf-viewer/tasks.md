@@ -59,8 +59,13 @@ predeterminado durante todo el change.
 
 - [x] 5.1 Selección por `?viewer=urdf` en `SimulatorPanel.jsx`, en `lazy` para que quien no
       lo pida no pague su descarga. Sin el parámetro, el visor actual, intacto.
-- [ ] 5.2 Capturas de ambos visores en la misma pose. **Pendiente: requiere navegador y una
-      sesión activa del simulador en Fly.** Es la única tarea que no pude cerrar.
+- [x] 5.2 Comparación hecha en `/robot-compare`: ambos visores, misma pose, sin backend —
+      así mirar un robot no consume uno de los tres cupos del simulador. Capturado con
+      Chrome headless.
+      **Resultado en la pose Home (todas las juntas a cero)**: el visor actual apila el
+      brazo en vertical; el nuevo lo extiende en horizontal, que es la pose cero de un
+      UR5e. Con el gripper a 0.70, el nuevo cierra como una pinza y el actual muestra las
+      piezas dispersas.
 - [x] 5.3 Bundle medido: `UrdfViewer` 716,77 kB / **183,40 kB gzip** frente a los
       1.425,09 kB gzip de `vendor-babylon`. **7,8× más liviano**, ~1,24 MB gzip menos en la
       ruta del simulador.
@@ -73,6 +78,16 @@ predeterminado durante todo el change.
       confusión) y la incorporación de `ur10e` y `pupi`.
 
 ## Hallazgos durante la implementación
+
+- **Las mallas cargaban en cero y el fallo era invisible.** urdf-loader antepone el
+  directorio del propio URDF a cualquier ruta que no empiece por `package://`, así que las
+  rutas absolutas reescritas daban 404 en silencio: el robot aparecía con sus 22 juntas y
+  nada de geometría. Se corrigió conservando los `package://` como en ROS y espejando el
+  paquete en `public/robots/robot_description/`, que además es lo que hará que el URDF de
+  `ur10e` o `pupi` funcione sin tocar rutas.
+- El indicador en pantalla («22 juntas · 0 mallas») es lo que hizo legible ese fallo. Sin
+  él, la pantalla negra no distingue entre «no cargó», «cargó fuera de cámara» y «cargó sin
+  geometría».
 
 - La firma real de `loadMeshCb` es `(ruta, manager, material, onComplete)`, con el material
   en tercer lugar. La primera versión del visor usaba tres argumentos y habría fallado al
