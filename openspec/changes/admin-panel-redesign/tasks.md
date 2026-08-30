@@ -117,14 +117,15 @@
 
 ## 6. Sitio (6 funciones)
 
-- [ ] 6.1 Landing como **lista de bloques en el orden de la página**, cada uno con interruptor en
+- [x] 6.1 Landing como **lista de bloques en el orden de la página**, cada uno con interruptor en
       su cabecera y su contenido al desplegarlo. **Espec: §8.5 (bloques y estados).**
-- [ ] 6.2 Editar textos de cada sección al desplegar; foto del robot del mockup igual que hoy.
+- [x] 6.2 Editar textos de cada sección al desplegar; foto del robot del mockup igual que hoy.
       **Espec: §8.5 (campos del Hero, markup `*asteriscos*`).**
-- [ ] 6.3 FAQ: añadir, editar y eliminar preguntas. **Espec: §8.5 (lista con handle de arrastre).**
-- [ ] 6.4 Páginas legales (Términos, Privacidad, Cookies) en su propio bloque.
-- [ ] 6.5 Especializaciones (crear, editar, publicar, eliminar) debajo de la landing, en el rail
-      «Sitio». **Espec: §8.5 (grid de 3 tarjetas).**
+- [x] 6.3 FAQ: añadir, editar y eliminar preguntas. **Espec: §8.5 (lista con handle de arrastre).**
+- [x] 6.4 Páginas legales (Términos, Privacidad, Cookies) en su propio bloque.
+- [x] 6.5 Especializaciones (crear, editar, publicar, eliminar) debajo de la landing, en el rail
+      «Sitio». **Espec: §8.5 (grid de 3 tarjetas).** Sigue en su propia pestaña (el rail la
+      mantiene bajo «Contenido»); el canvas solo apila ambas pantallas para ahorrar lienzo.
 
 ## 7. Verificación (cada rebanada)
 

@@ -4,7 +4,7 @@
  * La directora puede crear/editar/eliminar especializaciones, subir una imagen
  * de portada y asignarles cursos (en orden). No toca los CRUD de cursos.
  */
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import { Card, CardContent } from '@/shared/components/card'
@@ -117,74 +117,94 @@ export function SpecializationsTab() {
   }
 
   return (
-    <div className="grid grid-cols-1 gap-5 lg:grid-cols-12">
-      {/* ── Lista de especializaciones ── */}
-      <div className="space-y-3 lg:col-span-5">
-        <div className="flex items-center justify-between">
-          <h2 className="flex items-center gap-2 text-lg font-bold text-gray-900">
-            <Layers className="h-5 w-5" /> Especializaciones
-          </h2>
-          <Button size="sm" variant={editingId === null ? 'default' : 'outline'} onClick={startCreate} className="gap-1.5">
-            <Plus className="h-4 w-4" /> Nueva
-          </Button>
+    <div>
+      {/* Encabezado (canvas AdminSitio §8.5) */}
+      <div className="flex flex-wrap items-end justify-between gap-4">
+        <div>
+          <span className="font-mono text-[9.5px] font-semibold uppercase tracking-[0.14em] text-[#a9a8b4]">Contenido</span>
+          <h1
+            className="mt-2 text-[26px] font-bold leading-[1.16] tracking-[-0.014em] text-[#16151b]"
+            style={{ fontFamily: "'Iowan Old Style', 'Palatino Linotype', Palatino, Georgia, serif" }}
+          >
+            Especializaciones
+          </h1>
+          <p className="mt-2 text-[13.5px] text-[#55545f]">
+            Agrupan cursos en rutas. Cada una toma un color fijo que se repite en las tarjetas y en la malla.
+          </p>
         </div>
+        <button
+          type="button"
+          onClick={startCreate}
+          className="inline-flex h-10 flex-shrink-0 items-center gap-2 rounded-[11px] bg-[#16151b] px-4 text-[13px] font-semibold text-white transition-colors hover:bg-[#2b2b26] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[#16151b]"
+        >
+          <Plus className="h-4 w-4" strokeWidth={2} /> Nueva especialización
+        </button>
+      </div>
 
+      {/* Tarjetas (grid de 3, canvas) */}
+      <div className="mt-5 grid max-w-[1060px] grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-3">
         {isLoading ? (
           <p className="py-8 text-center text-sm text-gray-400">Cargando…</p>
         ) : specs.length === 0 ? (
-          <Card className="border-2 border-dashed border-gray-200">
-            <CardContent className="py-12 text-center">
-              <Layers className="mx-auto mb-2 h-8 w-8 text-gray-300" />
-              <p className="text-sm text-gray-500">Aún no hay especializaciones</p>
-              <p className="text-xs text-gray-400">Crea una con el botón "Nueva"</p>
-            </CardContent>
-          </Card>
+          <div className="rounded-[14px] border-2 border-dashed border-gray-200 py-12 text-center md:col-span-2 xl:col-span-3">
+            <Layers className="mx-auto mb-2 h-8 w-8 text-gray-300" />
+            <p className="text-sm text-gray-500">Aún no hay especializaciones</p>
+            <p className="text-xs text-gray-400">Crea una con el botón "Nueva especialización"</p>
+          </div>
         ) : (
           specs.map((spec) => (
-            <Card
+            <div
               key={spec.id}
-              className={`cursor-pointer overflow-hidden border transition-all hover:shadow-md ${editingId === spec.id ? 'border-[#4b46d6]/40 ring-1 ring-[#4b46d6]/20' : 'border-gray-200'}`}
+              className={`cursor-pointer overflow-hidden rounded-[14px] border bg-white transition-all ${
+                editingId === spec.id ? 'border-[#4b46d6]/40 ring-1 ring-[#4b46d6]/20' : 'border-[#e9e9ee] hover:shadow-md'
+              }`}
               onClick={() => startEdit(spec)}
             >
-              <CardContent className="flex items-center gap-3 p-3">
-                <div className="h-12 w-16 flex-shrink-0 overflow-hidden rounded-md bg-[#f4f3f8]">
-                  {spec.image_url ? (
-                    <img src={spec.image_url} alt={spec.title} className="h-full w-full object-cover" />
-                  ) : (
-                    <div className="flex h-full w-full items-center justify-center bg-[#0a0a0c]">
-                      <Layers className="h-5 w-5 text-white/40" />
-                    </div>
-                  )}
-                </div>
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-2">
-                    <h3 className="truncate text-sm font-semibold text-gray-900">{spec.title}</h3>
-                    {spec.is_published === false && (
-                      <span className="inline-flex items-center gap-1 rounded-full bg-gray-100 px-1.5 py-0.5 text-[10px] text-gray-500">
-                        <EyeOff className="h-2.5 w-2.5" /> Oculta
-                      </span>
-                    )}
-                  </div>
-                  <p className="flex items-center gap-1 text-xs text-gray-400">
-                    <BookOpen className="h-3 w-3" /> {spec.course_count} curso{spec.course_count === 1 ? '' : 's'}
-                  </p>
-                </div>
-                <button
-                  onClick={(e) => { e.stopPropagation(); handleDelete(spec) }}
-                  className="rounded-lg p-1.5 text-gray-300 transition-colors hover:bg-red-50 hover:text-red-500"
-                  title="Eliminar"
+              <div
+                className="relative h-[96px] bg-[#0a0a0c]"
+                style={{ backgroundImage: 'radial-gradient(circle, rgba(255,255,255,0.5) 1px, transparent 1px)', backgroundSize: '18px 18px' }}
+              >
+                {spec.image_url && <img src={spec.image_url} alt={spec.title} className="absolute inset-0 h-full w-full object-cover" />}
+                <span
+                  className={`absolute right-2.5 top-2.5 rounded-full px-2.5 py-0.5 text-[10.5px] font-semibold ${
+                    spec.is_published === false ? 'bg-[#f4f4f7] text-[#8b8a95]' : 'bg-[#ecfdf5] text-[#047857]'
+                  }`}
                 >
-                  <Trash2 className="h-4 w-4" />
-                </button>
-              </CardContent>
-            </Card>
+                  {spec.is_published === false ? 'Borrador' : 'Publicada'}
+                </span>
+              </div>
+              <div className="p-[16px_18px]">
+                <div className="text-[14.5px] font-semibold text-[#16151b]">{spec.title}</div>
+                <p className="mt-1.5 text-[12.5px] leading-relaxed text-[#8b8a95] line-clamp-2">{spec.description}</p>
+                <div className="mt-3.5 flex items-center gap-2.5">
+                  <span className="font-mono text-[10.5px] text-[#a9a8b4]">
+                    {spec.course_count ?? (spec.courses || []).length} curso{(spec.course_count ?? (spec.courses || []).length) === 1 ? '' : 's'}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={(e) => { e.stopPropagation(); startEdit(spec) }}
+                    className="ml-auto inline-flex h-8 items-center gap-2 rounded-[10px] border border-[#e3e2ea] px-3 text-[12px] font-semibold text-[#55545f] transition-colors hover:border-[#c4c3cd] hover:text-[#16151b]"
+                  >
+                    Editar
+                  </button>
+                  <button
+                    type="button"
+                    onClick={(e) => { e.stopPropagation(); handleDelete(spec) }}
+                    className="grid h-8 w-8 place-items-center rounded-[9px] border border-[#e3e2ea] text-[#c4c3cd] transition-colors hover:border-[#f0d5d5] hover:text-[#b4425a]"
+                    title="Eliminar"
+                  >
+                    <Trash2 className="h-3.5 w-3.5" strokeWidth={1.8} />
+                  </button>
+                </div>
+              </div>
+            </div>
           ))
         )}
       </div>
 
       {/* ── Formulario crear/editar ── */}
-      <div className="lg:col-span-7">
-        <Card className="border-gray-200">
+      <div className="mt-8 max-w-[880px]">
+        <Card className="border-[#e9e9ee]">
           <CardContent className="space-y-4 p-5">
             <h3 className="text-sm font-semibold text-gray-900">
               {editingId ? 'Editar especialización' : 'Nueva especialización'}
@@ -284,7 +304,7 @@ export function SpecializationsTab() {
                 )}
               </div>
 
-              <Button type="submit" disabled={saving} className="w-full gap-1.5 ">
+              <Button type="submit" disabled={saving} className="w-full gap-1.5">
                 <Save className="h-4 w-4" />
                 {saving ? 'Guardando…' : editingId ? 'Guardar cambios' : 'Crear especialización'}
               </Button>
