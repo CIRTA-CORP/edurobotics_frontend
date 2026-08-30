@@ -207,6 +207,33 @@ function SimulatorMockup({ imageUrl, loading }) {
 // ─────────────────────────────────────────────────────────────
 // Banda de estadísticas
 // ─────────────────────────────────────────────────────────────
+/** Un grupo de la cinta. El segundo es un duplicado visual: va aria-hidden. */
+function FactsTrack({ items, hidden }) {
+  return (
+    <div className="facts-marquee__track" aria-hidden={hidden || undefined}>
+      {items.map((s, i) => (
+        <span key={`${s.label}-${i}`} className="flex flex-shrink-0 items-center">
+          <span className="flex items-baseline gap-2.5 px-7">
+            <span className="font-mono text-[19px] font-bold tracking-tight text-[#16151b]">
+              {s.value}
+            </span>
+            <span className="whitespace-nowrap text-[13px] text-[#8b8a95]">{s.label}</span>
+          </span>
+          <span className="h-1.5 w-1.5 rotate-45 bg-[#dcdbe4]" aria-hidden="true" />
+        </span>
+      ))}
+    </div>
+  )
+}
+
+/**
+ * Stats — la cinta de hechos, en movimiento continuo.
+ *
+ * Técnica de letigre.run: dos grupos idénticos de al menos el ancho de la
+ * pantalla; desplazar uno el 100% de su propio ancho lo saca justo cuando el
+ * otro ocupa su sitio, así el bucle no deja hueco. Los textos se repiten dentro
+ * de cada grupo para que `space-around` no los separe en pantallas anchas.
+ */
 function Stats() {
   const stats = [
     { value: 'UR5', label: 'Robot industrial simulado' },
@@ -214,19 +241,15 @@ function Stats() {
     { value: '0', label: 'Instalaciones necesarias' },
     { value: '2', label: 'Modos: bloques y código' },
   ]
+  // Repetidos dentro del grupo: evita huecos cuando la pantalla es más ancha
+  // que el contenido.
+  const repeated = [...stats, ...stats]
+
   return (
-    <section className="border-b border-[#ececf1]">
-      <div className="mx-auto grid max-w-6xl grid-cols-2 px-4 py-7 md:grid-cols-4">
-        {stats.map((s, i) => (
-          <div
-            key={s.label}
-            className={`px-4 py-3 md:py-0 ${i > 0 ? 'md:border-l md:border-[#ececf1]' : ''}`}
-          >
-            {/* Figures in mono so they read as data, not as prose. */}
-            <div className="font-mono text-[22px] font-bold tracking-tight text-[#16151b]">{s.value}</div>
-            <div className="mt-1.5 text-[13px] text-[#8b8a95]">{s.label}</div>
-          </div>
-        ))}
+    <section className="border-y border-[#ececf1] bg-white py-5">
+      <div className="facts-marquee" style={{ '--facts-duration': '34s' }}>
+        <FactsTrack items={repeated} />
+        <FactsTrack items={repeated} hidden />
       </div>
     </section>
   )
