@@ -25,8 +25,8 @@ export function RegisterForm({ onSwitchToLogin }) {
     password: '',
     password_confirm: '',
   })
-  const [message, setMessage] = useState(null)
-  const [messageType, setMessageType] = useState('success')
+  const [error, setError] = useState(null)
+  const [created, setCreated] = useState(null)   // username, once the account exists
   const [loading, setLoading] = useState(false)
   const navigate = useNavigate()
 
@@ -37,11 +37,10 @@ export function RegisterForm({ onSwitchToLogin }) {
 
   const handleSubmit = async (event) => {
     event.preventDefault()
-    setMessage(null)
+    setError(null)
 
     if (form.password !== form.password_confirm) {
-      setMessageType('error')
-      setMessage('Las contraseñas no coinciden')
+      setError('Las contraseñas no coinciden')
       return
     }
 
@@ -49,36 +48,44 @@ export function RegisterForm({ onSwitchToLogin }) {
 
     try {
       await registerUser(form)
-      setMessageType('success')
-      setMessage('¡Cuenta creada exitosamente!')
+      // Hand over naming the username they just chose — it is what they will
+      // type next, and a green strip would not have told them.
+      setCreated(form.username)
       // En el modal, volver a la vista de login; en la página, navegar a /login.
       setTimeout(() => {
         if (onSwitchToLogin) onSwitchToLogin()
         else navigate('/login')
-      }, 1200)
-    } catch (error) {
-      setMessageType('error')
-      setMessage(error.message)
-    } finally {
+      }, 1600)
+    } catch (err) {
+      setError(err.message)
       setLoading(false)
     }
   }
 
+  if (created) {
+    return (
+      <div className="py-2 text-center" role="status" aria-live="polite">
+        <div className="mx-auto grid h-12 w-12 place-items-center rounded-2xl bg-emerald-50">
+          <CheckCircle2 className="h-5 w-5 text-emerald-600" strokeWidth={2.2} />
+        </div>
+        <p className="mt-4 text-[19px] font-bold tracking-[-0.01em] text-[#16151b]">Cuenta creada</p>
+        <p className="mt-1.5 text-[14px] leading-relaxed text-[#55545f]">
+          Te llevamos a iniciar sesión con tu usuario{' '}
+          <strong className="font-mono font-semibold text-[#16151b]">{created}</strong>.
+        </p>
+        <div className="mx-auto mt-5 h-[3px] w-40 overflow-hidden rounded-full bg-[#efeef3]">
+          <div className="h-full w-full origin-left animate-[loginHandoff_1.6s_ease-out_forwards] rounded-full bg-[#16151b]" />
+        </div>
+      </div>
+    )
+  }
+
   return (
     <>
-      {message && (
-        <div
-          className={`mb-4 p-3 rounded-lg flex items-start gap-2 text-sm ${messageType === 'success'
-            ? 'bg-green-50 text-green-900 border border-green-200'
-            : 'bg-red-50 text-red-900 border border-red-200'
-            }`}
-        >
-          {messageType === 'success' ? (
-            <CheckCircle2 className="w-4 h-4 mt-0.5 flex-shrink-0" />
-          ) : (
-            <AlertCircle className="w-4 h-4 mt-0.5 flex-shrink-0" />
-          )}
-          <span>{message}</span>
+      {error && (
+        <div className="mb-4 flex items-start gap-2.5 rounded-[10px] border border-[#b4425a]/25 bg-[#b4425a]/[0.05] p-3.5">
+          <AlertCircle className="mt-0.5 h-4 w-4 flex-shrink-0 text-[#b4425a]" />
+          <p className="text-[13.5px] text-[#16151b]">{error}</p>
         </div>
       )}
 
