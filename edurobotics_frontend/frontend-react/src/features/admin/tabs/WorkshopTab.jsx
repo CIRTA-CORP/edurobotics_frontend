@@ -9,8 +9,9 @@
  * reutilizan tal cual: cambian de contenedor, no de lógica.
  */
 
-import { useState } from 'react'
-import { ClipboardCheck, FileText, Settings } from 'lucide-react'
+import { useRef, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
+import { Check, Eye, FileText } from 'lucide-react'
 import { Drawer } from '@/shared/components/Drawer'
 import { ContentForm } from '@/features/admin/features/content/ContentForm'
 import { QuizEditor } from '@/features/admin/features/quizzes/QuizEditor'
@@ -51,6 +52,9 @@ export function WorkshopTab() {
   } = useAdmin()
 
   const [editorTab, setEditorTab] = useState('contenido')
+  const navigate = useNavigate()
+  const richEditorRef = useRef(null)
+  const [lastSavedAt, setLastSavedAt] = useState(null)
 
   // ── Módulo: crear / editar (mismos hooks que la pestaña antigua) ──
   const moduleDrawerOpen = isModuleModalOpen || isModuleEditModalOpen
@@ -91,20 +95,23 @@ export function WorkshopTab() {
   const quizCount = selectedUnit?.quizzes?.length || 0
   const hasModules = (selectedCourse?.modules || []).length > 0
 
-  const tab = (id, label, Icon, count) => (
+  const tab = (id, label, count) => (
     <button
       key={id}
       onClick={() => setEditorTab(id)}
-      className={`inline-flex items-center gap-2 border-b-2 px-1 pb-2.5 text-[13.5px] font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4b46d6] ${
+      className={`inline-flex h-[34px] items-center gap-2 rounded-lg px-4 text-[13px] font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4b46d6] ${
         editorTab === id
-          ? 'border-[#16151b] text-[#16151b]'
-          : 'border-transparent text-[#8b8a95] hover:text-[#16151b]'
+          ? 'bg-white text-[#16151b] shadow-[0_1px_3px_rgba(22,21,27,0.09)]'
+          : 'text-[#8b8a95] hover:text-[#16151b]'
       }`}
     >
-      <Icon className="h-4 w-4" strokeWidth={1.7} />
       {label}
-      {count > 0 && (
-        <span className="rounded-full bg-[#efeef3] px-1.5 font-mono text-[10px] tabular-nums text-[#8b8a95]">
+      {count !== undefined && count > 0 && (
+        <span
+          className={`rounded-full px-1.5 py-[1px] font-mono text-[9.5px] font-bold tabular-nums ${
+            editorTab === id ? 'bg-[#4b46d6]/[0.08] text-[#4b46d6]' : 'bg-[#e7e6ee] text-[#8b8a95]'
+          }`}
+        >
           {count}
         </span>
       )}
@@ -120,17 +127,43 @@ export function WorkshopTab() {
           ) : (
             <>
               <div className="border-b border-[#ececf1] px-5 pt-4 sm:px-6">
-                {/* Línea de contexto: el árbol ya dice dónde estás */}
-                <p className="font-mono text-[10.5px] uppercase tracking-[0.1em] text-[#a9a8b4]">
-                  {selectedModule?.title}
-                </p>
-                <h2 className="mt-1 truncate text-[19px] font-bold tracking-[-0.01em] text-[#16151b]">
+                {/* Fila de acciones: contexto a la izquierda, acciones a la derecha */}
+                <div className="flex items-center justify-between gap-5">
+                  <p className="min-w-0 truncate font-mono text-[10.5px] uppercase tracking-[0.1em] text-[#a9a8b4]">
+                    {selectedModule?.title}
+                  </p>
+                  {editorTab === 'contenido' && (
+                    <div className="flex flex-shrink-0 items-center gap-2.5">
+                      <button
+                        type="button"
+                        onClick={() => navigate(`/courses/${selectedCourse?.id}/study`)}
+                        className="inline-flex h-9 items-center gap-2 rounded-[10px] border border-[#e3e2ea] px-3.5 text-[12.5px] font-semibold text-[#55545f] transition-colors hover:border-[#c4c3cd] hover:text-[#16151b] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4b46d6]"
+                      >
+                        <Eye className="h-4 w-4" strokeWidth={1.8} /> Ver como alumno
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => richEditorRef.current?.save()}
+                        disabled={contentHooks.saving}
+                        className="inline-flex h-9 items-center gap-2 rounded-[10px] bg-[#16151b] px-4 text-[12.5px] font-semibold text-white transition-colors hover:bg-[#2b2b26] disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[#16151b]"
+                      >
+                        <Check className="h-4 w-4" strokeWidth={2.4} />
+                        {contentHooks.saving ? 'Guardando…' : 'Guardar'}
+                      </button>
+                    </div>
+                  )}
+                </div>
+
+                <h2
+                  className="mt-3.5 truncate font-bold tracking-[-0.014em] text-[#16151b]"
+                  style={{ fontFamily: "'Iowan Old Style', 'Palatino Linotype', Palatino, Georgia, serif", fontSize: 28, lineHeight: 1.16 }}
+                >
                   {selectedUnit.title}
                 </h2>
-                <div className="mt-3 flex items-center gap-5">
-                  {tab('contenido', 'Contenido', FileText)}
-                  {tab('evaluacion', 'Evaluación', ClipboardCheck, quizCount)}
-                  {tab('ajustes', 'Ajustes', Settings)}
+                <div className="mb-4 mt-[18px] inline-flex items-center gap-[3px] rounded-[10px] bg-[#f4f3f8] p-[3px]">
+                  {tab('contenido', 'Contenido')}
+                  {tab('evaluacion', 'Evaluación', quizCount)}
+                  {tab('ajustes', 'Ajustes')}
                 </div>
               </div>
 
@@ -138,7 +171,14 @@ export function WorkshopTab() {
                 {editorTab === 'contenido' && (
                   <ContentForm
                     selectedUnit={selectedUnit}
-                    onRichContentSave={(html) => contentHooks.handleRichContentSave(html, selectedUnit, selectedCourse)}
+                    editorRef={richEditorRef}
+                    hideEditorSave
+                    lastSavedAt={lastSavedAt}
+                    onRichContentSave={(html) =>
+                      contentHooks
+                        .handleRichContentSave(html, selectedUnit, selectedCourse)
+                        .then(() => setLastSavedAt(new Date()))
+                    }
                     onContentDelete={handleContentDelete}
                     onMigrateLegacy={() => contentHooks.handleMigrateLegacy(selectedUnit, selectedCourse)}
                     onSimulatorToggle={() => contentHooks.handleSimulatorToggle(selectedUnit, selectedCourse)}

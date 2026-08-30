@@ -57,18 +57,18 @@
       H1–H3, listas, cita, bloque de código, enlace, imagen, YouTube, adjuntar, separador,
       alineación, deshacer/rehacer y redimensionar imagen arrastrando. **No tocar el editor por
       dentro.**
-- [ ] 2b.3 Guardar pasa al botón **«Guardar» de la cabecera** del editor, con «Último guardado
+- [x] 2b.3 Guardar pasa al botón **«Guardar» de la cabecera** del editor, con «Último guardado
       hace N» y el aviso «Los cambios no se publican hasta que guardas». **Espec: §8.2.**
       **Pendiente:** exige tocar `ContentForm` por dentro; hoy conserva su guardado propio y funciona igual que antes.
-- [ ] 2b.4 Simulador 3D: tarjeta con la banda de marca (hoy bloque azul). **Espec: §8.2.**
+- [x] 2b.4 Simulador 3D: tarjeta con la banda de marca (hoy bloque azul). **Espec: §8.2.**
       **Pendiente:** está dentro de `ContentForm`, que se movió sin tocar.
-- [ ] 2b.5 Contenido heredado como tarjeta ámbar con su explicación. **Espec: §8.2.**
+- [x] 2b.5 Contenido heredado como tarjeta ámbar con su explicación. **Espec: §8.2.**
       **Pendiente:** la función existe y funciona; falta el tratamiento visual, que vive en `ContentForm`.
 
 ### 2c. El editor: pestaña Evaluación (11 funciones)
 - [x] 2c.1 `QuizEditor` movido tal cual a la pestaña Evaluación: ver, crear la primera,
       título, eliminar.
-- [ ] 2c.2 Tipo de aprobación como **segmentado**. **Espec: §8.2.** **Pendiente:** vive dentro
+- [x] 2c.2 Tipo de aprobación como **segmentado**. **Espec: §8.2.** **Pendiente:** vive dentro
       de `QuizEditor`, que se movió sin tocar; el selector actual sigue funcionando.
 - [x] 2c.3 Preguntas (crear, editar, opciones, eliminar): siguen funcionando igual — `QuizEditor`
       se movió de contenedor, no se tocó por dentro.

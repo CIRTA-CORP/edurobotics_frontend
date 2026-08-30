@@ -431,56 +431,90 @@ export function QuizEditor({ unitId, moduleId }) {
                         <Settings className="w-3.5 h-3.5" />
                         Configuración de aprobación
                     </div>
-                    <div className="flex flex-wrap items-end gap-4">
-                        <div className="flex-1 min-w-[180px]">
-                            <label className="block text-xs font-medium text-gray-600 mb-1">Tipo de aprobación</label>
-                            <select
-                                value={selectedQuiz.passing_type || 'score'}
-                                onChange={async (e) => {
-                                    const newType = e.target.value;
-                                    setSelectedQuiz(prev => ({ ...prev, passing_type: newType }));
-                                    try {
-                                        await quizService.updateQuiz(selectedQuiz.id, { passing_type: newType });
-                                        toast.success('Configuración actualizada');
-                                    } catch { toast.error('Error al actualizar'); }
-                                }}
-                                className="w-full px-3 py-2 text-sm bg-white border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
-                            >
-                                <option value="score">Puntaje mínimo (%)</option>
-                                <option value="all_correct">Todas las respuestas correctas</option>
-                            </select>
+                    <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
+                        <div>
+                            <label className="mb-2 block text-xs font-semibold text-[#55545f]">Tipo de aprobación</label>
+                            <div className="flex items-center gap-[3px] rounded-[10px] bg-[#f4f3f8] p-[3px]">
+                                <button
+                                    type="button"
+                                    onClick={async () => {
+                                        const newType = 'score';
+                                        setSelectedQuiz(prev => ({ ...prev, passing_type: newType }));
+                                        try {
+                                            await quizService.updateQuiz(selectedQuiz.id, { passing_type: newType });
+                                            toast.success('Configuración actualizada');
+                                        } catch { toast.error('Error al actualizar'); }
+                                    }}
+                                    className={`flex h-8 flex-1 items-center justify-center rounded-lg text-[12.5px] font-semibold transition-colors ${
+                                        (selectedQuiz.passing_type || 'score') === 'score'
+                                            ? 'bg-white text-[#16151b] shadow-[0_1px_3px_rgba(22,21,27,0.09)]'
+                                            : 'text-[#8b8a95] hover:text-[#16151b]'
+                                    }`}
+                                >
+                                    Puntaje mínimo
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={async () => {
+                                        const newType = 'all_correct';
+                                        setSelectedQuiz(prev => ({ ...prev, passing_type: newType }));
+                                        try {
+                                            await quizService.updateQuiz(selectedQuiz.id, { passing_type: newType });
+                                            toast.success('Configuración actualizada');
+                                        } catch { toast.error('Error al actualizar'); }
+                                    }}
+                                    className={`flex h-8 flex-1 items-center justify-center rounded-lg text-[12.5px] font-semibold transition-colors ${
+                                        (selectedQuiz.passing_type || 'score') === 'all_correct'
+                                            ? 'bg-white text-[#16151b] shadow-[0_1px_3px_rgba(22,21,27,0.09)]'
+                                            : 'text-[#8b8a95] hover:text-[#16151b]'
+                                    }`}
+                                >
+                                    Todas correctas
+                                </button>
+                            </div>
                         </div>
                         {(selectedQuiz.passing_type || 'score') === 'score' && (
-                            <div className="flex-1 min-w-[180px]">
-                                <label className="block text-xs font-medium text-gray-600 mb-1">
-                                    Puntaje mínimo: <span className="font-bold text-blue-600">{selectedQuiz.passing_score ?? 80}%</span>
+                            <div>
+                                <label className="mb-2 block text-xs font-semibold text-[#55545f]">
+                                    Puntaje mínimo · <span className="font-mono font-bold text-[#4b46d6]">{selectedQuiz.passing_score ?? 80}%</span>
                                 </label>
-                                <input
-                                    type="range"
-                                    min="10"
-                                    max="100"
-                                    step="5"
-                                    value={selectedQuiz.passing_score ?? 80}
-                                    onChange={(e) => {
-                                        setSelectedQuiz(prev => ({ ...prev, passing_score: parseInt(e.target.value) }));
-                                    }}
-                                    onMouseUp={async (e) => {
-                                        try {
-                                            await quizService.updateQuiz(selectedQuiz.id, { passing_score: parseInt(e.target.value) });
-                                            toast.success('Puntaje actualizado');
-                                        } catch { toast.error('Error al actualizar'); }
-                                    }}
-                                    onTouchEnd={async (e) => {
-                                        try {
-                                            await quizService.updateQuiz(selectedQuiz.id, { passing_score: parseInt(e.target.value) });
-                                            toast.success('Puntaje actualizado');
-                                        } catch { toast.error('Error al actualizar'); }
-                                    }}
-                                    className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-blue-600"
-                                />
-                                <div className="flex justify-between text-[10px] text-gray-400 mt-0.5">
-                                    <span>10%</span>
-                                    <span>100%</span>
+                                <div className="flex h-8 items-center">
+                                    <div className="relative w-full">
+                                        <div className="h-[5px] w-full rounded-full bg-[#eceaf2]">
+                                            <div
+                                                className="h-full rounded-full bg-[#4b46d6]"
+                                                style={{ width: `${selectedQuiz.passing_score ?? 80}%` }}
+                                            />
+                                        </div>
+                                        <input
+                                            type="range"
+                                            min="10"
+                                            max="100"
+                                            step="5"
+                                            value={selectedQuiz.passing_score ?? 80}
+                                            onChange={(e) => {
+                                                setSelectedQuiz(prev => ({ ...prev, passing_score: parseInt(e.target.value) }));
+                                            }}
+                                            onMouseUp={async (e) => {
+                                                try {
+                                                    await quizService.updateQuiz(selectedQuiz.id, { passing_score: parseInt(e.target.value) });
+                                                    toast.success('Puntaje actualizado');
+                                                } catch { toast.error('Error al actualizar'); }
+                                            }}
+                                            onTouchEnd={async (e) => {
+                                                try {
+                                                    await quizService.updateQuiz(selectedQuiz.id, { passing_score: parseInt(e.target.value) });
+                                                    toast.success('Puntaje actualizado');
+                                                } catch { toast.error('Error al actualizar'); }
+                                            }}
+                                            className="absolute inset-0 h-8 w-full cursor-pointer opacity-0"
+                                            aria-label="Puntaje mínimo"
+                                        />
+                                        <span
+                                            className="pointer-events-none absolute top-1/2 h-[17px] w-[17px] -translate-y-1/2 rounded-full border-2 border-[#4b46d6] bg-white shadow-[0_1px_3px_rgba(22,21,27,0.16)]"
+                                            style={{ left: `calc(${selectedQuiz.passing_score ?? 80}% - 8px)` }}
+                                        />
+                                    </div>
                                 </div>
                             </div>
                         )}
