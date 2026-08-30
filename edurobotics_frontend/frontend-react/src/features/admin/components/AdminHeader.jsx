@@ -1,103 +1,95 @@
 /**
  * Admin Header Component
  *
- * Displays the admin dashboard header with glassmorphism effect,
- * view toggle (admin/student), and logout functionality.
+ * The panel bar: identity on the left, the admin/student segmented control and
+ * the standing shortcuts on the right. Every control keeps the job it had —
+ * what changed is that the view toggle is a real segmented control and the
+ * shortcuts are quiet icons instead of coloured buttons.
  *
- * Responsive: wraps to a second row on narrow screens, hides the subtitle, and
- * collapses the view toggle to icons-only so nothing overflows on mobile.
+ * Responsive: labels drop on narrow screens so nothing overflows.
  */
 
-import { Button } from '@/shared/components/button'
 import { Link } from 'react-router-dom'
-import { Eye, Layout, LogOut, Shield, Terminal } from 'lucide-react'
+import { Home, LogOut, Terminal } from 'lucide-react'
 import { useAdmin } from '@/features/admin/context/AdminContext'
 
-export function AdminHeader({ adminView, onViewChange, onLogout, onLogoClick }) {
+function IconAction({ to, onClick, title, children }) {
+  const className =
+    'grid h-8 w-8 place-items-center rounded-lg text-[#8b8a95] transition-colors hover:bg-[#f4f3f8] hover:text-[#16151b] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4b46d6]'
+  if (to) {
+    return (
+      <Link to={to} title={title} aria-label={title} className={className}>
+        {children}
+      </Link>
+    )
+  }
+  return (
+    <button onClick={onClick} title={title} aria-label={title} className={className}>
+      {children}
+    </button>
+  )
+}
+
+export function AdminHeader({ adminView, onViewChange, onLogout, onLogoClick, initials = '' }) {
   const { isTeacher } = useAdmin()
 
+  const segment = (active) =>
+    `grid h-[30px] place-items-center rounded-lg px-3.5 text-[12.5px] font-semibold transition-colors ${
+      active ? 'bg-white text-[#16151b] shadow-sm' : 'text-[#8b8a95] hover:text-[#16151b]'
+    }`
+
   return (
-    <header className="bg-white/80 backdrop-blur-md border-b border-gray-200 shadow-sm sticky top-0 z-50">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
-        <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
-          {/* Logo */}
-          <div className="flex items-center gap-3">
-            <Link
-              to="/"
-              onClick={onLogoClick}
-              className="cursor-pointer hover:opacity-75 transition-opacity"
-              title="Ir a la página principal"
-            >
-              <img src="/cirtanitido.svg" alt="CIRTA" className="h-8" />
-            </Link>
-            <div className="border-l border-gray-200 pl-3">
-              <div className="flex items-center gap-2">
-                <h1 className="text-lg font-bold tracking-tight text-gray-900 leading-tight">EduRobotics</h1>
-                <span className={`inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full ring-1 ring-inset ring-white/10 ${isTeacher ? 'bg-indigo-600 text-white' : 'bg-slate-900 text-white'}`}>
-                  <Shield className="w-2.5 h-2.5" />
-                  {isTeacher ? 'PROFESOR' : 'ADMIN'}
-                </span>
-              </div>
-              <p className="hidden sm:block text-[11px] text-gray-500 leading-tight">
-                {isTeacher ? 'Gestión de tus cursos' : 'Gestión de cursos y módulos'}
-              </p>
-            </div>
+    <header className="sticky top-0 z-50 flex h-14 flex-shrink-0 items-center justify-between border-b border-[#ececf1] bg-white px-4 sm:px-[18px]">
+      <div className="flex min-w-0 items-center gap-3.5">
+        <Link
+          to="/"
+          onClick={onLogoClick}
+          title="Ir a la página principal"
+          className="flex items-center gap-2.5 transition-opacity hover:opacity-75"
+        >
+          <img src="/cirtanitido.svg" alt="CIRTA" className="h-7" />
+          <span className="hidden text-[14.5px] font-semibold tracking-[-0.01em] text-[#16151b] sm:inline">
+            EduRobotics
+          </span>
+        </Link>
+        <span className="rounded-full bg-[#16151b] px-2.5 py-[3px] font-mono text-[9.5px] font-bold tracking-[0.08em] text-white">
+          {isTeacher ? 'PROFESOR' : 'ADMIN'}
+        </span>
+      </div>
+
+      <div className="flex items-center gap-2 sm:gap-3">
+        {/* Teachers get their own panel, so the toggle is admin-only. */}
+        {!isTeacher && (
+          <div className="flex items-center gap-[3px] rounded-[10px] bg-[#f4f3f8] p-[3px]">
+            <button onClick={() => onViewChange('admin')} className={segment(adminView === 'admin')}>
+              <span className="hidden sm:inline">Vista admin</span>
+              <span className="sm:hidden">Admin</span>
+            </button>
+            <button onClick={() => onViewChange('student')} className={segment(adminView === 'student')}>
+              <span className="hidden sm:inline">Vista estudiante</span>
+              <span className="sm:hidden">Alumno</span>
+            </button>
           </div>
+        )}
 
-          {/* Right side */}
-          <div className="flex items-center gap-2 sm:gap-3">
-            {/* View toggle (admin only: teachers see their own panel) */}
-            {!isTeacher && (
-              <div className="flex bg-gray-100 rounded-lg p-0.5">
-                <button
-                  onClick={() => onViewChange('admin')}
-                  title="Vista admin"
-                  className={`flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-md text-xs font-medium transition-all ${adminView === 'admin'
-                      ? 'bg-white text-gray-900 shadow-sm'
-                      : 'text-gray-500 hover:text-gray-700'
-                    }`}
-                >
-                  <Layout className="w-3.5 h-3.5" />
-                  <span className="hidden sm:inline">Admin</span>
-                </button>
-                <button
-                  onClick={() => onViewChange('student')}
-                  title="Vista estudiante"
-                  className={`flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-md text-xs font-medium transition-all ${adminView === 'student'
-                      ? 'bg-white text-gray-900 shadow-sm'
-                      : 'text-gray-500 hover:text-gray-700'
-                    }`}
-                >
-                  <Eye className="w-3.5 h-3.5" />
-                  <span className="hidden sm:inline">Estudiante</span>
-                </button>
+        <div className="hidden h-5 w-px bg-[#ececf1] sm:block" />
 
-                <div className="w-px h-6 bg-gray-200 mx-1 self-center" />
+        <IconAction to="/simulator" title="Simulador">
+          <Terminal className="h-[17px] w-[17px]" />
+        </IconAction>
+        <IconAction to="/" title="Ir a la página principal">
+          <Home className="h-[17px] w-[17px]" />
+        </IconAction>
 
-                <Link
-                  to="/simulator"
-                  title="Simulador"
-                  className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-md text-xs font-medium transition-all text-purple-600 hover:bg-purple-50 hover:text-purple-700"
-                >
-                  <Terminal className="w-3.5 h-3.5" />
-                  <span className="hidden sm:inline">Simulador</span>
-                </Link>
-              </div>
-            )}
-
-            <div className="w-px h-6 bg-gray-200" />
-
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={onLogout}
-              title="Cerrar sesión"
-              className="text-gray-500 hover:text-red-600 hover:bg-red-50"
-            >
-              <LogOut className="w-4 h-4" />
-            </Button>
+        {initials && (
+          <div className="grid h-7 w-7 place-items-center rounded-full bg-[#16151b] text-[10.5px] font-bold text-white">
+            {initials}
           </div>
-        </div>
+        )}
+
+        <IconAction onClick={onLogout} title="Cerrar sesión">
+          <LogOut className="h-[17px] w-[17px]" />
+        </IconAction>
       </div>
     </header>
   )

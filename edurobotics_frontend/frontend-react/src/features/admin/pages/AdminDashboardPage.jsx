@@ -103,13 +103,13 @@ function AdminDashboardLayout() {
           onViewChange={setAdminView}
           onLogout={handleLogout}
         />
-        <div className="max-w-7xl mx-auto p-3 lg:p-6">
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 lg:gap-6">
-            <aside className="lg:col-span-3">
-              <AdminSidebarNav />
-            </aside>
+        {/* The rail is a column of the shell, not a card floating in a grid:
+            it runs the full height with a hairline against the work area. */}
+        <div className="flex min-h-[calc(100vh-3.5rem)] flex-col lg:flex-row">
+          <AdminSidebarNav />
 
-            <main className="lg:col-span-9">
+          <main className="min-w-0 flex-1 p-3 lg:p-6">
+            <div className="mx-auto max-w-6xl">
               <AdminBreadcrumbs />
 
               <div className="space-y-6">
@@ -127,8 +127,8 @@ function AdminDashboardLayout() {
                   {activeTab === 'progreso' && <StudentsTab />}
                 </Suspense>
               </div>
-            </main>
-          </div>
+            </div>
+          </main>
         </div>
         </>
       )}
