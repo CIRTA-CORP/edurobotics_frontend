@@ -163,9 +163,19 @@ Orden obligatorio — cada uno depende del anterior:
    canvas:** las especializaciones conservan su **foto** (decisión de Mario), y la tarjeta
    «Continúa donde quedaste» exige enriquecer `GET /api/progress/{user_id}/last-accessed`, que
    hoy devuelve sólo `content_id` sin curso/módulo/unidad.
-4. `theme-switching` (modo claro/oscuro) — **por escribir**. Va al final a propósito: si los
+4. `landing-redesign` — **hecho**. La banda de marca abre y cierra la página; se fueron los tres
+   degradados apilados, el azul y la ventana falsa del mockup.
+5. `admin-panel-redesign` — **escrito, pendiente de OK**. El más grande: 6 artboards y un mapa de
+   cobertura con **72 funciones (24 cambian de lugar, ninguna desaparece)**. El armazón ya está
+   hecho (`c13b969`); quedan 5 rebanadas. **Tarea 0 bloqueante: Mario revisa el mapa de cobertura
+   antes de codear.**
+6. `theme-switching` (modo claro/oscuro) — **por escribir**. Va al final a propósito: si los
    tokens quedan centralizados en `@theme` (paso 2), el modo oscuro es un cambio de paleta; si
    se hace antes, hay que perseguir colores hardcodeados por toda la app.
+
+**Tipografía (regla transversal):** ningún change de este tramo cambia la familia tipográfica.
+El canvas propone una serif editorial; se descartó por decisión de Mario (2026-08-29). Crece la
+escala, no la familia.
 
 ---
 
