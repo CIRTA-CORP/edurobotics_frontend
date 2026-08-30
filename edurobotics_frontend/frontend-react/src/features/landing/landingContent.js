@@ -85,28 +85,46 @@ Para consultas sobre estos términos, escríbenos a cirta.contacto@gmail.com.`,
     },
     privacidad: {
       title: 'Política de Privacidad',
-      body: `En EduRobotics (operada por CIRTA CORP) respetamos tu privacidad. Esta política explica qué datos recopilamos y cómo los usamos.
+      body: `En EduRobotics (operada por CIRTA CORP) respetamos tu privacidad. Esta política explica qué datos tratamos, para qué, y cómo puedes ejercer tus derechos conforme a la Ley 21.719 de Protección de Datos Personales.
+
+Última actualización: 30 de agosto de 2026.
 
 ## 1. Responsable del tratamiento
 CIRTA CORP (razón social por completar), RUT por completar, con domicilio en Chile (dirección por completar). Representante legal: por completar. Contacto: cirta.contacto@gmail.com.
 
-## 2. Datos que recopilamos
-Datos de registro (nombre, usuario, correo), datos de uso (progreso, evaluaciones, inicios de sesión) y datos técnicos básicos necesarios para el funcionamiento.
+## 2. Datos que tratamos
+Datos de registro (nombre, apellido, nombre de usuario, correo). Datos de uso (matrículas, progreso en los cursos, tiempo activo, intentos y respuestas de evaluaciones, comentarios sobre los cursos). Datos de acceso (fecha y hora de tus inicios de sesión). Tu contraseña se guarda solo como un hash cifrado: nadie, ni siquiera nosotros, puede leerla.
 
-## 3. Para qué los usamos
-Para crear y gestionar tu cuenta, mostrar tu progreso, mejorar la plataforma y enviar correos relacionados con tu cuenta (como recuperación de contraseña).
+## 3. Para qué los usamos y con qué base legal
+Tratamos tus datos para crear y gestionar tu cuenta, mostrar tu progreso, permitir que tus docentes acompañen tu avance, mejorar la plataforma y enviarte correos relacionados con tu cuenta (como la recuperación de contraseña). La base de licitud es el consentimiento que otorgas al registrarte, que queda registrado con su fecha y la versión de los documentos aceptados.
 
-## 4. Con quién los compartimos
-No vendemos tus datos. Usamos proveedores que nos ayudan a operar (alojamiento, envío de correos), que solo los tratan según nuestras instrucciones.
+## 4. Tus derechos (ARCO-P) y cómo ejercerlos
+La ley te reconoce los derechos de acceso, rectificación, cancelación (supresión), oposición y portabilidad. En EduRobotics puedes ejercer varios por ti mismo, sin pedirnos permiso ni esperar respuesta:
+
+Acceso y portabilidad: entra a tu perfil, sección «Privacidad y datos», y usa «Descargar mis datos». Obtendrás un archivo JSON con todo lo que guardamos de ti, en un formato estructurado y reutilizable.
+
+Rectificación: puedes corregir tu nombre y apellido desde tu perfil, en «Datos personales».
+
+Cancelación (supresión): en «Privacidad y datos» encontrarás «Eliminar mi cuenta». Borra tu cuenta y todos tus datos asociados de forma permanente e irreversible.
+
+Oposición y cualquier otra solicitud: escríbenos a cirta.contacto@gmail.com. Responderemos dentro de los plazos que fija la ley.
 
 ## 5. Conservación
-Conservamos tus datos mientras tu cuenta esté activa o según lo requiera la ley. Puedes solicitar la eliminación de tu cuenta.
+Conservamos tus datos mientras tu cuenta esté activa. Si eliminas tu cuenta, borramos tu perfil, matrículas, progreso, intentos de evaluación, comentarios y registros de acceso. Podemos conservar datos por más tiempo solo cuando una obligación legal lo exija, y únicamente para ese fin.
 
-## 6. Tus derechos
-Puedes acceder, rectificar o eliminar tus datos escribiendo a cirta.contacto@gmail.com.
+## 6. Datos de niños, niñas y adolescentes
+EduRobotics se usa en contextos escolares, por lo que parte de nuestros usuarios son menores de edad. Cuando el estudiante es menor, el consentimiento debe otorgarlo su madre, padre o tutor legal, normalmente a través del establecimiento educacional que contrata la plataforma. Los datos de menores se tratan solo con fines educativos: nunca los usamos con fines comerciales ni publicitarios, ni construimos perfiles con ellos. Si detectas que se creó una cuenta de un menor sin la autorización correspondiente, escríbenos a cirta.contacto@gmail.com y la eliminaremos.
 
-## 7. Seguridad
-Aplicamos medidas razonables para proteger tus datos (contraseñas cifradas, accesos restringidos). Ningún sistema es 100% infalible.`,
+## 7. Con quién los compartimos y transferencias internacionales
+No vendemos tus datos ni los cedemos a terceros con fines comerciales. Para operar la plataforma usamos proveedores de infraestructura que tratan los datos únicamente siguiendo nuestras instrucciones: alojamiento de la base de datos (Supabase, con servidores en Brasil), alojamiento de la aplicación (Railway y Vercel, con servidores en Estados Unidos), el simulador (Fly.io) y el envío de correos (Resend, en Estados Unidos).
+
+Esto implica que tus datos se almacenan y procesan fuera de Chile. Elegimos proveedores que ofrecen garantías contractuales y medidas de seguridad adecuadas para estas transferencias. Los datos de tus docentes y del establecimiento se comparten dentro de la plataforma solo en lo necesario para el seguimiento pedagógico.
+
+## 8. Seguridad
+Aplicamos medidas razonables para proteger tus datos: contraseñas cifradas con hash, comunicación por HTTPS, accesos restringidos por rol y revisión periódica de vulnerabilidades en nuestras dependencias. Ningún sistema es infalible; si ocurriera una vulneración que afecte tus datos, te informaremos y notificaremos a la autoridad conforme a la ley.
+
+## 9. Cambios en esta política
+Si modificamos esta política, publicaremos la nueva versión en esta página con su fecha de actualización. Cuando los cambios sean sustanciales, te pediremos aceptar la nueva versión.`,
     },
     cookies: {
       title: 'Política de Cookies',
