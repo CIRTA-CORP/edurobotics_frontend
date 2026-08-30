@@ -51,7 +51,7 @@ export function CourseColumn() {
   }
 
   return (
-    <div className="flex h-full flex-col border-r border-[#ececf1] bg-white">
+    <div className="flex min-h-0 flex-col border-r border-[#ececf1] bg-white lg:w-[260px] lg:flex-shrink-0">
       {!isTeacher && (
         <div className="flex items-center gap-2 border-b border-[#ececf1] p-3">
           <button

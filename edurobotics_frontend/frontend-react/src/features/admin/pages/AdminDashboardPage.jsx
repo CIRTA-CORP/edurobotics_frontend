@@ -49,6 +49,7 @@ function AdminDashboardLayout() {
     setActiveTab,
     handleLogout,
     isTeacher,
+    selectedCourse,
   } = useAdmin()
 
   const navigate = useNavigate()
@@ -62,10 +63,11 @@ function AdminDashboardLayout() {
     setUser(storedUser)
   }, [navigate, setUser])
 
-  // A teacher has no course-meta tab ('cursos') nor the admin-only tabs; any of
-  // those (default or deep link) falls back to their home, "Progreso".
+  // A teacher has no course-meta tab ('cursos' is only the empty shell behind the
+  // course column; they pick a course there and land on 'taller') nor the
+  // admin-only tabs; any of those (default or deep link) falls back to "Progreso".
   useEffect(() => {
-    if (isTeacher && ['dashboard', 'usuarios', 'especializaciones', 'landing', 'cursos'].includes(activeTab)) {
+    if (isTeacher && ['dashboard', 'usuarios', 'especializaciones', 'landing'].includes(activeTab)) {
       setActiveTab('progreso')
     }
   }, [isTeacher, activeTab, setActiveTab])
@@ -107,6 +109,10 @@ function AdminDashboardLayout() {
         <div className="flex min-h-[calc(100vh-3.5rem)] flex-col lg:flex-row">
           <AdminSidebarNav />
 
+          {/* Second column of the canvas: the course list and, when one is open,
+              its module/unit tree. Present in the Cursos/taller context. */}
+          {(activeTab === 'cursos' || activeTab === 'taller') && <CourseColumn />}
+
           <main className="min-w-0 flex-1 p-3 lg:p-6">
             <div className="mx-auto max-w-6xl">
               {/* Sin barra de migas: el árbol del taller dice dónde estás y el
@@ -115,7 +121,7 @@ function AdminDashboardLayout() {
                 <Suspense fallback={<TabLoader />}>
                   {activeTab === 'dashboard' && <DashboardTab />}
                   {activeTab === 'cursos' && <CoursesTab />}
-                  {activeTab === 'taller' && <WorkshopTab />}
+                  {activeTab === 'taller' && (selectedCourse ? <WorkshopTab /> : <CoursesTab />)}
                   {activeTab === 'especializaciones' && <SpecializationsTab />}
                   {activeTab === 'landing' && <LandingTab />}
                   {activeTab === 'usuarios' && <UsersTab />}
