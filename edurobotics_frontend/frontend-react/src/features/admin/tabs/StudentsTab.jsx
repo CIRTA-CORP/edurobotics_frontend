@@ -48,7 +48,7 @@ function StudentDetail({ studentId, onClose }) {
         <div className="space-y-5">
           {/* Identity card */}
           <div className="flex items-center gap-3">
-            <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-indigo-100 text-sm font-bold text-indigo-700">
+            <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-[#4b46d6]/[0.10] text-sm font-bold text-[#4b46d6]">
               {initials(s.name)}
             </div>
             <div className="min-w-0">
@@ -78,14 +78,14 @@ function StudentDetail({ studentId, onClose }) {
                     <div className="flex items-center justify-between gap-2">
                       <span className="truncate text-sm font-medium text-gray-800" title={c.title}>{c.title}</span>
                       <span className={`flex-shrink-0 rounded-full px-2 py-0.5 text-xs font-semibold ${
-                        c.percentage >= 100 ? 'bg-emerald-100 text-emerald-700' : 'bg-blue-50 text-blue-700'
+                        c.percentage >= 100 ? 'bg-emerald-100 text-emerald-700' : 'bg-[#4b46d6]/[0.07] text-[#4b46d6]'
                       }`}>
                         {c.percentage}%
                       </span>
                     </div>
                     <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-gray-100">
                       <div
-                        className={`h-full rounded-full ${c.percentage >= 100 ? 'bg-emerald-500' : 'bg-blue-500'}`}
+                        className={`h-full rounded-full ${c.percentage >= 100 ? 'bg-emerald-500' : 'bg-[#10b981]'}`}
                         style={{ width: `${c.percentage}%` }}
                       />
                     </div>
@@ -119,7 +119,7 @@ export function StudentsTab() {
   return (
     <div className="space-y-4">
       <div className="flex items-center gap-2">
-        <GraduationCap className="h-5 w-5 text-indigo-600" />
+        <GraduationCap className="h-5 w-5 text-[#16151b]" />
         <h3 className="text-lg font-semibold text-gray-900">Progreso de alumnos</h3>
         {!isLoading && <span className="text-sm text-gray-400">· {students.length}</span>}
       </div>
@@ -188,7 +188,7 @@ export function StudentsTab() {
                   >
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-3">
-                        <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full bg-indigo-50 text-xs font-bold text-indigo-700">
+                        <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full bg-[#4b46d6]/[0.07] text-xs font-bold text-[#4b46d6]">
                           {initials(s.name || s.username)}
                         </div>
                         <div className="min-w-0">

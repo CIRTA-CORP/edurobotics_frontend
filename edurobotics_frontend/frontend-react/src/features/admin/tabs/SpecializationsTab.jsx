@@ -143,16 +143,16 @@ export function SpecializationsTab() {
           specs.map((spec) => (
             <Card
               key={spec.id}
-              className={`cursor-pointer overflow-hidden border transition-all hover:shadow-md ${editingId === spec.id ? 'border-blue-300 ring-1 ring-blue-200' : 'border-gray-200'}`}
+              className={`cursor-pointer overflow-hidden border transition-all hover:shadow-md ${editingId === spec.id ? 'border-[#4b46d6]/40 ring-1 ring-[#4b46d6]/20' : 'border-gray-200'}`}
               onClick={() => startEdit(spec)}
             >
               <CardContent className="flex items-center gap-3 p-3">
-                <div className="h-12 w-16 flex-shrink-0 overflow-hidden rounded-md bg-slate-100">
+                <div className="h-12 w-16 flex-shrink-0 overflow-hidden rounded-md bg-[#f4f3f8]">
                   {spec.image_url ? (
                     <img src={spec.image_url} alt={spec.title} className="h-full w-full object-cover" />
                   ) : (
-                    <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-slate-700 to-slate-900">
-                      <Layers className="h-5 w-5 text-blue-300" />
+                    <div className="flex h-full w-full items-center justify-center bg-[#0a0a0c]">
+                      <Layers className="h-5 w-5 text-white/40" />
                     </div>
                   )}
                 </div>
@@ -207,7 +207,7 @@ export function SpecializationsTab() {
                   value={form.description}
                   onChange={(e) => setForm({ ...form, description: e.target.value })}
                   rows={2}
-                  className="flex min-h-[70px] w-full resize-none rounded-lg border border-gray-200 bg-white px-3 py-2.5 text-sm placeholder:text-gray-400 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+                  className="flex min-h-[70px] w-full resize-none rounded-lg border border-gray-200 bg-white px-3 py-2.5 text-sm placeholder:text-gray-400 focus:border-[#4b46d6] focus:outline-none focus:ring-2 focus:ring-[#4b46d6]/20"
                   placeholder="De qué trata esta especialización…"
                 />
               </div>
@@ -227,7 +227,7 @@ export function SpecializationsTab() {
                     </button>
                   </div>
                 ) : (
-                  <label className="flex h-28 cursor-pointer flex-col items-center justify-center gap-1.5 rounded-lg border-2 border-dashed border-gray-200 bg-gray-50/50 text-gray-400 transition-colors hover:border-blue-300 hover:bg-blue-50/40 hover:text-blue-500">
+                  <label className="flex h-28 cursor-pointer flex-col items-center justify-center gap-1.5 rounded-lg border-2 border-dashed border-gray-200 bg-gray-50/50 text-gray-400 transition-colors hover:border-[#4b46d6]/40 hover:bg-[#4b46d6]/[0.05] hover:text-[#4b46d6]">
                     {uploading ? (
                       <Loader2 className="h-5 w-5 animate-spin" />
                     ) : (
@@ -272,9 +272,9 @@ export function SpecializationsTab() {
                       return (
                         <label
                           key={course.id}
-                          className={`flex cursor-pointer items-center gap-3 rounded-lg border px-3 py-2 transition-all ${checked ? 'border-blue-200 bg-blue-50/80' : 'border-gray-100 hover:bg-gray-50'}`}
+                          className={`flex cursor-pointer items-center gap-3 rounded-lg border px-3 py-2 transition-all ${checked ? 'border-[#4b46d6]/30 bg-[#4b46d6]/[0.07]' : 'border-gray-100 hover:bg-gray-50'}`}
                         >
-                          <input type="checkbox" checked={checked} onChange={() => toggleCourse(course.id)} className="h-4 w-4 accent-blue-600" />
+                          <input type="checkbox" checked={checked} onChange={() => toggleCourse(course.id)} className="h-4 w-4 accent-[#4b46d6]" />
                           <span className="flex-1 truncate text-sm text-gray-800">{course.title}</span>
                           <span className="font-mono text-[11px] text-gray-400">CR-{course.id}</span>
                         </label>
@@ -284,7 +284,7 @@ export function SpecializationsTab() {
                 )}
               </div>
 
-              <Button type="submit" disabled={saving} className="w-full gap-1.5 bg-blue-600 hover:bg-blue-700">
+              <Button type="submit" disabled={saving} className="w-full gap-1.5 ">
                 <Save className="h-4 w-4" />
                 {saving ? 'Guardando…' : editingId ? 'Guardar cambios' : 'Crear especialización'}
               </Button>

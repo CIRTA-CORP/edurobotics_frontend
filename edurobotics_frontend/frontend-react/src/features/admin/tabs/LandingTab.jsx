@@ -71,7 +71,7 @@ function TextArea(props) {
   return (
     <textarea
       {...props}
-      className="flex min-h-[80px] w-full resize-none rounded-lg border border-gray-200 bg-white px-3 py-2.5 text-sm placeholder:text-gray-400 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+      className="flex min-h-[80px] w-full resize-none rounded-lg border border-gray-200 bg-white px-3 py-2.5 text-sm placeholder:text-gray-400 focus:border-[#4b46d6] focus:outline-none focus:ring-2 focus:ring-[#4b46d6]/20"
     />
   )
 }
@@ -159,7 +159,7 @@ export function LandingTab() {
               <ExternalLink className="h-4 w-4" /> Ver landing
             </Button>
           </a>
-          <Button onClick={handleSave} disabled={saving} className="flex-1 justify-center gap-1.5 bg-blue-600 hover:bg-blue-700 sm:flex-none">
+          <Button onClick={handleSave} disabled={saving} className="flex-1 justify-center gap-1.5 sm:flex-none">
             <Save className="h-4 w-4" />
             {saving ? 'Guardando…' : 'Guardar cambios'}
           </Button>
@@ -194,7 +194,7 @@ export function LandingTab() {
               </button>
             </div>
           ) : (
-            <label className="flex h-32 cursor-pointer flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed border-gray-200 bg-gray-50/50 text-gray-400 transition-colors hover:border-blue-300 hover:bg-blue-50/40 hover:text-blue-500">
+            <label className="flex h-32 cursor-pointer flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed border-gray-200 bg-gray-50/50 text-gray-400 transition-colors hover:border-[#4b46d6]/40 hover:bg-[#4b46d6]/[0.05] hover:text-[#4b46d6]">
               {uploading ? (
                 <>
                   <Loader2 className="h-6 w-6 animate-spin" />

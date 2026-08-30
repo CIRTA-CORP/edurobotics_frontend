@@ -60,50 +60,26 @@ function RowMenu({ onEdit, onDelete, label }) {
   )
 }
 
-export function CourseTree({ onOpenDetail }) {
+export function CourseTreeNodes() {
   const {
     selectedCourse, selectedModule, selectedUnit,
     handleModuleSelect, handleUnitSelect,
     handleModuleEdit, handleModuleDelete,
     handleUnitEdit, handleUnitDelete,
     setIsModuleModalOpen, setIsUnitModalOpen,
-    isSelectedCourseLoading, isTeacher,
+    isSelectedCourseLoading,
   } = useAdmin()
 
   // Modules the admin folded by hand; the selected one is open by default.
   const [overrides, setOverrides] = useState({})
 
-  if (!selectedCourse) {
-    return (
-      <div className="p-6 text-center">
-        <p className="text-[13px] text-[#a9a8b4]">Elige un curso en el panel de la izquierda.</p>
-      </div>
-    )
-  }
+  if (!selectedCourse) return null
 
   const modules = selectedCourse.modules || []
 
   return (
-    <div className="flex h-full flex-col">
-      {/* Course header: title, its detail screen, and the course id */}
-      <div className="border-b border-[#ececf1] px-4 py-3.5">
-        <p className="truncate text-[14px] font-semibold text-[#16151b]" title={selectedCourse.title}>
-          {selectedCourse.title}
-        </p>
-        <div className="mt-1.5 flex items-center gap-2">
-          {!isTeacher && (
-            <button
-              onClick={onOpenDetail}
-              className="text-[12px] font-medium text-[#4b46d6] hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4b46d6] rounded"
-            >
-              Detalle del curso
-            </button>
-          )}
-          <span className="font-mono text-[10px] text-[#b3b2be]">#{selectedCourse.id}</span>
-        </div>
-      </div>
-
-      <nav className="flex-1 overflow-y-auto p-2.5" aria-label="Contenido del curso">
+    <div className="ml-3 border-l border-[#ececf1] pl-1.5">
+      <nav className="py-1" aria-label="Contenido del curso">
         {isSelectedCourseLoading ? (
           <p className="px-2 py-3 text-[13px] text-[#a9a8b4]">Cargando…</p>
         ) : modules.length === 0 ? (
@@ -214,15 +190,13 @@ export function CourseTree({ onOpenDetail }) {
         )}
       </nav>
 
-      <div className="border-t border-[#ececf1] p-2.5">
-        <button
-          onClick={() => setIsModuleModalOpen(true)}
-          className="flex w-full items-center justify-center gap-2 rounded-lg border border-[#e9e9ee] py-2 text-[13px] font-semibold text-[#55545f] transition-colors hover:border-[#c4c3cd] hover:text-[#16151b] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4b46d6]"
-        >
-          <Plus className="h-4 w-4" />
-          Crear módulo
-        </button>
-      </div>
+      <button
+        onClick={() => setIsModuleModalOpen(true)}
+        className="mb-1 ml-2 flex items-center gap-2 rounded-lg px-2 py-1.5 text-[13px] text-[#8b8a95] transition-colors hover:bg-[#f4f3f8] hover:text-[#16151b] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4b46d6]"
+      >
+        <Plus className="h-3.5 w-3.5" />
+        Crear módulo
+      </button>
     </div>
   )
 }

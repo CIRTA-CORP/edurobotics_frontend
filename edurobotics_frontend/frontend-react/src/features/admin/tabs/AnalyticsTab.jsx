@@ -56,7 +56,7 @@ function Card({ icon, label, value, sub }) {
 
 function InsufficientData({ note }) {
   return (
-    <div className="flex items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-700">
+    <div className="flex items-start gap-2 rounded-lg border border-[#b45309]/25 bg-[#fffbeb] px-3 py-2 text-xs text-[#b45309]">
       <Info className="mt-0.5 h-3.5 w-3.5 flex-shrink-0" />
       <span>
         Datos insuficientes: este curso tiene menos de 3 alumnos con señal, así que no mostramos
@@ -120,16 +120,24 @@ function ProgressSection({ courseId }) {
               return (
                 <div key={step.content_id}>
                   <div className="mb-0.5 flex items-center justify-between text-xs">
-                    <span className={`truncate pr-2 ${afterDrop ? 'font-semibold text-rose-600' : 'text-gray-600'}`} title={step.title}>
-                      {step.title}
+                    <span className="flex min-w-0 items-center gap-2 pr-2">
+                      <span className={`truncate ${afterDrop ? 'font-semibold text-[#b45309]' : 'text-[#55545f]'}`} title={step.title}>
+                        {step.title}
+                      </span>
+                      {/* El color nunca va solo: el estado se dice. */}
+                      {afterDrop && (
+                        <span className="flex-shrink-0 rounded-full bg-[#b45309]/[0.12] px-2 py-0.5 text-[10px] font-semibold text-[#b45309]">
+                          Mayor caída
+                        </span>
+                      )}
                     </span>
-                    <span className={`flex-shrink-0 ${afterDrop ? 'font-semibold text-rose-600' : 'text-gray-400'}`}>
+                    <span className={`flex-shrink-0 font-mono tabular-nums ${afterDrop ? 'font-semibold text-[#b45309]' : 'text-[#a9a8b4]'}`}>
                       {insufficient ? '…' : step.pct == null ? '—' : `${step.pct}% · ${step.completed}`}
                     </span>
                   </div>
                   <div className="h-2 overflow-hidden rounded-full bg-gray-100">
                     <div
-                      className={`h-full rounded-full ${afterDrop ? 'bg-rose-500' : 'bg-blue-500'}`}
+                      className={`h-full rounded-full ${afterDrop ? 'bg-[#b45309]' : 'bg-[#4b46d6]'}`}
                       style={{ width: `${insufficient ? 0 : Math.max(step.pct || 0, 3)}%` }}
                     />
                   </div>
@@ -159,7 +167,7 @@ function ProgressSection({ courseId }) {
             {data.at_risk.map((r) => (
               <li key={r.user_id} className="flex items-center justify-between rounded-lg bg-gray-50 px-3 py-2 text-sm">
                 <span className="flex items-center gap-2 text-gray-700">
-                  <AlertTriangle className="h-3.5 w-3.5 text-amber-500" />
+                  <AlertTriangle className="h-3.5 w-3.5 text-[#b45309]" />
                   {r.name || `Usuario ${r.user_id}`}
                 </span>
                 <span className="text-xs text-gray-400">{r.last_activity ? `última: ${fmtDate(r.last_activity)}` : 'sin señal'}</span>
@@ -262,7 +270,7 @@ function PerformanceSection({ courseId }) {
             {questions.map((q) => (
               <li key={q.question_id} className="flex items-center justify-between gap-3 rounded-lg bg-gray-50 px-3 py-2">
                 <span className="truncate text-sm text-gray-700" title={q.question_text}>{q.question_text}</span>
-                <span className="flex-shrink-0 rounded-full bg-rose-100 px-2 py-0.5 text-xs font-semibold text-rose-700">
+                <span className="flex-shrink-0 rounded-full bg-[#b45309]/[0.12] px-2 py-0.5 font-mono text-xs font-semibold tabular-nums text-[#b45309]">
                   {insufficient ? '…' : `${q.error_rate}% error`}
                 </span>
               </li>
@@ -336,7 +344,7 @@ export function AnalyticsTab() {
     <div className="space-y-4">
       <div className="flex flex-wrap items-center gap-2">
         <BarChart3 className="h-5 w-5 text-gray-700" />
-        <h3 className="text-lg font-semibold text-gray-900">Analítica</h3>
+        <h2 className="text-[24px] font-bold tracking-[-0.012em] text-[#16151b]">Analítica</h2>
         <select
           value={courseId ?? ''}
           onChange={(e) => {
@@ -344,7 +352,7 @@ export function AnalyticsTab() {
             setLocalCourseId(id)
             setSelectedCourseId(id)
           }}
-          className="rounded-lg border border-gray-200 bg-white px-2 py-1 text-xs text-gray-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+          className="rounded-lg border border-gray-200 bg-white px-2 py-1 text-xs text-gray-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4b46d6]"
           aria-label="Curso a analizar"
         >
           {courses.map((c) => (

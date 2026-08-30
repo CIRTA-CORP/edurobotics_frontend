@@ -10,7 +10,7 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
-import { Users, Shield, GraduationCap, BookOpen, Loader2 } from 'lucide-react'
+import { Shield, GraduationCap, BookOpen, Loader2, Search } from 'lucide-react'
 import { getAdminUsers, updateUserRole } from '@/features/courses/services/courses'
 import {
   getUserAssignedCourses,
@@ -98,6 +98,8 @@ export function UsersTab() {
   const queryClient = useQueryClient()
   const me = getStoredUser()
   const [assignTeacher, setAssignTeacher] = useState(null)
+  const [query, setQuery] = useState('')
+  const [roleFilter, setRoleFilter] = useState('all')
 
   const { data, isLoading } = useQuery({
     queryKey: ['admin-users'],
@@ -120,21 +122,74 @@ export function UsersTab() {
     roleMutation.mutate({ userId: user.id, role: nextRole })
   }
 
-  const users = data?.users || []
+  const allUsers = data?.users || []
+
+  // Con la lista plana ya no se navega: buscador por nombre/usuario/correo y
+  // filtro por rol. Se filtra en cliente porque la lista del piloto es corta.
+  const q = query.trim().toLowerCase()
+  const users = allUsers.filter((u) => {
+    if (roleFilter !== 'all' && u.role !== roleFilter) return false
+    if (!q) return true
+    return [u.name, u.username, u.email].some((f) => (f || '').toLowerCase().includes(q))
+  })
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center gap-2">
-        <Users className="w-5 h-5 text-gray-700" />
-        <h3 className="text-lg font-semibold text-gray-900">Usuarios registrados</h3>
-        {!isLoading && <span className="text-sm text-gray-400">· {users.length}</span>}
+      <div className="flex flex-wrap items-end justify-between gap-3">
+        <div>
+          <div className="font-mono text-[10px] font-semibold uppercase tracking-[0.14em] text-[#a9a8b4]">
+            Usuarios y progreso
+          </div>
+          <h2 className="mt-2 text-[24px] font-bold tracking-[-0.012em] text-[#16151b]">
+            Usuarios registrados
+          </h2>
+        </div>
+        {!isLoading && (
+          <p className="font-mono text-[12px] tabular-nums text-[#8b8a95]">
+            {users.length}{users.length !== allUsers.length && ` de ${allUsers.length}`}
+          </p>
+        )}
+      </div>
+
+      <div className="flex flex-wrap items-center gap-2">
+        <div className="relative min-w-0 flex-1 sm:max-w-xs">
+          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#b3b2be]" />
+          <input
+            type="search"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Buscar por nombre, usuario o correo"
+            aria-label="Buscar usuarios"
+            className="h-9 w-full rounded-lg border border-[#e9e9ee] bg-white pl-9 pr-3 text-[13.5px] text-[#16151b] placeholder:text-[#b3b2be] focus:outline-none focus:ring-2 focus:ring-[#4b46d6]/30"
+          />
+        </div>
+        <div className="flex items-center gap-[3px] rounded-[10px] bg-[#f4f3f8] p-[3px]">
+          {[
+            { id: 'all', label: 'Todos' },
+            { id: 'student', label: 'Alumnos' },
+            { id: 'teacher', label: 'Profesores' },
+            { id: 'admin', label: 'Admins' },
+          ].map((r) => (
+            <button
+              key={r.id}
+              onClick={() => setRoleFilter(r.id)}
+              className={`grid h-[28px] place-items-center rounded-lg px-3 text-[12.5px] font-semibold transition-colors ${
+                roleFilter === r.id ? 'bg-white text-[#16151b] shadow-sm' : 'text-[#8b8a95] hover:text-[#16151b]'
+              }`}
+            >
+              {r.label}
+            </button>
+          ))}
+        </div>
       </div>
 
       <div className="overflow-hidden rounded-xl border border-gray-200 bg-white">
         {isLoading ? (
           <div className="flex justify-center py-10"><Loader2 className="h-6 w-6 animate-spin text-gray-400" /></div>
         ) : users.length === 0 ? (
-          <div className="p-6 text-center text-sm text-gray-400">Aún no hay usuarios.</div>
+          <div className="p-6 text-center text-sm text-[#a9a8b4]">
+            {allUsers.length === 0 ? 'Aún no hay usuarios.' : 'Ningún usuario coincide con la búsqueda.'}
+          </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
@@ -203,9 +258,18 @@ export function UsersTab() {
           </div>
         )}
       </div>
-      <p className="text-[11px] text-gray-400">
-        "Iniciados" = cursos con algún avance. "Completados" = cursos con todo el contenido y los quizzes aprobados. No puedes cambiar tu propio rol. Los profesores editan solo los cursos que les asignas.
-      </p>
+      {/* Las salvaguardas se dicen aquí, no solo cuando el intento falla. */}
+      <div className="space-y-1.5 text-[11.5px] leading-relaxed text-[#8b8a95]">
+        <p>
+          <strong className="font-semibold text-[#55545f]">Iniciados</strong> son los cursos con
+          algún avance; <strong className="font-semibold text-[#55545f]">completados</strong>, los
+          que tienen todo el contenido visto y los quizzes aprobados.
+        </p>
+        <p>
+          No puedes cambiar tu propio rol, y no se puede degradar al último administrador — si lo
+          intentas, el cambio se rechaza. Los profesores editan solo los cursos que les asignas.
+        </p>
+      </div>
 
       <TeacherCoursesDrawer teacher={assignTeacher} onClose={() => setAssignTeacher(null)} />
     </div>

@@ -16,6 +16,7 @@ import { ErrorBoundary } from '@/shared/components/ErrorBoundary'
 import { AdminProvider, useAdmin } from '@/features/admin/context/AdminContext'
 import { AdminSidebarNav } from '@/features/admin/components/AdminSidebarNav'
 import { CourseCreateDrawer } from '@/features/admin/components/CourseCreateDrawer'
+import { CourseColumn } from '@/features/admin/components/CourseColumn'
 
 // Lazy-load each tab so the admin shell stays light. The heavy Content tab
 // (TipTap editor) and the student preview only download when actually opened.

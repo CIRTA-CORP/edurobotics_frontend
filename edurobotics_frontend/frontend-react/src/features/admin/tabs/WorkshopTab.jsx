@@ -16,7 +16,6 @@ import { ContentForm } from '@/features/admin/features/content/ContentForm'
 import { QuizEditor } from '@/features/admin/features/quizzes/QuizEditor'
 import { ModuleForm } from '@/features/admin/features/modules/ModuleForm'
 import { UnitForm } from '@/features/admin/features/units/UnitForm'
-import { CourseTree } from '@/features/admin/features/workshop/CourseTree'
 import { useAdmin } from '@/features/admin/context/AdminContext'
 
 function EmptyEditor({ hasModules }) {
@@ -42,7 +41,6 @@ function EmptyEditor({ hasModules }) {
 export function WorkshopTab() {
   const {
     selectedCourse, selectedModule, selectedUnit,
-    setActiveTab,
     expandedSections, toggleSection, handleContentDelete, contentHooks,
     isModuleModalOpen, setIsModuleModalOpen,
     isModuleEditModalOpen, setIsModuleEditModalOpen,
@@ -115,14 +113,8 @@ export function WorkshopTab() {
 
   return (
     <>
-      <div className="flex min-h-[calc(100vh-8rem)] overflow-hidden rounded-2xl border border-[#e9e9ee] bg-white">
-        {/* ── Árbol ── */}
-        <div className="hidden w-[290px] flex-shrink-0 border-r border-[#ececf1] bg-[#fcfcfd] lg:block">
-          <CourseTree onOpenDetail={() => setActiveTab('cursos')} />
-        </div>
-
-        {/* ── Editor ── */}
-        <div className="min-w-0 flex-1">
+      <div className="min-h-[calc(100vh-8rem)] overflow-hidden rounded-2xl border border-[#e9e9ee] bg-white">
+        <div className="min-w-0">
           {!selectedUnit ? (
             <EmptyEditor hasModules={hasModules} />
           ) : (

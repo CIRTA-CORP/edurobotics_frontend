@@ -38,6 +38,9 @@ export function CourseForm({
   expanded,
   onToggle,
   bare = false,       // when true, render just the fields (e.g. inside a Drawer)
+  formId,             // lets a button outside the form submit it
+  hideSubmit = false, // the detail screen puts "Guardar" in its own header
+  hidePrereqs = false,// ...and the prerequisites in its own column
 }) {
   const isCreateMode = mode === 'create'
   const [uploadingImage, setUploadingImage] = useState(false)
@@ -72,7 +75,7 @@ export function CourseForm({
   const content = (
     <>
           {/* ── Course details form ── */}
-          <form onSubmit={onSubmit} className="space-y-4">
+          <form id={formId} onSubmit={onSubmit} className="space-y-4">
             {/* Title */}
             <div className="space-y-1.5">
               <label className="text-xs font-semibold text-gray-600 uppercase tracking-wide">
@@ -203,14 +206,14 @@ export function CourseForm({
             </div>
 
             {/* Action buttons */}
-            {isCreateMode ? (
-              <Button type="submit" disabled={isSubmitting} className="w-full gap-1.5 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed">
+            {hideSubmit ? null : isCreateMode ? (
+              <Button type="submit" disabled={isSubmitting} className="w-full gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed">
                 <Plus className="w-4 h-4" />
                 {isSubmitting ? 'Creando...' : 'Crear Curso'}
               </Button>
             ) : (
               <div className="flex gap-2 pt-2">
-                <Button type="submit" disabled={isSubmitting} className="flex-1 gap-1.5 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed">
+                <Button type="submit" disabled={isSubmitting} className="flex-1 gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed">
                   <Save className="w-4 h-4" />
                   {isSubmitting ? 'Guardando...' : 'Guardar cambios'}
                 </Button>
@@ -227,7 +230,7 @@ export function CourseForm({
           </form>
 
           {/* ── Prerequisites (edit mode only) ── */}
-          {!isCreateMode && (
+          {!isCreateMode && !hidePrereqs && (
             <div className="border-t border-gray-100 pt-5">
               <div className="flex items-center gap-2 mb-1">
                 <GitBranch className="w-4 h-4 text-gray-500" />
