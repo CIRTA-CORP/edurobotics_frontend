@@ -87,6 +87,32 @@ export const resetPassword = async ({ token, new_password, new_password_confirm 
 }
 
 /**
+ * Portabilidad (Ley 21.719): descarga todo lo que el backend guarda del usuario
+ * autenticado. Devuelve el objeto ya parseado; el llamador decide qué hacer con él.
+ */
+export const exportMyData = async () => {
+  const response = await fetch(`${API_BASE}/api/users/me/export`, {
+    headers: { Authorization: `Bearer ${getToken()}` },
+  })
+  if (!response.ok) throw new Error(await parseError(response))
+  const data = await response.json()
+  return data.data
+}
+
+/**
+ * Supresión (Ley 21.719): elimina la cuenta y todos sus datos. Irreversible.
+ * No limpia el token — de eso se encarga quien llama, junto con el logout.
+ */
+export const deleteMyAccount = async () => {
+  const response = await fetch(`${API_BASE}/api/users/me`, {
+    method: 'DELETE',
+    headers: { Authorization: `Bearer ${getToken()}` },
+  })
+  if (!response.ok) throw new Error(await parseError(response))
+  return response.json()
+}
+
+/**
  * Decode JWT token payload (without verification - just for reading data)
  */
 const decodeToken = (token) => {
