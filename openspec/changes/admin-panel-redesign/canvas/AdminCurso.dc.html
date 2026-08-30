@@ -1,0 +1,195 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./vendor/react.js"></script>
+<script src="./vendor/react-dom.js"></script>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <style>
+    body { margin: 0; font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Helvetica, Arial, sans-serif; -webkit-font-smoothing: antialiased; }
+    a { color: #4b46d6; text-decoration: none; }
+    a:hover { color: #3a35b0; }
+    button { font: inherit; border: 0; background: none; cursor: pointer; color: inherit; }
+    input, textarea { font: inherit; }
+    .mono { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+    .lbl { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 9.5px; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; color: #a9a8b4; }
+    .fl { display: block; font-size: 11.5px; font-weight: 600; color: #55545f; margin-bottom: 7px; }
+    .fi { width: 100%; box-sizing: border-box; height: 40px; padding: 0 12px; border-radius: 10px; border: 1px solid #e3e2ea; font-size: 13.5px; color: #16151b; background: #ffffff; }
+    .card { border: 1px solid #e9e9ee; border-radius: 14px; }
+    .h1 { font-family: 'Iowan Old Style', 'Palatino Linotype', Palatino, Georgia, serif; font-size: 28px; line-height: 1.16; font-weight: 700; letter-spacing: -0.014em; margin: 14px 0 0; }
+    .th { text-align: left; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 9.5px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: #a9a8b4; padding: 0 14px 11px; }
+    .td { padding: 13px 14px; font-size: 13.5px; color: #33323b; border-top: 1px solid #f2f1f6; }
+    .num { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-variant-numeric: tabular-nums; }
+    .pri { display: inline-flex; align-items: center; gap: 8px; height: 40px; padding: 0 18px; border-radius: 11px; background: #16151b; color: #ffffff; font-size: 13px; font-weight: 600; }
+    .sec { display: inline-flex; align-items: center; gap: 7px; height: 38px; padding: 0 15px; border-radius: 10px; border: 1px solid #e3e2ea; font-size: 12.5px; font-weight: 600; color: #55545f; }
+  </style>
+</helmet>
+
+<div style="width: 1440px; min-height: 1120px; display: flex; flex-direction: column; background: #ffffff; color: #16151b;">
+
+  <header style="height: 56px; flex-shrink: 0; display: flex; align-items: center; justify-content: space-between; padding: 0 18px; border-bottom: 1px solid #ececf1;">
+    <div style="display: flex; align-items: center; gap: 14px;">
+      <div style="display: flex; align-items: center; gap: 10px;">
+        <div style="width: 28px; height: 28px; border-radius: 8px; background: #16151b; display: grid; place-items: center;">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M6 19h5 M8.5 19v-4.5 M8.5 14.5L13 10 M13 10h4.5 M17.5 10V6"></path></svg>
+        </div>
+        <span style="font-size: 14.5px; font-weight: 600; letter-spacing: -0.01em;">EduRobotics</span>
+      </div>
+      <span style="padding: 3px 9px; border-radius: 99px; background: #16151b; color: #ffffff; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 9.5px; font-weight: 700; letter-spacing: 0.08em;">ADMIN</span>
+    </div>
+    <div style="display: flex; align-items: center; gap: 12px;">
+      <div style="display: flex; align-items: center; gap: 3px; padding: 3px; border-radius: 10px; background: #f4f3f8;">
+        <span style="height: 30px; padding: 0 13px; display: grid; place-items: center; border-radius: 8px; background: #ffffff; color: #16151b; font-size: 12.5px; font-weight: 600; box-shadow: 0 1px 3px rgba(22,21,27,0.09);">Vista admin</span>
+        <span style="height: 30px; padding: 0 13px; display: grid; place-items: center; border-radius: 8px; color: #8b8a95; font-size: 12.5px; font-weight: 600;">Vista estudiante</span>
+      </div>
+      <div style="width: 1px; height: 20px; background: #ececf1;"></div>
+      <button title="Simulador" style="width: 32px; height: 32px; border-radius: 8px; display: grid; place-items: center; color: #8b8a95;"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M6 6h12v12H6z M10 10h4v4h-4z M9 3v3 M15 3v3 M9 18v3 M15 18v3 M3 9h3 M3 15h3 M18 9h3 M18 15h3"></path></svg></button>
+      <button title="Ir a la página principal" style="width: 32px; height: 32px; border-radius: 8px; display: grid; place-items: center; color: #8b8a95;"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 11l8-7 8 7 M6 10v10h12V10"></path></svg></button>
+      <div style="width: 28px; height: 28px; border-radius: 99px; background: #16151b; color: #ffffff; display: grid; place-items: center; font-size: 10.5px; font-weight: 700;">MO</div>
+      <button title="Cerrar sesión" style="width: 32px; height: 32px; border-radius: 8px; display: grid; place-items: center; color: #b3b2be;"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M15 17l5-5-5-5 M20 12H9 M12 3H6a1 1 0 00-1 1v16a1 1 0 001 1h6"></path></svg></button>
+    </div>
+  </header>
+
+  <div style="flex: 1; display: flex; min-height: 0;">
+    <nav style="width: 236px; flex-shrink: 0; border-right: 1px solid #ececf1; background: #fafafa; padding: 16px 12px;">
+      <div class="lbl" style="padding: 0 10px 10px;">Panel</div>
+      <div style="display: flex; flex-direction: column; gap: 2px;">
+        <div style="display: flex; align-items: center; gap: 10px; height: 36px; padding: 0 11px; border-radius: 9px; font-size: 13px; font-weight: 500; color: #7b7a86;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0;"><path d="M4 13h6V4H4z M14 20h6v-9h-6z M4 20h6v-4H4z M14 8h6V4h-6z"></path></svg>Dashboard</div>
+        <div style="display: flex; align-items: center; gap: 10px; height: 36px; padding: 0 11px; border-radius: 9px; font-size: 13px; font-weight: 500; color: #7b7a86;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0;"><path d="M16 20v-1.5a4 4 0 00-4-4H6a4 4 0 00-4 4V20 M9 11a3.5 3.5 0 100-7 3.5 3.5 0 000 7 M22 20v-1.5a4 4 0 00-3-3.9 M16.5 4.1a4 4 0 010 7.8"></path></svg>Usuarios</div>
+        <div style="display: flex; align-items: center; gap: 10px; height: 36px; padding: 0 11px; border-radius: 9px; font-size: 13px; font-weight: 500; color: #7b7a86;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0;"><path d="M4 8l8-4 8 4-8 4z M4 8v5c0 2.2 3.6 4 8 4s8-1.8 8-4V8"></path></svg>Progreso</div>
+        <div style="display: flex; align-items: center; gap: 10px; height: 36px; padding: 0 11px; border-radius: 9px; font-size: 13px; font-weight: 500; color: #7b7a86;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0;"><path d="M4 20V10 M10 20V4 M16 20v-7 M22 20H2"></path></svg>Analítica</div>
+      </div>
+      <div class="lbl" style="padding: 20px 10px 10px;">Contenido</div>
+      <div style="display: flex; flex-direction: column; gap: 2px;">
+        <div style="display: flex; align-items: center; gap: 10px; height: 36px; padding: 0 11px; border-radius: 9px; font-size: 13px; font-weight: 600; background: #16151b; color: #ffffff;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0;"><path d="M4 4h7a2 2 0 012 2v14a2 2 0 00-2-2H4z M20 4h-7a2 2 0 00-2 2v14a2 2 0 012-2h7z"></path></svg>Cursos<span class="mono" style="margin-left: auto; font-size: 10px; padding: 1px 6px; border-radius: 99px; background: rgba(255,255,255,0.22); color: #ffffff;">4</span></div>
+        <div style="display: flex; align-items: center; gap: 10px; height: 36px; padding: 0 11px; border-radius: 9px; font-size: 13px; font-weight: 500; color: #7b7a86;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0;"><path d="M4 8l8-4 8 4-8 4z M4 8v5c0 2.2 3.6 4 8 4s8-1.8 8-4V8"></path></svg>Especializaciones</div>
+      </div>
+      <div class="lbl" style="padding: 20px 10px 10px;">Sitio</div>
+      <div style="display: flex; align-items: center; gap: 10px; height: 36px; padding: 0 11px; border-radius: 9px; font-size: 13px; font-weight: 500; color: #7b7a86;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0;"><path d="M12 3a9 9 0 100 18 9 9 0 000-18 M3 12h18 M12 3c2.5 2.5 3.8 5.6 3.8 9s-1.3 6.5-3.8 9c-2.5-2.5-3.8-5.6-3.8-9s1.3-6.5 3.8-9z"></path></svg>Landing</div>
+    </nav>
+
+    <aside style="width: 320px; flex-shrink: 0; border-right: 1px solid #ececf1; padding: 14px;">
+      <div style="display: flex; align-items: center; gap: 8px;">
+        <button class="pri" style="flex: 1; justify-content: center; height: 38px; font-size: 12.5px;">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14 M5 12h14"></path></svg>
+          Crear curso
+        </button>
+        <button class="sec" title="Importar respaldo (.json)" style="width: 38px; height: 38px; padding: 0; justify-content: center;">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 16V5 M7.5 9.5L12 5l4.5 4.5 M5 19h14"></path></svg>
+        </button>
+      </div>
+
+      <div style="margin-top: 16px; display: flex; flex-direction: column; gap: 2px;">
+        <button style="width: 100%; text-align: left; display: flex; align-items: center; gap: 9px; padding: 9px 10px; border-radius: 9px; font-size: 13px; color: #7b7a86;"><span style="width: 8px; height: 8px; border-radius: 99px; background: #10b981; flex-shrink: 0;"></span><span style="flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">Introducción a la robótica</span><span class="mono" style="font-size: 9.5px; color: #c4c3cd; flex-shrink: 0;">CR-1</span></button>
+        <button style="width: 100%; text-align: left; display: flex; align-items: center; gap: 9px; padding: 9px 10px; border-radius: 9px; font-size: 13px; background: rgba(75,70,214,0.08); color: #4b46d6; font-weight: 600; box-shadow: inset 2.5px 0 0 0 #4b46d6;"><span style="width: 8px; height: 8px; border-radius: 99px; background: #d97706; flex-shrink: 0;"></span><span style="flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">Robots colaborativos UR5</span><span class="mono" style="font-size: 9.5px; color: #c4c3cd; flex-shrink: 0;">CR-2</span></button>
+        <button style="width: 100%; text-align: left; display: flex; align-items: center; gap: 9px; padding: 9px 10px; border-radius: 9px; font-size: 13px; color: #7b7a86;"><span style="width: 8px; height: 8px; border-radius: 99px; background: #b4425a; flex-shrink: 0;"></span><span style="flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">Visión artificial aplicada</span><span class="mono" style="font-size: 9.5px; color: #c4c3cd; flex-shrink: 0;">CR-3</span></button>
+        <button style="width: 100%; text-align: left; display: flex; align-items: center; gap: 9px; padding: 9px 10px; border-radius: 9px; font-size: 13px; color: #7b7a86;"><span style="width: 8px; height: 8px; border-radius: 99px; background: #b4425a; flex-shrink: 0;"></span><span style="flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">Integración con PLC</span><span class="mono" style="font-size: 9.5px; color: #c4c3cd; flex-shrink: 0;">CR-4</span></button>
+      </div>
+
+      <div style="margin-top: 20px; padding-left: 34px; position: relative;">
+        <div style="position: absolute; left: 11px; top: 0; bottom: 8px; width: 2px; background: #eceaf2;"></div>
+        <div style="position: relative; margin-bottom: 16px; min-height: 24px;"><span style="position: absolute; left: 0; width: 24px; height: 24px; border-radius: 99px; display: grid; place-items: center; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 11px; font-weight: 700; background: #eceaf2; color: #8b8a95;">1</span><div style="display: flex; align-items: center; gap: 8px; min-height: 24px;"><span style="flex: 1; min-width: 0; font-size: 13px; font-weight: 600; color: #7b7a86; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">Fundamentos</span><span class="mono" style="font-size: 10px; color: #bfbec9;">3</span></div></div>
+        <div style="position: relative; margin-bottom: 16px; min-height: 24px;"><span style="position: absolute; left: 0; width: 24px; height: 24px; border-radius: 99px; display: grid; place-items: center; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 11px; font-weight: 700; background: #eceaf2; color: #8b8a95;">2</span><div style="display: flex; align-items: center; gap: 8px; min-height: 24px;"><span style="flex: 1; min-width: 0; font-size: 13px; font-weight: 600; color: #7b7a86; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">Programación por bloques</span><span class="mono" style="font-size: 10px; color: #bfbec9;">4</span></div></div>
+        <div style="position: relative; margin-bottom: 16px; min-height: 24px;"><span style="position: absolute; left: 0; width: 24px; height: 24px; border-radius: 99px; display: grid; place-items: center; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 11px; font-weight: 700; background: #eceaf2; color: #8b8a95;">3</span><div style="display: flex; align-items: center; gap: 8px; min-height: 24px;"><span style="flex: 1; min-width: 0; font-size: 13px; font-weight: 600; color: #7b7a86; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">Celda y seguridad</span><span class="mono" style="font-size: 10px; color: #bfbec9;">2</span></div></div>
+      </div>
+    </aside>
+
+    <div style="flex: 1; min-width: 0; padding: 22px 28px 48px;">
+      <div style="display: flex; align-items: center; justify-content: space-between; gap: 20px;">
+        <span class="mono" style="font-size: 10.5px; letter-spacing: 0.1em; text-transform: uppercase; color: #a9a8b4;">Cursos · CR-2</span>
+        <div style="display: flex; align-items: center; gap: 9px;">
+          <button class="sec"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z M12 15a3 3 0 100-6 3 3 0 000 6"></path></svg>Ver como alumno</button>
+          <button class="sec"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M7 8V3h10v5 M7 18H5V8h14v10h-2 M7 14h10v7H7z"></path></svg>Descargar PDF</button>
+          <button class="sec"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v11 M7.5 11l4.5 4.5 4.5-4.5 M5 20h14"></path></svg>Descargar respaldo</button>
+          <button class="pri" style="height: 38px;"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7"></path></svg>Guardar cambios</button>
+        </div>
+      </div>
+
+      <div style="display: flex; align-items: center; gap: 12px;">
+        <h1 class="h1">Programación de robots colaborativos UR5</h1>
+        <span style="margin-top: 16px; display: inline-flex; align-items: center; gap: 6px; height: 26px; padding: 0 11px; border-radius: 99px; background: #ecfdf5; color: #047857; font-size: 11.5px; font-weight: 600;">
+          <span style="width: 6px; height: 6px; border-radius: 99px; background: #10b981;"></span>Publicado
+        </span>
+      </div>
+
+      <div style="margin-top: 18px; display: inline-flex; align-items: center; gap: 3px; padding: 3px; border-radius: 10px; background: #f4f3f8;">
+        <span style="height: 34px; padding: 0 15px; display: grid; place-items: center; border-radius: 8px; background: #ffffff; color: #16151b; font-size: 13px; font-weight: 600; box-shadow: 0 1px 3px rgba(22,21,27,0.09);">Detalle</span>
+        <span style="height: 34px; padding: 0 15px; display: grid; place-items: center; border-radius: 8px; color: #8b8a95; font-size: 13px; font-weight: 600;">Métricas</span>
+        <span style="height: 34px; padding: 0 15px; display: grid; place-items: center; border-radius: 8px; color: #8b8a95; font-size: 13px; font-weight: 600;">Feedback</span>
+      </div>
+
+      <div style="margin-top: 24px; display: flex; align-items: flex-start; gap: 28px;">
+
+        <div style="width: 460px; flex-shrink: 0; display: flex; flex-direction: column; gap: 18px;">
+          <div>
+            <label class="fl">Título del curso *</label>
+            <input class="fi" value="Programación de robots colaborativos UR5">
+          </div>
+          <div>
+            <label class="fl">Descripción</label>
+            <textarea style="width: 100%; box-sizing: border-box; min-height: 86px; padding: 11px 12px; border-radius: 10px; border: 1px solid #e3e2ea; font-size: 13.5px; line-height: 1.6; color: #16151b; resize: none;">Del primer movimiento a una celda segura: coordenadas, programación por bloques y los límites de fuerza que hacen que un brazo pueda trabajar al lado de una persona.</textarea>
+          </div>
+          <div>
+            <label class="fl">Imagen de portada</label>
+            <div style="position: relative; height: 148px; border-radius: 12px; overflow: hidden; border: 1px solid #e9e9ee; background: #0a0a0c;">
+              <div style="position: absolute; inset: 0; background-image: radial-gradient(circle, rgba(255,255,255,0.5) 1px, transparent 1px); background-size: 20px 20px; -webkit-mask-image: radial-gradient(70% 80% at 50% 70%, #000 5%, transparent 72%); mask-image: radial-gradient(70% 80% at 50% 70%, #000 5%, transparent 72%);"></div>
+              <button title="Quitar imagen" style="position: absolute; top: 10px; right: 10px; width: 28px; height: 28px; border-radius: 99px; background: rgba(0,0,0,0.55); display: grid; place-items: center;">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 6l12 12 M18 6L6 18"></path></svg>
+              </button>
+              <span class="mono" style="position: absolute; left: 12px; bottom: 10px; font-size: 10px; color: rgba(255,255,255,0.6);">portada-ur5.jpg · PNG, JPG, WEBP · máx 5 MB</span>
+            </div>
+          </div>
+          <div>
+            <label class="fl">Nivel</label>
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <span style="flex: 1; height: 38px; display: flex; align-items: center; justify-content: center; gap: 6px; border-radius: 9px; font-size: 12.5px; font-weight: 600; border: 1px solid #e3e2ea; background: #ffffff; color: #7b7a86;">Principiante</span>
+              <span style="flex: 1; height: 38px; display: flex; align-items: center; justify-content: center; gap: 6px; border-radius: 9px; font-size: 12.5px; font-weight: 600; border: 1px solid #cdcbe8; background: rgba(75,70,214,0.08); color: #4b46d6;">Intermedio</span>
+              <span style="flex: 1; height: 38px; display: flex; align-items: center; justify-content: center; gap: 6px; border-radius: 9px; font-size: 12.5px; font-weight: 600; border: 1px solid #e3e2ea; background: #ffffff; color: #7b7a86;">Avanzado</span>
+            </div>
+          </div>
+          <div style="display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 14px 16px; border-radius: 12px; border: 1px solid #e9e9ee;">
+            <div>
+              <div style="font-size: 13.5px; font-weight: 600;">Publicado</div>
+              <div style="font-size: 12px; color: #8b8a95; margin-top: 3px;">Visible para estudiantes. Al despublicar solo lo ven los admin.</div>
+            </div>
+            <span style="width: 44px; height: 25px; border-radius: 99px; background: #10b981; display: flex; align-items: center; padding: 0 3px; flex-shrink: 0;">
+              <span style="margin-left: auto; width: 19px; height: 19px; border-radius: 99px; background: #ffffff;"></span>
+            </span>
+          </div>
+        </div>
+
+        <div style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 18px;">
+          <div class="card" style="padding: 20px;">
+            <div style="display: flex; align-items: center; gap: 9px;">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#8b8a95" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3v12 M6 21a3 3 0 100-6 3 3 0 000 6 M18 9a3 3 0 100-6 3 3 0 000 6 M18 9v3a4 4 0 01-4 4h-4"></path></svg>
+              <span class="lbl">Prerequisitos</span>
+            </div>
+            <p style="margin: 10px 0 0; font-size: 12.5px; line-height: 1.6; color: #8b8a95;">El alumno debe completar estos cursos antes de entrar. Se guardan junto con el curso.</p>
+            <div style="margin-top: 14px; display: flex; flex-direction: column; gap: 8px;">
+              <label style="display: flex; align-items: center; gap: 12px; padding: 11px 13px; border-radius: 10px; border: 1px solid #cdcbe8; background: rgba(75,70,214,0.08);"><span style="width: 17px; height: 17px; border-radius: 5px; flex-shrink: 0; display: grid; place-items: center; background: #4b46d6;"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7"></path></svg></span><span style="flex: 1; min-width: 0;"><span style="display: block; font-size: 13.5px; font-weight: 600; color: #2c2b34;">Introducción a la robótica</span><span class="mono" style="display: block; font-size: 10.5px; color: #a9a8b4; margin-top: 2px;">CR-1 · Principiante</span></span><span class="mono" style="font-size: 9.5px; font-weight: 700; letter-spacing: 0.08em; color: #4b46d6; flex-shrink: 0;">REQUERIDO</span></label>
+              <label style="display: flex; align-items: center; gap: 12px; padding: 11px 13px; border-radius: 10px; border: 1px solid #eceaf2; background: #ffffff;"><span style="width: 17px; height: 17px; border-radius: 5px; flex-shrink: 0; display: grid; place-items: center; border: 1.6px solid #dcdbe4;"></span><span style="flex: 1; min-width: 0;"><span style="display: block; font-size: 13.5px; font-weight: 600; color: #2c2b34;">Visión artificial aplicada</span><span class="mono" style="display: block; font-size: 10.5px; color: #a9a8b4; margin-top: 2px;">CR-3 · Avanzado</span></span></label>
+              <label style="display: flex; align-items: center; gap: 12px; padding: 11px 13px; border-radius: 10px; border: 1px solid #eceaf2; background: #ffffff;"><span style="width: 17px; height: 17px; border-radius: 5px; flex-shrink: 0; display: grid; place-items: center; border: 1.6px solid #dcdbe4;"></span><span style="flex: 1; min-width: 0;"><span style="display: block; font-size: 13.5px; font-weight: 600; color: #2c2b34;">Integración con PLC</span><span class="mono" style="display: block; font-size: 10.5px; color: #a9a8b4; margin-top: 2px;">CR-4 · Avanzado</span></span></label>
+            </div>
+          </div>
+
+          <div class="card" style="padding: 20px; border-color: #f0d5d5;">
+            <span class="lbl" style="color: #b4425a;">Zona sensible</span>
+            <p style="margin: 10px 0 0; font-size: 12.5px; line-height: 1.6; color: #8b8a95;">Eliminar el curso borra sus módulos, unidades, contenidos y evaluaciones. Descarga un respaldo antes.</p>
+            <button style="margin-top: 14px; display: inline-flex; align-items: center; gap: 8px; height: 38px; padding: 0 16px; border-radius: 10px; border: 1px solid #f0d5d5; font-size: 12.5px; font-weight: 600; color: #b4425a;">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16 M9 7V5h6v2 M6 7l1 13h10l1-13 M10 11v6 M14 11v6"></path></svg>
+              Eliminar curso
+            </button>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>
+</x-dc>
+</body>
+</html>

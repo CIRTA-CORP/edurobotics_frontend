@@ -76,7 +76,7 @@ export function CoursesTab() {
       {/* Cabecera: contexto, acciones y la acción primaria a la derecha */}
       <div className="flex flex-wrap items-start justify-between gap-3">
         <p className="font-mono text-[11px] uppercase tracking-[0.1em] text-[#a9a8b4]">
-          Cursos · #{selectedCourse.id}
+          Cursos · CR-{selectedCourse.id}
         </p>
         <div className="flex flex-wrap gap-2">
           <HeaderAction onClick={() => navigate(`/courses/${selectedCourse.id}`)}>

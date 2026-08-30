@@ -1,0 +1,199 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./vendor/react.js"></script>
+<script src="./vendor/react-dom.js"></script>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <style>
+    body { margin: 0; font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Helvetica, Arial, sans-serif; -webkit-font-smoothing: antialiased; }
+    a { color: #4b46d6; text-decoration: none; }
+    a:hover { color: #3a35b0; }
+    button { font: inherit; border: 0; background: none; cursor: pointer; color: inherit; }
+    input, textarea { font: inherit; }
+    .mono { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+    .lbl { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 9.5px; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; color: #a9a8b4; }
+    .fl { display: block; font-size: 11.5px; font-weight: 600; color: #55545f; margin-bottom: 7px; }
+    .fi { width: 100%; box-sizing: border-box; height: 40px; padding: 0 12px; border-radius: 10px; border: 1px solid #e3e2ea; font-size: 13.5px; color: #16151b; background: #ffffff; }
+    .card { border: 1px solid #e9e9ee; border-radius: 14px; }
+    .h1 { font-family: 'Iowan Old Style', 'Palatino Linotype', Palatino, Georgia, serif; font-size: 28px; line-height: 1.16; font-weight: 700; letter-spacing: -0.014em; margin: 14px 0 0; }
+    .th { text-align: left; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 9.5px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: #a9a8b4; padding: 0 14px 11px; }
+    .td { padding: 13px 14px; font-size: 13.5px; color: #33323b; border-top: 1px solid #f2f1f6; }
+    .num { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-variant-numeric: tabular-nums; }
+    .pri { display: inline-flex; align-items: center; gap: 8px; height: 40px; padding: 0 18px; border-radius: 11px; background: #16151b; color: #ffffff; font-size: 13px; font-weight: 600; }
+    .sec { display: inline-flex; align-items: center; gap: 7px; height: 38px; padding: 0 15px; border-radius: 10px; border: 1px solid #e3e2ea; font-size: 12.5px; font-weight: 600; color: #55545f; }
+  </style>
+</helmet>
+
+<div style="width: 1440px; min-height: 1560px; display: flex; flex-direction: column; background: #ffffff; color: #16151b;">
+
+  <header style="height: 56px; flex-shrink: 0; display: flex; align-items: center; justify-content: space-between; padding: 0 18px; border-bottom: 1px solid #ececf1;">
+    <div style="display: flex; align-items: center; gap: 14px;">
+      <div style="display: flex; align-items: center; gap: 10px;">
+        <div style="width: 28px; height: 28px; border-radius: 8px; background: #16151b; display: grid; place-items: center;">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M6 19h5 M8.5 19v-4.5 M8.5 14.5L13 10 M13 10h4.5 M17.5 10V6"></path></svg>
+        </div>
+        <span style="font-size: 14.5px; font-weight: 600; letter-spacing: -0.01em;">EduRobotics</span>
+      </div>
+      <span style="padding: 3px 9px; border-radius: 99px; background: #16151b; color: #ffffff; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 9.5px; font-weight: 700; letter-spacing: 0.08em;">ADMIN</span>
+    </div>
+    <div style="display: flex; align-items: center; gap: 12px;">
+      <div style="display: flex; align-items: center; gap: 3px; padding: 3px; border-radius: 10px; background: #f4f3f8;">
+        <span style="height: 30px; padding: 0 13px; display: grid; place-items: center; border-radius: 8px; background: #ffffff; color: #16151b; font-size: 12.5px; font-weight: 600; box-shadow: 0 1px 3px rgba(22,21,27,0.09);">Vista admin</span>
+        <span style="height: 30px; padding: 0 13px; display: grid; place-items: center; border-radius: 8px; color: #8b8a95; font-size: 12.5px; font-weight: 600;">Vista estudiante</span>
+      </div>
+      <div style="width: 1px; height: 20px; background: #ececf1;"></div>
+      <button title="Simulador" style="width: 32px; height: 32px; border-radius: 8px; display: grid; place-items: center; color: #8b8a95;"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M6 6h12v12H6z M10 10h4v4h-4z M9 3v3 M15 3v3 M9 18v3 M15 18v3 M3 9h3 M3 15h3 M18 9h3 M18 15h3"></path></svg></button>
+      <button title="Ir a la página principal" style="width: 32px; height: 32px; border-radius: 8px; display: grid; place-items: center; color: #8b8a95;"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 11l8-7 8 7 M6 10v10h12V10"></path></svg></button>
+      <div style="width: 28px; height: 28px; border-radius: 99px; background: #16151b; color: #ffffff; display: grid; place-items: center; font-size: 10.5px; font-weight: 700;">MO</div>
+      <button title="Cerrar sesión" style="width: 32px; height: 32px; border-radius: 8px; display: grid; place-items: center; color: #b3b2be;"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M15 17l5-5-5-5 M20 12H9 M12 3H6a1 1 0 00-1 1v16a1 1 0 001 1h6"></path></svg></button>
+    </div>
+  </header>
+
+  <div style="flex: 1; display: flex; min-height: 0;">
+    <nav style="width: 236px; flex-shrink: 0; border-right: 1px solid #ececf1; background: #fafafa; padding: 16px 12px;">
+      <div class="lbl" style="padding: 0 10px 10px;">Panel</div>
+      <div style="display: flex; flex-direction: column; gap: 2px;">
+        <div style="display: flex; align-items: center; gap: 10px; height: 36px; padding: 0 11px; border-radius: 9px; font-size: 13px; font-weight: 500; color: #7b7a86;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0;"><path d="M4 13h6V4H4z M14 20h6v-9h-6z M4 20h6v-4H4z M14 8h6V4h-6z"></path></svg>Dashboard</div>
+        <div style="display: flex; align-items: center; gap: 10px; height: 36px; padding: 0 11px; border-radius: 9px; font-size: 13px; font-weight: 500; color: #7b7a86;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0;"><path d="M16 20v-1.5a4 4 0 00-4-4H6a4 4 0 00-4 4V20 M9 11a3.5 3.5 0 100-7 3.5 3.5 0 000 7 M22 20v-1.5a4 4 0 00-3-3.9 M16.5 4.1a4 4 0 010 7.8"></path></svg>Usuarios</div>
+        <div style="display: flex; align-items: center; gap: 10px; height: 36px; padding: 0 11px; border-radius: 9px; font-size: 13px; font-weight: 500; color: #7b7a86;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0;"><path d="M4 8l8-4 8 4-8 4z M4 8v5c0 2.2 3.6 4 8 4s8-1.8 8-4V8"></path></svg>Progreso</div>
+        <div style="display: flex; align-items: center; gap: 10px; height: 36px; padding: 0 11px; border-radius: 9px; font-size: 13px; font-weight: 600; background: #16151b; color: #ffffff;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0;"><path d="M4 20V10 M10 20V4 M16 20v-7 M22 20H2"></path></svg>Analítica</div>
+      </div>
+      <div class="lbl" style="padding: 20px 10px 10px;">Contenido</div>
+      <div style="display: flex; flex-direction: column; gap: 2px;">
+        <div style="display: flex; align-items: center; gap: 10px; height: 36px; padding: 0 11px; border-radius: 9px; font-size: 13px; font-weight: 500; color: #7b7a86;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0;"><path d="M4 4h7a2 2 0 012 2v14a2 2 0 00-2-2H4z M20 4h-7a2 2 0 00-2 2v14a2 2 0 012-2h7z"></path></svg>Cursos<span class="mono" style="margin-left: auto; font-size: 10px; padding: 1px 6px; border-radius: 99px; background: #e7e6ee; color: #8b8a95;">4</span></div>
+        <div style="display: flex; align-items: center; gap: 10px; height: 36px; padding: 0 11px; border-radius: 9px; font-size: 13px; font-weight: 500; color: #7b7a86;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0;"><path d="M4 8l8-4 8 4-8 4z M4 8v5c0 2.2 3.6 4 8 4s8-1.8 8-4V8"></path></svg>Especializaciones</div>
+      </div>
+      <div class="lbl" style="padding: 20px 10px 10px;">Sitio</div>
+      <div style="display: flex; align-items: center; gap: 10px; height: 36px; padding: 0 11px; border-radius: 9px; font-size: 13px; font-weight: 500; color: #7b7a86;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0;"><path d="M12 3a9 9 0 100 18 9 9 0 000-18 M3 12h18 M12 3c2.5 2.5 3.8 5.6 3.8 9s-1.3 6.5-3.8 9c-2.5-2.5-3.8-5.6-3.8-9s1.3-6.5 3.8-9z"></path></svg>Landing</div>
+    </nav>
+
+    <div style="flex: 1; min-width: 0; padding: 26px 36px 52px;">
+      <div style="display: flex; align-items: flex-end; justify-content: space-between; gap: 24px;">
+        <div>
+          <span class="lbl">Panel</span>
+          <h1 class="h1">Analítica</h1>
+        </div>
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <button class="sec" style="height: 40px;"><span style="width: 8px; height: 8px; border-radius: 99px; background: #d97706;"></span>Robots colaborativos UR5<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"></path></svg></button>
+          <div style="display: flex; align-items: center; gap: 3px; padding: 3px; border-radius: 10px; background: #f4f3f8;">
+            <span style="height: 32px; padding: 0 12px; display: grid; place-items: center; border-radius: 8px; color: #8b8a95; font-size: 12.5px; font-weight: 600;">7 días</span>
+            <span style="height: 32px; padding: 0 12px; display: grid; place-items: center; border-radius: 8px; background: #ffffff; color: #16151b; font-size: 12.5px; font-weight: 600; box-shadow: 0 1px 3px rgba(22,21,27,0.09);">14 días</span>
+            <span style="height: 32px; padding: 0 12px; display: grid; place-items: center; border-radius: 8px; color: #8b8a95; font-size: 12.5px; font-weight: 600;">90 días</span>
+          </div>
+        </div>
+      </div>
+
+      <div style="margin-top: 22px; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 18px;">
+        <div class="card" style="padding: 18px 20px;"><span class="lbl">Alumnos activos</span><div style="margin-top: 12px; display: flex; align-items: baseline; gap: 6px;"><span class="mono" style="font-size: 30px; font-weight: 700; letter-spacing: -0.025em; line-height: 1;">24</span><span style="font-size: 13px; color: #8b8a95;">de 128</span></div><div style="margin-top: 9px; font-size: 12px; color: #a9a8b4;">+6 respecto a los 14 días previos</div></div>
+        <div class="card" style="padding: 18px 20px;"><span class="lbl">Tiempo activo</span><div style="margin-top: 12px; display: flex; align-items: baseline; gap: 6px;"><span class="mono" style="font-size: 30px; font-weight: 700; letter-spacing: -0.025em; line-height: 1;">41</span><span style="font-size: 13px; color: #8b8a95;">h</span></div><div style="margin-top: 9px; font-size: 12px; color: #a9a8b4;">Suma del tiempo real en el curso</div></div>
+        <div class="card" style="padding: 18px 20px;"><span class="lbl">Contenidos completados</span><div style="margin-top: 12px; display: flex; align-items: baseline; gap: 6px;"><span class="mono" style="font-size: 30px; font-weight: 700; letter-spacing: -0.025em; line-height: 1;">312</span><span style="font-size: 13px; color: #8b8a95;"></span></div><div style="margin-top: 9px; font-size: 12px; color: #a9a8b4;">68 % de los que se abrieron</div></div>
+        <div class="card" style="padding: 18px 20px;"><span class="lbl">Aprobación media</span><div style="margin-top: 12px; display: flex; align-items: baseline; gap: 6px;"><span class="mono" style="font-size: 30px; font-weight: 700; letter-spacing: -0.025em; line-height: 1;">76</span><span style="font-size: 13px; color: #8b8a95;">%</span></div><div style="margin-top: 9px; font-size: 12px; color: #a9a8b4;">Umbral del curso: 70 %</div></div>
+      </div>
+
+      <div class="card" style="margin-top: 22px; padding: 22px 24px;">
+        <div style="display: flex; align-items: baseline; justify-content: space-between; gap: 20px;">
+          <div>
+            <span class="lbl">Interacción</span>
+            <h3 style="font-size: 16px; font-weight: 600; margin: 9px 0 0;">Sesiones por día</h3>
+          </div>
+          <span style="font-size: 12.5px; color: #8b8a95;">Toda la plataforma · últimos 14 días</span>
+        </div>
+        <svg viewBox="0 0 830 200" style="margin-top: 18px; width: 100%; height: 200px; overflow: visible;">
+          <line x1="0" y1="112" x2="800" y2="112" stroke="#f2f1f6" stroke-width="1"></line><line x1="0" y1="56" x2="800" y2="56" stroke="#f2f1f6" stroke-width="1"></line><line x1="0" y1="0" x2="800" y2="0" stroke="#f2f1f6" stroke-width="1"></line> <text x="808" y="115" font-family="ui-monospace, Menlo, monospace" font-size="9.5" fill="#c4c3cd">15</text><text x="808" y="59" font-family="ui-monospace, Menlo, monospace" font-size="9.5" fill="#c4c3cd">30</text><text x="808" y="3" font-family="ui-monospace, Menlo, monospace" font-size="9.5" fill="#c4c3cd">45</text> <rect x="0" y="101" width="46" height="67" rx="4" fill="#7d79e3"></rect><text x="23.0" y="186" text-anchor="middle" font-family="ui-monospace, Menlo, monospace" font-size="10" fill="#b3b2be">L</text><rect x="58" y="71" width="46" height="97" rx="4" fill="#7d79e3"></rect><text x="81.0" y="186" text-anchor="middle" font-family="ui-monospace, Menlo, monospace" font-size="10" fill="#b3b2be">M</text><rect x="116" y="52" width="46" height="116" rx="4" fill="#7d79e3"></rect><text x="139.0" y="186" text-anchor="middle" font-family="ui-monospace, Menlo, monospace" font-size="10" fill="#b3b2be">X</text><rect x="174" y="78" width="46" height="90" rx="4" fill="#7d79e3"></rect><text x="197.0" y="186" text-anchor="middle" font-family="ui-monospace, Menlo, monospace" font-size="10" fill="#b3b2be">J</text><rect x="232" y="123" width="46" height="45" rx="4" fill="#7d79e3"></rect><text x="255.0" y="186" text-anchor="middle" font-family="ui-monospace, Menlo, monospace" font-size="10" fill="#b3b2be">V</text><rect x="290" y="153" width="46" height="15" rx="4" fill="#7d79e3"></rect><text x="313.0" y="186" text-anchor="middle" font-family="ui-monospace, Menlo, monospace" font-size="10" fill="#b3b2be">S</text><rect x="348" y="157" width="46" height="11" rx="4" fill="#7d79e3"></rect><text x="371.0" y="186" text-anchor="middle" font-family="ui-monospace, Menlo, monospace" font-size="10" fill="#b3b2be">D</text><rect x="406" y="86" width="46" height="82" rx="4" fill="#7d79e3"></rect><text x="429.0" y="186" text-anchor="middle" font-family="ui-monospace, Menlo, monospace" font-size="10" fill="#b3b2be">L</text><rect x="464" y="41" width="46" height="127" rx="4" fill="#7d79e3"></rect><text x="487.0" y="186" text-anchor="middle" font-family="ui-monospace, Menlo, monospace" font-size="10" fill="#b3b2be">M</text><rect x="522" y="15" width="46" height="153" rx="4" fill="#4b46d6"></rect><text x="545.0" y="186" text-anchor="middle" font-family="ui-monospace, Menlo, monospace" font-size="10" fill="#b3b2be">X</text><text x="545.0" y="7" text-anchor="middle" font-family="ui-monospace, Menlo, monospace" font-size="11" font-weight="700" fill="#16151b">41</text><rect x="580" y="60" width="46" height="108" rx="4" fill="#7d79e3"></rect><text x="603.0" y="186" text-anchor="middle" font-family="ui-monospace, Menlo, monospace" font-size="10" fill="#b3b2be">J</text><rect x="638" y="108" width="46" height="60" rx="4" fill="#7d79e3"></rect><text x="661.0" y="186" text-anchor="middle" font-family="ui-monospace, Menlo, monospace" font-size="10" fill="#b3b2be">V</text><rect x="696" y="146" width="46" height="22" rx="4" fill="#7d79e3"></rect><text x="719.0" y="186" text-anchor="middle" font-family="ui-monospace, Menlo, monospace" font-size="10" fill="#b3b2be">S</text><rect x="754" y="149" width="46" height="19" rx="4" fill="#7d79e3"></rect><text x="777.0" y="186" text-anchor="middle" font-family="ui-monospace, Menlo, monospace" font-size="10" fill="#b3b2be">D</text>
+        </svg>
+      </div>
+
+      <div style="margin-top: 22px; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 22px; align-items: start;">
+
+        <div class="card" style="padding: 22px 24px;">
+          <span class="lbl">Dedicación</span>
+          <h3 style="font-size: 16px; font-weight: 600; margin: 9px 0 0;">Tiempo por módulo</h3>
+          <p style="margin: 8px 0 0; font-size: 12.5px; color: #8b8a95;">Mediana del tiempo activo; a la derecha el rango mín – máx.</p>
+          <div style="margin-top: 18px; display: flex; flex-direction: column; gap: 13px;">
+            <div style="display: flex; align-items: center; gap: 14px;"><span style="width: 200px; flex-shrink: 0; font-size: 13px; color: #33323b; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">1 · Fundamentos</span><span style="width: 220px; height: 9px; border-radius: 4px; background: #f2f1f6; flex-shrink: 0; display: block; position: relative;"><span style="position: absolute; left: 0; top: 0; height: 9px; width: 99px; border-radius: 4px; background: #4b46d6; display: block;"></span></span><span class="mono" style="width: 52px; flex-shrink: 0; font-size: 12px; font-weight: 600;">18 min</span><span class="mono" style="font-size: 10.5px; color: #a9a8b4; flex-shrink: 0;">9 – 34 min</span></div>
+            <div style="display: flex; align-items: center; gap: 14px;"><span style="width: 200px; flex-shrink: 0; font-size: 13px; color: #33323b; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">2 · Programación por bloques</span><span style="width: 220px; height: 9px; border-radius: 4px; background: #f2f1f6; flex-shrink: 0; display: block; position: relative;"><span style="position: absolute; left: 0; top: 0; height: 9px; width: 220px; border-radius: 4px; background: #4b46d6; display: block;"></span></span><span class="mono" style="width: 52px; flex-shrink: 0; font-size: 12px; font-weight: 600;">39 min</span><span class="mono" style="font-size: 10.5px; color: #a9a8b4; flex-shrink: 0;">21 – 68 min</span></div>
+            <div style="display: flex; align-items: center; gap: 14px;"><span style="width: 200px; flex-shrink: 0; font-size: 13px; color: #33323b; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">3 · Celda y seguridad</span><span style="width: 220px; height: 9px; border-radius: 4px; background: #f2f1f6; flex-shrink: 0; display: block; position: relative;"><span style="position: absolute; left: 0; top: 0; height: 9px; width: 123px; border-radius: 4px; background: #4b46d6; display: block;"></span></span><span class="mono" style="width: 52px; flex-shrink: 0; font-size: 12px; font-weight: 600;">22 min</span><span class="mono" style="font-size: 10.5px; color: #a9a8b4; flex-shrink: 0;">12 – 40 min</span></div>
+            <div style="display: flex; align-items: center; gap: 14px;"><span style="width: 200px; flex-shrink: 0; font-size: 13px; color: #33323b; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">Simulador 3D</span><span style="width: 220px; height: 9px; border-radius: 4px; background: #f2f1f6; flex-shrink: 0; display: block; position: relative;"><span style="position: absolute; left: 0; top: 0; height: 9px; width: 152px; border-radius: 4px; background: #4b46d6; display: block;"></span></span><span class="mono" style="width: 52px; flex-shrink: 0; font-size: 12px; font-weight: 600;">27 min</span><span class="mono" style="font-size: 10.5px; color: #a9a8b4; flex-shrink: 0;">4 – 91 min</span></div>
+          </div>
+        </div>
+
+        <div class="card" style="padding: 22px 24px;">
+          <span class="lbl">Contenidos</span>
+          <h3 style="font-size: 16px; font-weight: 600; margin: 9px 0 0;">Quién abre y quién termina</h3>
+          <p style="margin: 8px 0 0; font-size: 12.5px; color: #8b8a95;">Proporción de quienes lo abrieron y llegaron a completarlo.</p>
+          <div style="margin-top: 18px; display: flex; flex-direction: column; gap: 13px;">
+            <div style="display: flex; align-items: center; gap: 14px;"><span style="width: 190px; flex-shrink: 0; font-size: 13px; color: #33323b; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">1.2 Sistemas de coordenadas</span><span style="width: 210px; height: 9px; border-radius: 4px; background: #f2f1f6; flex-shrink: 0; display: block; position: relative;"><span style="position: absolute; left: 0; top: 0; height: 9px; width: 193px; border-radius: 4px; background: #4b46d6; display: block;"></span></span><span class="mono" style="font-size: 12px; font-weight: 600; color: #16151b; flex-shrink: 0;">92%</span><span style="font-size: 11.5px; color: #a9a8b4; flex-shrink: 0;">23 de 25</span></div>
+            <div style="display: flex; align-items: center; gap: 14px;"><span style="width: 190px; flex-shrink: 0; font-size: 13px; color: #33323b; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">2.1 Tu primer programa</span><span style="width: 210px; height: 9px; border-radius: 4px; background: #f2f1f6; flex-shrink: 0; display: block; position: relative;"><span style="position: absolute; left: 0; top: 0; height: 9px; width: 128px; border-radius: 4px; background: #4b46d6; display: block;"></span></span><span class="mono" style="font-size: 12px; font-weight: 600; color: #16151b; flex-shrink: 0;">61%</span><span style="font-size: 11.5px; color: #a9a8b4; flex-shrink: 0;">14 de 23</span></div>
+            <div style="display: flex; align-items: center; gap: 14px;"><span style="width: 190px; flex-shrink: 0; font-size: 13px; color: #33323b; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">2.3 Pinzas y señales</span><span style="width: 210px; height: 9px; border-radius: 4px; background: #f2f1f6; flex-shrink: 0; display: block; position: relative;"><span style="position: absolute; left: 0; top: 0; height: 9px; width: 80px; border-radius: 4px; background: #4b46d6; display: block;"></span></span><span class="mono" style="font-size: 12px; font-weight: 600; color: #16151b; flex-shrink: 0;">38%</span><span style="font-size: 11.5px; color: #a9a8b4; flex-shrink: 0;">8 de 21</span></div>
+            <div style="display: flex; align-items: center; gap: 14px;"><span style="width: 190px; flex-shrink: 0; font-size: 13px; color: #33323b; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">3.2 Paro de emergencia</span><span style="width: 210px; height: 9px; border-radius: 4px; background: #f2f1f6; flex-shrink: 0; display: block; position: relative;"><span style="position: absolute; left: 0; top: 0; height: 9px; width: 50px; border-radius: 4px; background: #4b46d6; display: block;"></span></span><span class="mono" style="font-size: 12px; font-weight: 600; color: #16151b; flex-shrink: 0;">24%</span><span style="font-size: 11.5px; color: #a9a8b4; flex-shrink: 0;">5 de 21</span></div>
+          </div>
+        </div>
+      </div>
+
+      <div style="margin-top: 22px; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 22px; align-items: start;">
+
+        <div class="card" style="padding: 22px 24px;">
+          <span class="lbl">Evaluaciones</span>
+          <h3 style="font-size: 16px; font-weight: 600; margin: 9px 0 0;">Rendimiento</h3>
+          <table style="width: 100%; border-collapse: collapse; margin-top: 14px;">
+            <thead><tr>
+              <th class="th" style="padding-left: 0;">Evaluación</th>
+              <th class="th">Intentos</th>
+              <th class="th">Promedio</th>
+              <th class="th">Aprobación</th>
+              <th class="th">Hasta aprobar</th>
+            </tr></thead>
+            <tbody><tr><td class="td" style="font-weight: 600; color: #16151b;">Control de movimiento</td><td class="td num">47</td><td class="td num">78%</td><td class="td"><span style="display: inline-flex; align-items: center; gap: 6px;"><span class="num" style="font-weight: 600;">81%</span><span style="padding: 2px 8px; border-radius: 99px; background: #ecfdf5; color: #047857; font-size: 10px; font-weight: 600;">Sano</span></span></td><td class="td num">1,4</td></tr>
+              <tr><td class="td" style="font-weight: 600; color: #16151b;">Seguridad de la celda</td><td class="td num">29</td><td class="td num">61%</td><td class="td"><span style="display: inline-flex; align-items: center; gap: 6px;"><span class="num" style="font-weight: 600;">52%</span><span style="padding: 2px 8px; border-radius: 99px; background: #fffbeb; color: #b45309; font-size: 10px; font-weight: 600;">Revisar</span></span></td><td class="td num">2,3</td></tr></tbody>
+          </table>
+        </div>
+
+        <div class="card" style="padding: 22px 24px;">
+          <span class="lbl">Evaluaciones</span>
+          <h3 style="font-size: 16px; font-weight: 600; margin: 9px 0 0;">Preguntas más falladas</h3>
+          <p style="margin: 8px 0 0; font-size: 12.5px; color: #8b8a95;">Porcentaje de respuestas incorrectas.</p>
+          <div style="margin-top: 18px; display: flex; flex-direction: column; gap: 13px;">
+            <div style="display: flex; align-items: center; gap: 14px;"><span style="width: 190px; flex-shrink: 0; font-size: 13px; color: #33323b; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">¿Respecto a qué interpola MoveL?</span><span style="width: 200px; height: 9px; border-radius: 4px; background: #f2f1f6; flex-shrink: 0; display: block; position: relative;"><span style="position: absolute; left: 0; top: 0; height: 9px; width: 136px; border-radius: 4px; background: #4b46d6; display: block;"></span></span><span class="mono" style="font-size: 12px; font-weight: 600; color: #16151b; flex-shrink: 0;">68%</span><span style="font-size: 11.5px; color: #a9a8b4; flex-shrink: 0;"></span></div>
+            <div style="display: flex; align-items: center; gap: 14px;"><span style="width: 190px; flex-shrink: 0; font-size: 13px; color: #33323b; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">Umbral de velocidad reducida</span><span style="width: 200px; height: 9px; border-radius: 4px; background: #f2f1f6; flex-shrink: 0; display: block; position: relative;"><span style="position: absolute; left: 0; top: 0; height: 9px; width: 108px; border-radius: 4px; background: #4b46d6; display: block;"></span></span><span class="mono" style="font-size: 12px; font-weight: 600; color: #16151b; flex-shrink: 0;">54%</span><span style="font-size: 11.5px; color: #a9a8b4; flex-shrink: 0;"></span></div>
+            <div style="display: flex; align-items: center; gap: 14px;"><span style="width: 190px; flex-shrink: 0; font-size: 13px; color: #33323b; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">Diferencia entre paro y protección</span><span style="width: 200px; height: 9px; border-radius: 4px; background: #f2f1f6; flex-shrink: 0; display: block; position: relative;"><span style="position: absolute; left: 0; top: 0; height: 9px; width: 82px; border-radius: 4px; background: #4b46d6; display: block;"></span></span><span class="mono" style="font-size: 12px; font-weight: 600; color: #16151b; flex-shrink: 0;">41%</span><span style="font-size: 11.5px; color: #a9a8b4; flex-shrink: 0;"></span></div>
+            <div style="display: flex; align-items: center; gap: 14px;"><span style="width: 190px; flex-shrink: 0; font-size: 13px; color: #33323b; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">Definición del TCP</span><span style="width: 200px; height: 9px; border-radius: 4px; background: #f2f1f6; flex-shrink: 0; display: block; position: relative;"><span style="position: absolute; left: 0; top: 0; height: 9px; width: 38px; border-radius: 4px; background: #4b46d6; display: block;"></span></span><span class="mono" style="font-size: 12px; font-weight: 600; color: #16151b; flex-shrink: 0;">19%</span><span style="font-size: 11.5px; color: #a9a8b4; flex-shrink: 0;"></span></div>
+          </div>
+        </div>
+      </div>
+
+      <div style="margin-top: 22px; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 22px; align-items: start;">
+
+        <div class="card" style="padding: 22px 24px;">
+          <div style="display: flex; align-items: center; gap: 9px;">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#b45309" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a9 9 0 100 18 9 9 0 000-18 M12 7v5.4l3.4 2"></path></svg>
+            <span class="lbl" style="color: #b45309;">Sin actividad reciente</span>
+          </div>
+          <p style="margin: 10px 0 0; font-size: 12.5px; color: #8b8a95;">Alumnos que empezaron y llevan más de 14 días sin entrar.</p>
+          <div style="margin-top: 16px; display: flex; flex-direction: column; gap: 9px;">
+            <div style="display: flex; align-items: center; gap: 12px; padding: 10px 12px; border-radius: 10px; border: 1px solid #f2f1f6;"><span style="width: 28px; height: 28px; border-radius: 99px; background: #16151b; color: #ffffff; display: grid; place-items: center; font-size: 10px; font-weight: 700;">TO</span><span style="flex: 1; min-width: 0; font-size: 13px; color: #33323b;">Tomás Lagos</span><span class="mono" style="font-size: 11px; color: #b45309;">hace 18 días</span></div>
+            <div style="display: flex; align-items: center; gap: 12px; padding: 10px 12px; border-radius: 10px; border: 1px solid #f2f1f6;"><span style="width: 28px; height: 28px; border-radius: 99px; background: #16151b; color: #ffffff; display: grid; place-items: center; font-size: 10px; font-weight: 700;">SO</span><span style="flex: 1; min-width: 0; font-size: 13px; color: #33323b;">Sofía Miranda</span><span class="mono" style="font-size: 11px; color: #b45309;">hace 24 días</span></div>
+            <div style="display: flex; align-items: center; gap: 12px; padding: 10px 12px; border-radius: 10px; border: 1px solid #f2f1f6;"><span style="width: 28px; height: 28px; border-radius: 99px; background: #16151b; color: #ffffff; display: grid; place-items: center; font-size: 10px; font-weight: 700;">IG</span><span style="flex: 1; min-width: 0; font-size: 13px; color: #33323b;">Ignacio Rojas</span><span class="mono" style="font-size: 11px; color: #b45309;">hace 31 días</span></div>
+          </div>
+        </div>
+
+        <div class="card" style="padding: 22px 24px;">
+          <span class="lbl">Feedback del curso</span>
+          <h3 style="font-size: 16px; font-weight: 600; margin: 9px 0 0;">Lo que responden al terminar</h3>
+          <p style="margin: 8px 0 0; font-size: 12.5px; color: #8b8a95;">18 respuestas de 24 alumnos que completaron.</p>
+          <div style="margin-top: 20px; display: flex; flex-direction: column; gap: 20px;">
+            <div><div style="display: flex; align-items: baseline; justify-content: space-between;"><span style="font-size: 13px; color: #33323b;">Dificultad percibida</span><span class="mono" style="font-size: 13px; font-weight: 700;">3.4<span style="color: #b3b2be; font-weight: 400;"> / 5</span></span></div><div style="margin-top: 9px; display: flex; gap: 4px;"><span style="width: 26px; height: 8px; border-radius: 4px; background: #4b46d6;"></span><span style="width: 26px; height: 8px; border-radius: 4px; background: #4b46d6;"></span><span style="width: 26px; height: 8px; border-radius: 4px; background: #4b46d6;"></span><span style="width: 26px; height: 8px; border-radius: 4px; background: #eceaf2;"></span><span style="width: 26px; height: 8px; border-radius: 4px; background: #eceaf2;"></span></div></div>
+            <div><div style="display: flex; align-items: baseline; justify-content: space-between;"><span style="font-size: 13px; color: #33323b;">Utilidad percibida</span><span class="mono" style="font-size: 13px; font-weight: 700;">4.6<span style="color: #b3b2be; font-weight: 400;"> / 5</span></span></div><div style="margin-top: 9px; display: flex; gap: 4px;"><span style="width: 26px; height: 8px; border-radius: 4px; background: #4b46d6;"></span><span style="width: 26px; height: 8px; border-radius: 4px; background: #4b46d6;"></span><span style="width: 26px; height: 8px; border-radius: 4px; background: #4b46d6;"></span><span style="width: 26px; height: 8px; border-radius: 4px; background: #4b46d6;"></span><span style="width: 26px; height: 8px; border-radius: 4px; background: #4b46d6;"></span></div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</x-dc>
+</body>
+</html>
