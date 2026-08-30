@@ -51,7 +51,7 @@ function SectionLabel({ children }) {
 }
 
 export function AdminSidebarNav() {
-  const { activeTab, setActiveTab, courses, isTeacher, selectedCourse } = useAdmin()
+  const { activeTab, setActiveTab, courses, isTeacher } = useAdmin()
 
   return (
     <nav className="h-full border-[#ececf1] bg-[#fafafa] p-3 lg:sticky lg:top-14 lg:w-[236px] lg:flex-shrink-0 lg:border-r lg:px-3 lg:py-4">
@@ -82,7 +82,7 @@ export function AdminSidebarNav() {
       {/* La lista de cursos vive en la segunda columna, no aquí. */}
       <NavButton
         active={activeTab === 'taller' || activeTab === 'cursos'}
-        onClick={() => setActiveTab(selectedCourse ? 'taller' : 'cursos')}
+        onClick={() => setActiveTab('cursos')}
         icon={BookOpen}
         count={courses.length}
       >

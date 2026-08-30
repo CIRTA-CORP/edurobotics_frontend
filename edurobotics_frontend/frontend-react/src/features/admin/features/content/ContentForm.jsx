@@ -121,8 +121,19 @@ export function ContentForm({
             </div>
           )}
 
-          {/* Simulator block — banda de marca (canvas 2b.4) */}
-          <div className="relative overflow-hidden rounded-2xl bg-[#0a0a0c] text-white" style={{ backgroundImage: 'radial-gradient(circle, rgba(255,255,255,0.5) 1px, transparent 1px)', backgroundSize: '22px 22px', WebkitMaskImage: 'radial-gradient(62% 82% at 50% 84%, #000 5%, transparent 68%)', maskImage: 'radial-gradient(62% 82% at 50% 84%, #000 5%, transparent 68%)' }}>
+          {/* Simulator block — banda de marca (canvas 2b.4). La trama de puntos va en
+              una capa aparte con su propia máscara; el contenido queda encima sin máscara. */}
+          <div className="relative overflow-hidden rounded-2xl bg-[#0a0a0c] text-white">
+            <div
+              aria-hidden="true"
+              className="pointer-events-none absolute inset-0"
+              style={{
+                backgroundImage: 'radial-gradient(circle, rgba(255,255,255,0.5) 1px, transparent 1px)',
+                backgroundSize: '22px 22px',
+                WebkitMaskImage: 'radial-gradient(62% 82% at 50% 84%, #000 5%, transparent 68%)',
+                maskImage: 'radial-gradient(62% 82% at 50% 84%, #000 5%, transparent 68%)',
+              }}
+            />
             <div className="relative px-5 py-5 sm:px-6">
               <div className="flex items-start justify-between gap-5">
                 <div className="flex min-w-0 items-start gap-3.5">
