@@ -1,8 +1,21 @@
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback, useRef, lazy, Suspense } from "react";
 import { Loader2, Play, Square, SlidersHorizontal, Home, AlertCircle } from "lucide-react";
 import { getSimulatorStatus, startSimulator, stopSimulator } from '@/features/simulator/services/simulator';
 import BabylonViewer from '@/features/simulator/viewer/BabylonViewer';
 import JointSliders from "./JointSliders";
+
+// Visor basado en URDF, en evaluación (change `simulator-urdf-viewer`). Se activa con
+// `?viewer=urdf`; sin el parámetro sigue el visor actual, intacto. Va en `lazy` para que
+// nadie que no lo pida pague su descarga.
+const UrdfViewer = lazy(() => import('@/features/simulator/viewer/UrdfViewer'));
+
+const useUrdfViewer = () => {
+  try {
+    return new URLSearchParams(window.location.search).get('viewer') === 'urdf';
+  } catch {
+    return false;
+  }
+};
 
 const DEFAULT_ANGLES = {
   shoulder_pan_joint: 0, shoulder_lift_joint: 0, elbow_joint: 0,
@@ -22,6 +35,7 @@ const CAMERA_VIEWS = [
 ];
 
 export default function SimulatorPanel({ jointAngles }) {
+  const urdfViewer = useUrdfViewer();
   const [serverRunning, setServerRunning] = useState(false);
   const [showSliders, setShowSliders] = useState(false);
   const [manualAngles, setManualAngles] = useState(DEFAULT_ANGLES);
@@ -137,7 +151,13 @@ export default function SimulatorPanel({ jointAngles }) {
         <>
           {/* 3D viewer — takes remaining width */}
           <div className="relative flex-1 min-w-0">
-            <BabylonViewer jointAngles={effectiveAngles} cameraView={cameraView} />
+            {urdfViewer ? (
+              <Suspense fallback={<div className="grid h-full w-full place-items-center bg-slate-950 text-xs text-slate-400">Cargando visor URDF…</div>}>
+                <UrdfViewer jointAngles={effectiveAngles} cameraView={cameraView} />
+              </Suspense>
+            ) : (
+              <BabylonViewer jointAngles={effectiveAngles} cameraView={cameraView} />
+            )}
 
             {/* Live status badge — top-left */}
             <div className="absolute top-3 left-3 z-20 flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-900/70 backdrop-blur-md border border-emerald-500/30 shadow-lg">

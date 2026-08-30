@@ -5,61 +5,84 @@ predeterminado durante todo el change.
 
 ## 0. Antes de empezar
 
-- [ ] 0.1 Mario confirma qué robot y qué calibración usa el spike: `ur5e` con
-      `default_kinematics.yaml` (nominal del fabricante) o con `kinematics_unagi.yaml` /
-      `kinematics_uni.yaml` (calibración de un brazo físico real).
-- [ ] 0.2 Medir y anotar el tamaño actual del bundle como línea base
-      (hoy: `vendor-babylon` 6.59 MB, 1.43 MB gzip) para poder comparar al final.
+- [x] 0.1 Robot y calibración: **`ur5e` con `default_kinematics.yaml`** (nominal del
+      fabricante). Decidido con evidencia, no por preferencia: `load_ur5e_robotiq.launch:11`
+      y `robot.xacro:80` lo cargan por defecto, así que es lo que simula PyBullet. Usar una
+      calibración por brazo (`kinematics_unagi.yaml`, `kinematics_uni.yaml`) volvería a
+      separar el visor de la simulación, que es el defecto que este change corrige; además
+      difieren en micras y describen un brazo con nombre propio, mientras 0.1625 es el
+      número que el estudiante encuentra en la hoja de datos.
+- [x] 0.2 Línea base del bundle: `vendor-babylon` 6.59 MB, **1.43 MB gzip**.
 
 ## 1. Exportar la descripción del robot
 
-- [ ] 1.1 Exportar `ur5e_robotiq2f85.xacro` → `.urdf` plano usando la herramienta `xacro`
-      dentro del Docker de `cirta_simulation`. Una vez, offline.
-- [ ] 1.2 Aplicar la calibración elegida en 0.1 al exportar.
-- [ ] 1.3 Convertir las mallas `.dae` referenciadas a `.glb`, conservando las rutas relativas
-      que declara el `.urdf`.
-- [ ] 1.4 Versionar el resultado en `public/robots/ur5e/` y dejar anotado en el README del
-      directorio el comando exacto de regeneración.
+- [x] 1.1 `scripts/export-robot-urdf.py` exporta `ur5e_robotiq2f85.xacro` → URDF plano.
+      No hizo falta Docker: `xacro` desde pip basta sustituyendo `$(find robot_description)`
+      por la ruta real, que es lo que el script hace sobre una copia temporal.
+- [x] 1.2 Calibración nominal aplicada (la que el xacro toma por defecto).
+- [x] 1.3 **No hubo que convertir nada**: las 13 mallas ya existían como `.glb` en
+      `public/meshes/`. Las mallas nunca estuvieron mal — el defecto era el ensamblaje. El
+      script reescribe las rutas `package://…​.dae` a esos `.glb` y verifica que existan.
+- [x] 1.4 URDF en `public/robots/ur5e/` y `public/robots/README.md` con el comando exacto
+      de regeneración y las decisiones tomadas al exportar.
 
 ## 2. Base del visor nuevo
 
-- [ ] 2.1 Añadir `three` y `urdf-loader`.
-- [ ] 2.2 `UrdfViewer.jsx` con la misma interfaz que el actual (`{ jointAngles, cameraView }`),
-      para que el intercambio no afecte a nada aguas arriba.
-- [ ] 2.3 Cargar el `.urdf` y montarlo en la escena.
-- [ ] 2.4 Portar los presets de cámara (`ArcRotateCamera` → `OrbitControls`) y el suavizado
-      exponencial del render loop; son matemáticas independientes del motor.
+- [x] 2.1 `three` 0.185.1 y `urdf-loader` 0.13.1 instalados.
+- [x] 2.2 `UrdfViewer.jsx` con la misma interfaz que el actual (`{ jointAngles, cameraView }`).
+- [x] 2.3 Carga del URDF y montaje en la escena, con la conversión Z-arriba → Y-arriba.
+- [x] 2.4 Presets de cámara portados con la fórmula de `ArcRotateCamera` para que el
+      encuadre sea idéntico y la comparación lado a lado sea honesta; suavizado exponencial
+      portado tal cual (mismo `SMOOTH_TAU = 0.12`).
 
 ## 3. Movimiento
 
-- [ ] 3.1 Aplicar los ángulos del WebSocket con `robot.setJointValues()`, reutilizando la
-      normalización de nombres que ya existe (`JOINT_ALIASES`) para no romper el contrato
-      con el backend.
-- [ ] 3.2 **Verificar temprano el gripper Robotiq 85**: comprobar que `urdf-loader` resuelve
-      el lazo cerrado con juntas `mimic` y que los dedos cierran sin separarse. Es el mayor
-      riesgo técnico del spike; si falla aquí, conviene saberlo antes de seguir.
+- [x] 3.1 Ángulos aplicados con `setJointValue`. La normalización de nombres se extrajo a
+      `viewer/jointNames.js` y ahora la comparten ambos visores, así que los dos hablan el
+      mismo idioma con el backend.
+- [x] 3.2 **Gripper verificado** con `scripts/check-gripper-linkage.mjs`: moviendo solo la
+      junta motriz, las 5 `mimic` la siguen exactamente y la punta del dedo recorre 39,2 mm
+      al cerrar. El mayor riesgo técnico del change queda despejado.
 
 ## 4. Verificación numérica
 
-- [ ] 4.1 Test que carga el URDF, fija una pose conocida y compara la posición mundial de
-      cada junta contra `default_kinematics.yaml`, con tolerancia de 1 mm. Debe fallar si
-      alguien reintroduce las constantes del UR5 (con `d1 = 0.089159` falla por 73 mm).
-- [ ] 4.2 Confirmar que el visor no contiene **ninguna** constante cinemática: sin `D = {...}`,
-      sin correcciones tipo `- 0.032`, sin `TOOL0_OFFSET`.
+- [x] 4.1 `scripts/verify-robot-kinematics.py` compara los orígenes de las 6 juntas del
+      brazo contra `default_kinematics.yaml` con tolerancia de 1 mm.
+      **Se comprobó que falla cuando debe**: reintroduciendo `0.089159` reporta
+      «desviación 73.3 mm» y sale con código 1.
+      *Desviación respecto al plan*: se hizo como script ejecutable y no como test de
+      framework, porque el frontend hoy no tiene ninguna infraestructura de tests y montar
+      vitest para un solo caso era desproporcionado. Queda anotado como deuda.
+- [x] 4.2 El visor no contiene ninguna constante cinemática; lo comprueba el mismo script.
 
 ## 5. Convivencia y comparación
 
-- [ ] 5.1 Selección por `?viewer=urdf` en `SimulatorPanel.jsx`. Sin el parámetro, el visor
-      actual, intacto.
-- [ ] 5.2 Capturas de ambos visores en la misma pose, para comparar lado a lado.
-- [ ] 5.3 Medir el bundle resultante y reportar el número real frente a la línea base de 0.2,
-      sin estimaciones.
+- [x] 5.1 Selección por `?viewer=urdf` en `SimulatorPanel.jsx`, en `lazy` para que quien no
+      lo pida no pague su descarga. Sin el parámetro, el visor actual, intacto.
+- [ ] 5.2 Capturas de ambos visores en la misma pose. **Pendiente: requiere navegador y una
+      sesión activa del simulador en Fly.** Es la única tarea que no pude cerrar.
+- [x] 5.3 Bundle medido: `UrdfViewer` 716,77 kB / **183,40 kB gzip** frente a los
+      1.425,09 kB gzip de `vendor-babylon`. **7,8× más liviano**, ~1,24 MB gzip menos en la
+      ruta del simulador.
 
 ## 6. Decisión
 
 - [ ] 6.1 Mario revisa la comparación y decide: se adopta, se ajusta o se descarta.
 - [ ] 6.2 Si se adopta, un change aparte cubre el cambio del visor por defecto, la baja de
-      Babylon y la incorporación de `ur10e` y `pupi`.
+      Babylon, el renombrado de `meshes/ur5/` (el robot es un UR5e y ese nombre originó la
+      confusión) y la incorporación de `ur10e` y `pupi`.
+
+## Hallazgos durante la implementación
+
+- La firma real de `loadMeshCb` es `(ruta, manager, material, onComplete)`, con el material
+  en tercer lugar. La primera versión del visor usaba tres argumentos y habría fallado al
+  cargar cualquier malla en el navegador. Lo detectó la comprobación del gripper, no la
+  vista.
+- El loader por defecto de `urdf-loader` solo entiende `.stl` y `.dae`, no `.glb`; por eso
+  el `loadMeshCb` propio es necesario y no opcional.
+- `npm audit` reporta 18 vulnerabilidades en el frontend (vite, react-router, postcss…),
+  **todas preexistentes** y ajenas a este change. Merecen su propio trabajo, equivalente al
+  que se hizo en el backend con pip-audit.
 
 ## Fuera de alcance (anotado, no se hace aquí)
 
