@@ -192,7 +192,12 @@ function SimulatorMockup({ imageUrl, loading }) {
             // (evita el parpadeo robot→foto); solo un panel oscuro con pulso.
             <div className="h-full w-full animate-pulse bg-white/[0.04]" />
           ) : imageUrl ? (
-            <img src={imageUrl} alt="Simulador EduRobotics" className="h-full w-full object-cover" />
+            <img
+              src={imageUrl}
+              alt="Simulador EduRobotics"
+              decoding="async"
+              className="h-full w-full object-cover"
+            />
           ) : (
             <div className="flex h-full items-center justify-center p-8">
               <Bot className="h-24 w-24 text-white/25" strokeWidth={1.2} />
@@ -354,6 +359,8 @@ function CourseCard({ title, level, description, imageUrl, courseId }) {
         <img
           src={imageUrl}
           alt={title}
+          loading="lazy"
+          decoding="async"
           className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
         />
       ) : (

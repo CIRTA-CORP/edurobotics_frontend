@@ -158,7 +158,7 @@ export function CourseForm({
               <label className="text-xs font-semibold text-gray-600 uppercase tracking-wide">
                 Nivel
               </label>
-              <div className="grid grid-cols-3 gap-2">
+              <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
                 {LEVEL_OPTIONS.map((level) => {
                   const LevelIcon = level.icon
                   const isActive = courseForm.level === level.value

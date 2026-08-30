@@ -206,7 +206,7 @@ export function LandingTab() {
           </Field>
           <Field label="Foto del robot (va dentro del mockup)">
             <div className="flex items-center gap-3.5">
-              <div className="relative h-[110px] w-[190px] flex-shrink-0 overflow-hidden rounded-[11px] border border-[#e9e9ee] bg-[#0a0a0c]" style={{ backgroundImage: 'radial-gradient(circle, rgba(255,255,255,0.5) 1px, transparent 1px)', backgroundSize: '18px 18px' }}>
+              <div className="relative h-[110px] w-full max-w-[190px] flex-shrink-0 overflow-hidden rounded-[11px] border border-[#e9e9ee] bg-[#0a0a0c]" style={{ backgroundImage: 'radial-gradient(circle, rgba(255,255,255,0.5) 1px, transparent 1px)', backgroundSize: '18px 18px' }}>
                 {form.hero.imageUrl && (
                   <img src={form.hero.imageUrl} alt="Robot del hero" className="absolute inset-0 h-full w-full object-cover" />
                 )}
