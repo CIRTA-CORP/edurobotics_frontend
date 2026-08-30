@@ -129,8 +129,8 @@
 
 ## 7. Verificación (cada rebanada)
 
-- [ ] 7.1 `npm run build` verde y `npm run lint` sin empeorar la línea base (53 problemas /
-      48 errores).
+- [x] 7.1 `npm run build` verde y `npm run lint` sin empeorar la línea base (53 problemas /
+      48 errores). Verificado archivo por archivo en las rebanadas 2, 5 y 6: sin issues nuevos.
 - [ ] 7.2 Capturas antes/después de la pantalla tocada.
 - [ ] 7.3 Recorrido de teclado de la pantalla (no regresar la capability `accessibility`).
 - [ ] 7.4 Repaso contra el mapa de cobertura de las funciones de esa rebanada.
