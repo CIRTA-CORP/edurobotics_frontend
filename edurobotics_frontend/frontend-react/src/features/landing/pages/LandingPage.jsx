@@ -6,7 +6,7 @@ import { Link } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import {
   Bot, Blocks, Code2, Play, ArrowRight, GraduationCap,
-  Building2, BookOpen, Cpu, CheckCircle2, ChevronDown,
+  Building2, BookOpen, Cpu, CheckCircle2,
 } from 'lucide-react'
 import { Button } from '@/shared/components/button'
 import { PublicNav } from '@/shared/components/PublicNav'
@@ -564,46 +564,46 @@ function FinalCTA({ onAuth, user, data }) {
 // ─────────────────────────────────────────────────────────────
 // Preguntas frecuentes (editable desde el admin)
 // ─────────────────────────────────────────────────────────────
+/**
+ * FAQ — lista a lo ancho, sin tarjetas.
+ *
+ * Usa `<details>/<summary>` nativos (patrón de letigre.run): el navegador se
+ * encarga del teclado, del estado y de la semántica para lectores de pantalla,
+ * así que no hace falta estado en React ni `aria-expanded` a mano. Las preguntas
+ * se separan con filetes en vez de encerrarse en cajas, y el icono `+` gira 45°
+ * hasta volverse `×` al abrir.
+ */
 function FAQ({ data }) {
-  const [open, setOpen] = useState(null)
   const items = data.items || []
   if (items.length === 0) return null
 
   return (
-    <section id="faq" className="mx-auto max-w-3xl px-4 pt-23 lg:pt-26">
-      <SectionLabel>Dudas frecuentes</SectionLabel>
-      <SectionTitle>{data.title}</SectionTitle>
-      {data.subtitle && (
-        <p className="mt-4 text-[16.5px] leading-relaxed text-[#55545f]">{data.subtitle}</p>
-      )}
+    <section id="faq" className="mx-auto max-w-6xl px-4 pt-23 lg:pt-26">
+      <div className="max-w-2xl">
+        <SectionLabel>Dudas frecuentes</SectionLabel>
+        <SectionTitle>{data.title}</SectionTitle>
+        {data.subtitle && (
+          <p className="mt-4 text-[16.5px] leading-relaxed text-[#55545f]">{data.subtitle}</p>
+        )}
+      </div>
 
-      <div className="mt-8 flex flex-col gap-2.5">
-        {items.map((it, i) => {
-          const isOpen = open === i
-          return (
-            <div
-              key={i}
-              className={`overflow-hidden rounded-xl border ${isOpen ? 'border-[#e9e9ee]' : 'border-[#f2f1f6]'}`}
-            >
-              <button
-                onClick={() => setOpen(isOpen ? null : i)}
-                aria-expanded={isOpen}
-                className="flex w-full items-center justify-between gap-5 px-5 py-4 text-left transition-colors hover:bg-[#fafafa]"
-              >
-                <span className="text-[15px] font-semibold text-[#16151b]">{it.question}</span>
-                <ChevronDown
-                  className={`h-4 w-4 flex-shrink-0 text-[#b3b2be] transition-transform ${isOpen ? 'rotate-180' : ''}`}
-                  aria-hidden="true"
-                />
-              </button>
-              {isOpen && (
-                <p className="max-w-[640px] px-5 pb-5 text-[14.5px] leading-relaxed text-[#55545f]">
-                  {it.answer}
-                </p>
-              )}
-            </div>
-          )
-        })}
+      <div className="mt-10 divide-y divide-[#ececf1] border-y border-[#ececf1]">
+        {items.map((it, i) => (
+          <details key={i} className="faq-item group">
+            <summary className="faq-item__summary">
+              <span className="text-[17px] font-semibold leading-snug text-[#16151b] sm:text-[19px]">
+                {it.question}
+              </span>
+              <span className="faq-item__icon" aria-hidden="true">
+                {/* Un + que se convierte en × al girar: una sola forma, dos estados */}
+                <svg viewBox="0 0 16 16" className="h-4 w-4" fill="none">
+                  <path d="M8 2.5v11M2.5 8h11" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+                </svg>
+              </span>
+            </summary>
+            <p className="faq-item__answer">{it.answer}</p>
+          </details>
+        ))}
       </div>
     </section>
   )

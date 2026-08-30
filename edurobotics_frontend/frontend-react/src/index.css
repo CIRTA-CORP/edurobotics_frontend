@@ -444,3 +444,72 @@
     display: none;
   }
 }
+
+/* ── Preguntas frecuentes ───────────────────────────────────────────────────
+   `<details>` nativo: el navegador da teclado, estado y semántica gratis. Lo
+   único que se estiliza es el marcador (que se oculta) y el icono. */
+.faq-item__summary {
+  display: flex;
+  cursor: pointer;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1.25rem;
+  padding: 1.35rem 0;
+  list-style: none;
+  user-select: none;
+  transition: color 150ms ease;
+}
+
+.faq-item__summary::-webkit-details-marker {
+  display: none;
+}
+
+.faq-item__summary:hover { color: #4b46d6; }
+
+.faq-item__summary:focus-visible {
+  outline: 2px solid #4b46d6;
+  outline-offset: 4px;
+  border-radius: 0.375rem;
+}
+
+/* El signo + gira 45° hasta volverse ×: una sola forma para los dos estados */
+.faq-item__icon {
+  display: grid;
+  place-items: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  flex-shrink: 0;
+  border-radius: 999px;
+  border: 1px solid #e3e2ea;
+  color: #8b8a95;
+  transition: transform 300ms ease, background-color 200ms ease,
+    color 200ms ease, border-color 200ms ease;
+}
+
+.faq-item[open] .faq-item__icon {
+  transform: rotate(45deg);
+  background: #16151b;
+  border-color: #16151b;
+  color: #ffffff;
+}
+
+.faq-item__answer {
+  max-width: 68ch;
+  margin: 0;
+  padding-bottom: 1.35rem;
+  font-size: 14.5px;
+  line-height: 1.7;
+  color: #55545f;
+  animation: faqAnswerIn 220ms ease-out;
+}
+
+@keyframes faqAnswerIn {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .faq-item__icon { transition: background-color 200ms ease, color 200ms ease; }
+  .faq-item[open] .faq-item__icon { transform: none; }
+  .faq-item__answer { animation: none; }
+}
