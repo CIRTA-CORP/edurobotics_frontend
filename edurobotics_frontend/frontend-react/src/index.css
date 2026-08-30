@@ -392,3 +392,10 @@
 .rich-content h3[id] {
   scroll-margin-top: 1.5rem;
 }
+/* Login handover: a determinate bar that fills while the redirect is pending.
+   Determinate on purpose — a spinner would read as "still working", and the
+   work is already done; what is left is only the navigation. */
+@keyframes loginHandoff {
+  from { transform: scaleX(0); }
+  to { transform: scaleX(1); }
+}
