@@ -78,6 +78,27 @@
   animation: fadeIn 0.15s ease-out;
 }
 
+/* Barra indeterminada de la pantalla «levantando el simulador». Va como clase y no como
+   estilo en línea para que la media query de abajo pueda anularla: un estilo en línea gana
+   siempre y dejaría la animación corriendo para quien pidió menos movimiento. */
+@keyframes simStartSlide {
+  0% { left: -40%; }
+  100% { left: 100%; }
+}
+
+.sim-start-slide {
+  animation: simStartSlide 1.3s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sim-start-slide {
+    animation: none;
+    left: 0;
+    width: 100%;
+    opacity: 0.55;
+  }
+}
+
 .animate-scale-in {
   animation: scaleIn 0.2s ease-out;
 }

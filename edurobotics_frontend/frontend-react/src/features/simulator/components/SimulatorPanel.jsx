@@ -271,10 +271,7 @@ export default function SimulatorPanel({ jointAngles, onCopyToEditor }) {
               </h2>
 
               <div className="relative mx-auto mt-7 h-[3px] w-[260px] overflow-hidden rounded-full bg-[#23232a]">
-                <span
-                  className="absolute top-0 h-full w-[40%] rounded-full bg-[#7d79e3]"
-                  style={{ animation: "simStartSlide 1.3s ease-in-out infinite" }}
-                />
+                <span className="sim-start-slide absolute top-0 h-full w-[40%] rounded-full bg-[#7d79e3]" />
               </div>
 
               <div className="mt-9 flex flex-col gap-[3px]">
