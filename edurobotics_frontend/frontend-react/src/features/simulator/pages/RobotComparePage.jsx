@@ -41,6 +41,14 @@ const PRESETS = {
   Extendido: { ...HOME, shoulder_lift_joint: -1.2, elbow_joint: 1.2 },
 }
 
+// Los robots que la web ya puede dibujar. Añadir uno es exportar su URDF y sumar una línea
+// aquí: el visor no contiene nada específico de ningún robot. El visor antiguo, en cambio,
+// solo sabe dibujar el que lleva transcrito en su código.
+const ROBOTS = {
+  ur5e: '/robots/ur5e/ur5e_robotiq.urdf',
+  ur10e: '/robots/ur10e/ur10e_robotiq.urdf',
+}
+
 function Pane({ title, subtitle, tone, children }) {
   return (
     <div className="relative flex min-h-0 flex-1 flex-col border border-slate-800">
@@ -70,6 +78,10 @@ export default function RobotComparePage() {
   })
   const [gripper, setGripper] = useState(() => Number(initialFromUrl('gripper', 0)) || 0)
   const [cameraView, setCameraView] = useState(() => initialFromUrl('cam', 'free'))
+  const [robot, setRobot] = useState(() => {
+    const fromUrl = initialFromUrl('robot', 'ur5e')
+    return fromUrl in ROBOTS ? fromUrl : 'ur5e'
+  })
 
   const angles = { ...PRESETS[preset], [GRIPPER_DRIVER_JOINT]: gripper }
 
@@ -113,6 +125,21 @@ export default function RobotComparePage() {
           ))}
         </div>
 
+        <div className="flex items-center gap-1">
+          {Object.keys(ROBOTS).map((name) => (
+            <button
+              key={name}
+              type="button"
+              onClick={() => setRobot(name)}
+              className={`rounded px-2.5 py-1 text-[12px] ${
+                robot === name ? 'bg-emerald-400 text-slate-900' : 'bg-slate-800 text-slate-300'
+              }`}
+            >
+              {name}
+            </button>
+          ))}
+        </div>
+
         <label className="flex items-center gap-2 text-[12px] text-slate-400">
           Gripper
           <input
@@ -129,12 +156,16 @@ export default function RobotComparePage() {
       </header>
 
       <div className="flex min-h-0 flex-1 flex-col md:flex-row">
-        <Pane title="Actual (Babylon)" subtitle="medidas escritas a mano" tone="text-rose-400">
+        <Pane
+          title="Actual (Babylon)"
+          subtitle={robot === 'ur5e' ? 'medidas escritas a mano' : `no sabe dibujar un ${robot}`}
+          tone="text-rose-400"
+        >
           <BabylonViewer jointAngles={angles} cameraView={cameraView} />
         </Pane>
         <Pane title="Nuevo (URDF)" subtitle="leído de la descripción de ROS" tone="text-emerald-400">
           <Suspense fallback={<div className="grid h-full place-items-center text-xs text-slate-500">Cargando…</div>}>
-            <UrdfViewer jointAngles={angles} cameraView={cameraView} />
+            <UrdfViewer key={robot} jointAngles={angles} cameraView={cameraView} urdf={ROBOTS[robot]} />
           </Suspense>
         </Pane>
       </div>

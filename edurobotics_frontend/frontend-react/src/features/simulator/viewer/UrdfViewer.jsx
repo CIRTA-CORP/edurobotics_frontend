@@ -24,7 +24,9 @@ import {
   ARM_JOINT_NAMES, GRIPPER_DRIVER_JOINT, normalizeJointAngles,
 } from '@/features/simulator/viewer/jointNames'
 
-const ROBOT_URDF = '/robots/ur5e/ur5e_robotiq.urdf'
+// Robot por defecto. El visor no sabe nada de ningún robot en particular: recibe la ruta
+// de un URDF y dibuja lo que ese archivo describa.
+const DEFAULT_URDF = '/robots/ur5e/ur5e_robotiq.urdf'
 // Espejo web del paquete `robot_description` de ROS.
 const PACKAGE_ROOT = '/robots/robot_description'
 
@@ -54,7 +56,7 @@ function presetToPosition({ alpha, beta, radius, target }) {
   }
 }
 
-export default function UrdfViewer({ jointAngles, cameraView = 'free' }) {
+export default function UrdfViewer({ jointAngles, cameraView = 'free', urdf = DEFAULT_URDF }) {
   const canvasRef = useRef(null)
   const robotRef = useRef(null)
   const targetAnglesRef = useRef(null)
@@ -131,7 +133,7 @@ export default function UrdfViewer({ jointAngles, cameraView = 'free' }) {
     let disposed = false
     try {
       loader.load(
-        ROBOT_URDF,
+        urdf,
         (robot) => {
           if (disposed) return
           // El URDF viene en la convención de ROS (Z arriba); three.js usa Y arriba.
@@ -143,7 +145,10 @@ export default function UrdfViewer({ jointAngles, cameraView = 'free' }) {
           manager.onLoad = () => {
             let meshes = 0
             robot.traverse((node) => { if (node.isMesh) meshes += 1 })
-            setStatus(`${Object.keys(robot.joints).length} juntas · ${meshes} mallas`)
+            // El nombre sale del propio URDF, no de una etiqueta escrita a mano: una
+            // etiqueta fija diciendo «ur5e» mientras se dibuja otro robot sería el mismo
+            // tipo de dato mentiroso que este trabajo vino a eliminar.
+            setStatus(`${robot.robotName} · ${Object.keys(robot.joints).length} juntas · ${meshes} mallas`)
           }
         },
         undefined,
@@ -211,7 +216,9 @@ export default function UrdfViewer({ jointAngles, cameraView = 'free' }) {
         else material?.dispose?.()
       })
     }
-  }, [])
+    // Cambiar de robot reconstruye la escena: es una operación rara y así no hay que
+    // razonar sobre estados mezclados de dos robots distintos.
+  }, [urdf])
 
   useEffect(() => {
     if (!jointAngles) return
@@ -249,7 +256,7 @@ export default function UrdfViewer({ jointAngles, cameraView = 'free' }) {
     <div className="relative h-full w-full">
       <canvas ref={canvasRef} className="block h-full w-full outline-none" style={{ touchAction: 'none' }} />
       <div className="pointer-events-none absolute left-2 top-2 rounded bg-black/60 px-2 py-1 font-mono text-[11px] text-emerald-300">
-        visor URDF · ur5e · {status}
+        visor URDF · {status}
       </div>
     </div>
   )
