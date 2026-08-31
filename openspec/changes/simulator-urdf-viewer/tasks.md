@@ -74,8 +74,23 @@ predeterminado durante todo el change.
 
 - [ ] 6.1 Mario revisa la comparación y decide: se adopta, se ajusta o se descarta.
 - [ ] 6.2 Si se adopta, un change aparte cubre el cambio del visor por defecto, la baja de
-      Babylon, el renombrado de `meshes/ur5/` (el robot es un UR5e y ese nombre originó la
-      confusión) y la incorporación de `ur10e` y `pupi`.
+      Babylon y el renombrado de `meshes/ur5/` (el robot es un UR5e y ese nombre originó la
+      confusión).
+
+## 7. Segundo robot (hecho como prueba, fuera del alcance original)
+
+- [x] 7.1 `scripts/convert-meshes.py` convierte los `.dae` de ROS a `.glb`. **No hace falta
+      Fly ni Docker**: el visor solo dibuja, y la conversión corre en el portátil.
+      El script se valida solo contra las 7 mallas del UR5e ya conocidas antes de tocar un
+      robot nuevo, porque la escala real vive en las transformadas del grafo de escena y
+      exportarla mal da un robot 1000× más grande.
+- [x] 7.2 UR10e exportado y dibujado en el mismo visor, sin una línea de código nueva.
+      Se comprobó que es visiblemente mayor que el UR5e (antebrazo 0,676 m vs 0,489 m).
+- [x] 7.3 La etiqueta en pantalla pasa a salir del `robot name` del propio URDF: decía
+      «ur5e» mientras dibujaba un UR10e.
+- [ ] 7.4 `pupi` (9 juntas): sus mallas no están en `meshes/arms/`, hay que localizarlas.
+- [ ] 7.5 Los assets de robots pesan 19 MB sin comprimir. Si se adoptan varios robots,
+      conviene compresión Draco antes de servirlos a un colegio.
 
 ## Hallazgos durante la implementación
 
