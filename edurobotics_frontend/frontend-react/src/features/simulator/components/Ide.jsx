@@ -1,5 +1,5 @@
-import React, { useEffect, useState, useCallback } from "react";
-import { MoreVertical, ChevronRight } from "lucide-react";
+import React, { useEffect, useState, useCallback, useRef } from "react";
+import { ChevronRight } from "lucide-react";
 import LeftPanel from "./LeftPanel";
 import SimulatorPanel from "./SimulatorPanel";
 import AlertsHandler from '@/features/simulator/components/AlertsHandler';
@@ -14,6 +14,12 @@ export function Ide() {
     parseInt(localStorage.getItem("LPWidth")) || 50
   );
   const [hideLeftPanel, setHideLeftPanel] = useState(false);
+  // Puente hacia el editor de Monaco, que vive en LeftPanel: lo usa el botón «Copiar al
+  // editor» de las juntas, que está en el panel del simulador.
+  const editorApiRef = useRef(null);
+  const handleCopyToEditor = useCallback((code) => {
+    editorApiRef.current?.replaceCode(code);
+  }, []);
   const [isDragging, setIsDragging] = useState(false);
 
   const onMove = useCallback((clientX) => {
@@ -101,27 +107,27 @@ export function Ide() {
               setAlertType={setAlertType}
               handleHide={() => setHideLeftPanel(true)}
               onJointAngles={setJointAngles}
+              editorApiRef={editorApiRef}
             />
           </div>
         )}
 
-        {/* DIVIDER */}
+        {/* DIVIDER — filete de 5px con tirador (canvas SimuladorPiezas §01) */}
         <div
           id="divider"
           onMouseDown={onMouseDown}
           onTouchStart={onTouchStart}
           onTouchEnd={onMouseUp}
-          className="flex justify-center items-center w-[10px] max-w-[12px] h-full bg-blue-600 cursor-col-resize hover:bg-gray-500 active:bg-gray-500 z-50 shrink-0"
+          className="group relative flex w-[5px] max-w-[6px] shrink-0 cursor-col-resize items-center justify-center bg-[#23232a] z-50"
         >
-          {hideLeftPanel ? (
+          <span className="h-9 w-[3px] rounded-full bg-[#3a3a44] transition-colors group-hover:bg-[#4a4a54]" />
+          {hideLeftPanel && (
             <button
               onClick={() => setHideLeftPanel(false)}
-              className="h-full w-full flex items-center justify-center outline-none"
+              className="absolute inset-0 flex items-center justify-center outline-none"
             >
-              <ChevronRight className="text-white" />
+              <ChevronRight className="h-3.5 w-3.5 text-[#6e6d78]" />
             </button>
-          ) : (
-            <MoreVertical className="text-white" />
           )}
         </div>
 
@@ -130,7 +136,7 @@ export function Ide() {
           id="simulator-panel-container"
           className="flex-grow h-full overflow-hidden"
         >
-          <SimulatorPanel jointAngles={jointAngles} />
+          <SimulatorPanel jointAngles={jointAngles} onCopyToEditor={handleCopyToEditor} />
         </div>
       </div>
 

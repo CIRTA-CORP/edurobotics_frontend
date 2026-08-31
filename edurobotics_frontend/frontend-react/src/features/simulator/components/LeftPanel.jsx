@@ -12,24 +12,22 @@ const BLOCKLY = "blockly";
 const EDITOR = "editor";
 const DOCUMENTATION = "docs";
 
-/* ── Bottom tab button ──────────────────────────── */
+/* ── Top bar tab button (canvas: pestañas en la cabecera del panel) ──────────── */
 function TabButton({ label, icon, active, onClick }) {
   return (
     <button
       onClick={onClick}
       className={`
-        relative flex-1 flex items-center justify-center gap-1.5 h-11
-        text-xs font-semibold tracking-wide transition-all focus:outline-none
+        inline-flex h-8 flex-shrink-0 items-center gap-2 rounded-lg px-3.5
+        text-[12.5px] font-semibold transition-colors focus-visible:outline-none
+        focus-visible:ring-2 focus-visible:ring-[#a5a1ee]
         ${active
-          ? 'text-white bg-slate-900/50'
-          : 'text-slate-500 hover:text-slate-200 hover:bg-slate-800/40'}
+          ? 'bg-[#7d79e3]/[0.14] text-[#a5a1ee]'
+          : 'text-[#6e6d78] hover:text-[#f4f4f6]'}
       `}
     >
       {icon}
       {label}
-      {active && (
-        <span className="absolute top-0 left-3 right-3 h-0.5 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-b" />
-      )}
     </button>
   );
 }
@@ -39,7 +37,7 @@ const ARDUINO_TEMPLATE_CODE = `
 
 `;
 
-export default function LeftPanel({ setAlertType, handleHide, onJointAngles }) {
+export default function LeftPanel({ setAlertType, handleHide, onJointAngles, editorApiRef }) {
   const [enviromentConfig, setEnviromentConfig] = useState({
     language: "python",
     editor: "python",
@@ -118,7 +116,20 @@ export default function LeftPanel({ setAlertType, handleHide, onJointAngles }) {
     editorRef.current.setValue(
       savedCode !== null && savedCode !== undefined ? savedCode : ARDUINO_TEMPLATE_CODE
     );
-  }, [runningEnviroment]);
+
+    // El botón «Copiar al editor» de las juntas vive en el panel del simulador, al otro
+    // lado del divisor. Se expone aquí la única operación que necesita, para no sacar el
+    // editor entero de este componente.
+    if (editorApiRef) {
+      editorApiRef.current = {
+        replaceCode: (code) => {
+          editorRef.current?.setValue(code);
+          localStorage.setItem(`code_${runningEnviroment}`, code);
+          editorRef.current?.focus();
+        },
+      };
+    }
+  }, [runningEnviroment, editorApiRef]);
 
   const handleEditorChange = useCallback((value) => {
     localStorage.setItem(`code_${runningEnviroment}`, value);
@@ -128,6 +139,18 @@ export default function LeftPanel({ setAlertType, handleHide, onJointAngles }) {
     if (editorRef.current) {
         editorRef.current.layout({ width: "auto", height: "auto" });
     }
+  }, []);
+
+  // "Copiar al editor" (panel de juntas): inserta el código generado en Monaco.
+  useEffect(() => {
+    const onInsert = (event) => {
+      if (editorRef.current && typeof event.detail === "string") {
+        editorRef.current.setValue(event.detail);
+        setPanelSelected(EDITOR);
+      }
+    };
+    window.addEventListener("sim:insert-code", onInsert);
+    return () => window.removeEventListener("sim:insert-code", onInsert);
   }, []);
 
   // Fix Monaco negro: cuando el tab Editor se activa, hay que forzar layout()
@@ -259,16 +282,42 @@ export default function LeftPanel({ setAlertType, handleHide, onJointAngles }) {
   }, []);
 
   return (
-    <div className="flex flex-col h-full w-full bg-[#1e1e1e] text-white">
-      <CodeButtons
-        runLoading={runLoading}
-        stopDisabled={false}
-        handleRun={handleRun}
-        handleStop={handleStop}
-        handleDownload={() => {}}
-        handleUpload={handleUpload}
-        handleHide={handleHide}
-      />
+    <div className="flex h-full w-full flex-col bg-[#131316] text-[#f4f4f6]">
+      {/* Barra superior: pestañas a la izquierda, acciones a la derecha
+          (canvas Simulador: las pestañas suben del pie a la cabecera del panel). */}
+      <div className="flex h-[46px] shrink-0 items-center justify-between gap-4 border-b border-[#23232a] bg-[#1a1a1f] px-3">
+        <div className="flex min-w-0 items-center gap-[2px]">
+          <TabButton
+            label="Editor"
+            icon={<Code2 className="w-3.5 h-3.5" strokeWidth={1.8} />}
+            active={panelSelected === EDITOR}
+            onClick={() => setPanelSelected(EDITOR)}
+          />
+          {enviromentConfig && enviromentConfig["blockly?"] && (
+            <TabButton
+              label="Bloques"
+              icon={<Puzzle className="w-3.5 h-3.5" strokeWidth={1.8} />}
+              active={panelSelected === BLOCKLY}
+              onClick={() => setPanelSelected(BLOCKLY)}
+            />
+          )}
+          <TabButton
+            label="Guía"
+            icon={<BookOpen className="w-3.5 h-3.5" strokeWidth={1.8} />}
+            active={panelSelected === DOCUMENTATION}
+            onClick={() => setPanelSelected(DOCUMENTATION)}
+          />
+        </div>
+        <CodeButtons
+          runLoading={runLoading}
+          stopDisabled={false}
+          handleRun={handleRun}
+          handleStop={handleStop}
+          handleDownload={() => {}}
+          handleUpload={handleUpload}
+          handleHide={handleHide}
+        />
+      </div>
 
       <div className="flex-grow flex flex-col w-full overflow-hidden relative">
         {enviromentConfig && enviromentConfig["blockly?"] && (
@@ -290,8 +339,8 @@ export default function LeftPanel({ setAlertType, handleHide, onJointAngles }) {
                 handleEditorChange={handleEditorChange}
               />
             </div>
-            <div id="terminal-container" className="h-[30%] max-h-[250px] overflow-y-auto border-t border-gray-700 bg-black">
-              <Terminal output={terminalOutput} onHide={handleHideTerminal} onClear={clearTerminal} />
+            <div id="terminal-container" className="h-[30%] max-h-[250px] overflow-y-auto border-t border-[#23232a] bg-[#0d0d10]">
+              <Terminal output={terminalOutput} running={runLoading} onHide={handleHideTerminal} onClear={clearTerminal} />
             </div>
           </Panel>
         </div>
@@ -301,30 +350,6 @@ export default function LeftPanel({ setAlertType, handleHide, onJointAngles }) {
              <DocumentationPanel url_doc={enviromentConfig?.doc_url} />
           </Panel>
         </div>
-      </div>
-
-      {/* TABS */}
-      <div className="w-full flex border-t border-slate-800 bg-gradient-to-b from-[#1f1f1f] to-[#181818] shrink-0">
-        {enviromentConfig && enviromentConfig["blockly?"] && (
-          <TabButton
-            label="Bloques"
-            icon={<Puzzle className="w-3.5 h-3.5" />}
-            active={panelSelected === BLOCKLY}
-            onClick={() => setPanelSelected(BLOCKLY)}
-          />
-        )}
-        <TabButton
-          label="Editor"
-          icon={<Code2 className="w-3.5 h-3.5" />}
-          active={panelSelected === EDITOR}
-          onClick={() => setPanelSelected(EDITOR)}
-        />
-        <TabButton
-          label="Guía"
-          icon={<BookOpen className="w-3.5 h-3.5" />}
-          active={panelSelected === DOCUMENTATION}
-          onClick={() => setPanelSelected(DOCUMENTATION)}
-        />
       </div>
     </div>
   );
