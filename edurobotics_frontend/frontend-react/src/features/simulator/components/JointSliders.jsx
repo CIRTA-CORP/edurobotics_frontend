@@ -36,9 +36,7 @@ export default function JointSliders({ angles, onChange, onCopyToEditor }) {
     if (onCopyToEditor) {
       onCopyToEditor(code);
     } else {
-      // Sin callback directo, se le pide al editor (LeftPanel) que inserte el
-      // código; el portapapeles queda de respaldo.
-      window.dispatchEvent(new CustomEvent("sim:insert-code", { detail: code }));
+      // Respaldo por si el panel se monta suelto: al menos el código queda a mano.
       navigator.clipboard.writeText(code);
     }
     setCopied(true);

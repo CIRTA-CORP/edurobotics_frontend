@@ -32,9 +32,28 @@ function TabButton({ label, icon, active, onClick }) {
   );
 }
 
-const ARDUINO_TEMPLATE_CODE = `
-// En este editor debes escribir tu código
+// Plantilla inicial del editor. El entorno es Python (`python_env`), así que el comentario
+// va con `#`: la plantilla anterior empezaba con `//`, que es C++, y un estudiante que
+// pulsara Ejecutar sin escribir nada recibía un SyntaxError como primera experiencia.
+//
+// Además arranca con un programa que funciona: mover el robot a su posición de reposo.
+// Ver algo moverse antes de escribir nada es mejor introducción que un archivo vacío.
+const STARTER_CODE = `# Escribe aquí tu programa.
+# Pulsa Ejecutar para ver el robot moverse en la vista 3D.
 
+from robot_api import Robot
+
+robot = Robot()
+
+# Posición de reposo: el UR5e queda extendido en horizontal.
+robot.move_joints({
+    "shoulder_pan_joint": 0.000,
+    "shoulder_lift_joint": 0.000,
+    "elbow_joint": 0.000,
+    "wrist_1_joint": 0.000,
+    "wrist_2_joint": 0.000,
+    "wrist_3_joint": 0.000,
+}, duration=2.0)
 `;
 
 export default function LeftPanel({ setAlertType, handleHide, onJointAngles, editorApiRef }) {
@@ -114,7 +133,7 @@ export default function LeftPanel({ setAlertType, handleHide, onJointAngles, edi
     document.head.appendChild(style);
     const savedCode = localStorage.getItem(`code_${runningEnviroment}`) || null;
     editorRef.current.setValue(
-      savedCode !== null && savedCode !== undefined ? savedCode : ARDUINO_TEMPLATE_CODE
+      savedCode !== null && savedCode !== undefined ? savedCode : STARTER_CODE
     );
 
     // El botón «Copiar al editor» de las juntas vive en el panel del simulador, al otro
@@ -125,6 +144,8 @@ export default function LeftPanel({ setAlertType, handleHide, onJointAngles, edi
         replaceCode: (code) => {
           editorRef.current?.setValue(code);
           localStorage.setItem(`code_${runningEnviroment}`, code);
+          // Si el estudiante está en la Guía, el código aparecería fuera de su vista.
+          setPanelSelected(EDITOR);
           editorRef.current?.focus();
         },
       };
@@ -139,18 +160,6 @@ export default function LeftPanel({ setAlertType, handleHide, onJointAngles, edi
     if (editorRef.current) {
         editorRef.current.layout({ width: "auto", height: "auto" });
     }
-  }, []);
-
-  // "Copiar al editor" (panel de juntas): inserta el código generado en Monaco.
-  useEffect(() => {
-    const onInsert = (event) => {
-      if (editorRef.current && typeof event.detail === "string") {
-        editorRef.current.setValue(event.detail);
-        setPanelSelected(EDITOR);
-      }
-    };
-    window.addEventListener("sim:insert-code", onInsert);
-    return () => window.removeEventListener("sim:insert-code", onInsert);
   }, []);
 
   // Fix Monaco negro: cuando el tab Editor se activa, hay que forzar layout()
