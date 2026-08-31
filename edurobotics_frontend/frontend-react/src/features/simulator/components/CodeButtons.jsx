@@ -5,60 +5,54 @@ const Tooltip = ({ title, children }) => (
   <div className="group relative flex items-center justify-center">
     {children}
     <div className="pointer-events-none absolute top-full mt-2 left-1/2 -translate-x-1/2 hidden group-hover:flex z-50 whitespace-nowrap">
-      <span className="px-2.5 py-1 text-[11px] font-medium text-white bg-slate-900 border border-slate-700 shadow-lg rounded-md">
+      <span className="px-2.5 py-1 text-[11px] font-medium text-[#f4f4f6] bg-[#1f1f26] border border-[#33333c] shadow-lg rounded-md">
         {title}
       </span>
     </div>
   </div>
 );
 
-/* ── Run button (primary) ───────────────────────── */
+/* ── Run button — verde de marca, texto oscuro (canvas §02) ── */
 const RunButton = ({ runLoading, handleRun }) => (
-  <Tooltip title={runLoading ? "Ejecutando..." : "Ejecutar programa"}>
-    <button
-      onClick={handleRun}
-      disabled={runLoading}
-      className={`
-        flex items-center justify-center gap-1.5 h-8 px-3 rounded-md
-        text-xs font-semibold text-white transition-all
-        ${runLoading
-          ? "bg-emerald-500/40 cursor-wait"
-          : "bg-emerald-600 hover:bg-emerald-500 shadow-sm shadow-emerald-500/20 hover:shadow-emerald-500/40"}
-      `}
-    >
-      {runLoading ? (
-        <>
-          <Loader2 className="w-3.5 h-3.5 animate-spin" />
-          Ejecutando
-        </>
-      ) : (
-        <>
-          <Play className="w-3.5 h-3.5 fill-current" />
-          Ejecutar
-        </>
-      )}
-    </button>
-  </Tooltip>
+  <button
+    onClick={handleRun}
+    disabled={runLoading}
+    className={`inline-flex h-8 items-center gap-2 rounded-[9px] px-3.5 text-[12.5px] font-semibold transition-colors ${
+      runLoading
+        ? "cursor-wait bg-[#34d399]/20 text-[#6ee7b7]"
+        : "bg-[#10b981] text-[#04231a] hover:bg-[#34d399]"
+    }`}
+  >
+    {runLoading ? (
+      <>
+        <Loader2 className="h-3.5 w-3.5 animate-spin" />
+        Ejecutando
+      </>
+    ) : (
+      <>
+        <Play className="h-3 w-3 fill-current" />
+        Ejecutar
+      </>
+    )}
+  </button>
 );
 
-/* ── Stop button ────────────────────────────────── */
-const StopButton = ({ handleStop, disabled }) => (
-  <Tooltip title="Detener programa">
-    <button
-      onClick={handleStop}
-      disabled={disabled}
-      className={`
-        flex items-center justify-center gap-1.5 h-8 px-3 rounded-md
-        text-xs font-semibold transition-all
-        ${disabled
-          ? "bg-slate-800 text-slate-600 cursor-not-allowed"
-          : "bg-slate-800 hover:bg-red-600/90 text-slate-300 hover:text-white border border-slate-700 hover:border-red-500"}
-      `}
-    >
-      <Square className="w-3 h-3 fill-current" />
-      Detener
-    </button>
-  </Tooltip>
+/* ── Stop button — contorno, rosa solo al correr ── */
+const StopButton = ({ handleStop, disabled, running }) => (
+  <button
+    onClick={handleStop}
+    disabled={disabled}
+    className={`inline-flex h-8 items-center gap-2 rounded-[9px] border px-3.5 text-[12.5px] font-semibold transition-colors ${
+      running
+        ? "border-[#f08099]/40 text-[#f08099] hover:bg-[#f08099]/10"
+        : disabled
+          ? "cursor-not-allowed border-[#33333c] text-[#4a4a54]"
+          : "border-[#33333c] text-[#a1a0ab] hover:text-[#f4f4f6] hover:border-[#4a4a54]"
+    }`}
+  >
+    <Square className="h-3 w-3 fill-current" />
+    Detener
+  </button>
 );
 
 /* ── Icon-only button ───────────────────────────── */
@@ -66,7 +60,7 @@ const IconButton = ({ onClick, title, children }) => (
   <Tooltip title={title}>
     <button
       onClick={onClick}
-      className="flex items-center justify-center w-8 h-8 rounded-md bg-transparent hover:bg-slate-800 text-slate-400 hover:text-white transition-all border border-transparent hover:border-slate-700"
+      className="grid h-[30px] w-[30px] place-items-center rounded-lg text-[#8b8a95] transition-colors hover:bg-[#26262d] hover:text-[#f4f4f6]"
     >
       {children}
     </button>
@@ -78,7 +72,7 @@ const UploadButton = ({ handleUpload }) => (
   <Tooltip title="Subir archivo">
     <label
       htmlFor="upload-icon-button-file"
-      className="cursor-pointer flex items-center justify-center w-8 h-8 rounded-md bg-transparent hover:bg-slate-800 text-slate-400 hover:text-white transition-all border border-transparent hover:border-slate-700"
+      className="grid h-[30px] w-[30px] cursor-pointer place-items-center rounded-lg text-[#8b8a95] transition-colors hover:bg-[#26262d] hover:text-[#f4f4f6]"
     >
       <input
         type="file"
@@ -86,7 +80,7 @@ const UploadButton = ({ handleUpload }) => (
         onChange={handleUpload}
         className="hidden"
       />
-      <Upload className="w-4 h-4" />
+      <Upload className="h-4 w-4" strokeWidth={1.8} />
     </label>
   </Tooltip>
 );
@@ -103,28 +97,21 @@ export default function CodeButtons({
   return (
     <div
       id="code-buttons"
-      className="flex flex-row items-center w-full min-h-[44px] bg-gradient-to-b from-[#252526] to-[#1f1f1f] px-3 border-b border-slate-800 shrink-0"
+      className="flex shrink-0 flex-row items-center gap-1.5"
     >
-      {/* Primary actions */}
-      <div className="flex flex-row items-center gap-1.5">
-        <RunButton runLoading={runLoading} handleRun={handleRun} />
-        <StopButton handleStop={handleStop} disabled={stopDisabled} />
+      <RunButton runLoading={runLoading} handleRun={handleRun} />
+      <StopButton handleStop={handleStop} disabled={stopDisabled} running={runLoading} />
 
-        {/* Divider */}
-        <div className="w-px h-5 bg-slate-700 mx-1.5" />
+      {/* Divider */}
+      <div className="mx-1 h-[18px] w-px bg-[#2c2c34]" />
 
-        {/* Secondary actions */}
-        <IconButton onClick={handleDownload} title="Descargar archivo">
-          <Download className="w-4 h-4" />
-        </IconButton>
-        <UploadButton handleUpload={handleUpload} />
-      </div>
-
-      <div className="flex-grow" />
-
-      {/* Hide panel */}
-      <IconButton onClick={handleHide} title="Ocultar panel">
-        <ChevronLeft className="w-4 h-4" />
+      {/* Secondary actions */}
+      <IconButton onClick={handleDownload} title="Descargar archivo">
+        <Download className="h-4 w-4" strokeWidth={1.8} />
+      </IconButton>
+      <UploadButton handleUpload={handleUpload} />
+      <IconButton onClick={handleHide} title="Ocultar el panel de código">
+        <ChevronLeft className="h-4 w-4" strokeWidth={1.8} />
       </IconButton>
     </div>
   );
