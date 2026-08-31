@@ -50,10 +50,21 @@ Fuente: canvas `SimuladorPiezas` (paleta), `SimuladorInicio` (pantallas de estad
 3. **«UR5» en 7 sitios** (cabecera, pantallas de inicio, Guía) cuando el robot es un UR5e.
 4. **`DocumentationPanel` quedó fuera del rediseño**: seguía entero en la paleta anterior
    (`slate-950`, `slate-900`, `blue-400`), y es la pestaña «Guía» que se ve junto al editor.
-5. **«Copiar al editor» no copiaba al editor.** La cadena estaba conectada desde
-   `JointSliders` hasta `SimulatorPanel`, pero `Ide` no pasaba `onCopyToEditor`: el botón
-   caía al respaldo de portapapeles y había que pegar a mano. Cableado hasta Monaco con un
-   `editorApiRef` que expone solo la operación necesaria, sin sacar el editor de `LeftPanel`.
+5. **«Copiar al editor» tenía dos mecanismos, uno de ellos a medias.** `Ide` no pasaba
+   `onCopyToEditor`, así que la cadena de props moría; funcionaba por un camino distinto,
+   un evento global `sim:insert-code` que `LeftPanel` escuchaba.
+   *Corrección a la primera lectura de este archivo: se anotó que el botón «no copiaba al
+   editor». Era falso — sí lo hacía, por el evento. El defecto era la duplicación, no la
+   ausencia.*
+   Ahora hay un solo camino: `LeftPanel` expone `replaceCode` por un ref, `Ide` lo pasa a
+   `SimulatorPanel`, y se elimina el evento global. Comunicación directa dentro del mismo
+   árbol en lugar de un evento en `window`, y de paso el editor se trae al frente si el
+   estudiante estaba en la Guía.
+
+6. **La plantilla inicial del editor no era Python.** Empezaba con `// En este editor debes
+   escribir tu código` —comentario de C++— en un entorno `python_env`. Un estudiante que
+   pulsara Ejecutar sin escribir nada recibía un `SyntaxError` como primera experiencia.
+   Ahora arranca con un programa válido que mueve el robot a su posición de reposo.
 
 ## Integración con el visor URDF
 
