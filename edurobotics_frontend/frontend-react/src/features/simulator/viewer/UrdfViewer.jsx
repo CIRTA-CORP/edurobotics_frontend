@@ -30,6 +30,17 @@ const DEFAULT_URDF = '/robots/ur5e/ur5e_robotiq.urdf'
 // Espejo web del paquete `robot_description` de ROS.
 const PACKAGE_ROOT = '/robots/robot_description'
 
+// El diagnóstico se muestra en desarrollo, o a demanda con `?debug=viewer` en producción
+// (sirve para saber qué cargó sin abrir la consola).
+const SHOW_DIAGNOSTICS = (() => {
+  try {
+    return import.meta.env.DEV
+      || new URLSearchParams(window.location.search).get('debug') === 'viewer'
+  } catch {
+    return false
+  }
+})()
+
 // Constante de tiempo del seguimiento suavizado, en segundos. Igual que en el visor
 // anterior: el robot se acerca al último objetivo cada frame, independiente del framerate.
 const SMOOTH_TAU = 0.12
@@ -64,8 +75,9 @@ export default function UrdfViewer({ jointAngles, cameraView = 'free', urdf = DE
   const latestAnglesRef = useRef(null)
   const controlsRef = useRef(null)
   const cameraRef = useRef(null)
-  // Estado visible en pantalla: durante el spike hace falta poder ver desde una captura
-  // si el robot cargó, cuántas mallas entraron, o qué falló.
+  // Diagnóstico en pantalla: qué robot cargó, cuántas mallas entraron o qué falló. Fue lo
+  // que hizo legible un fallo en el que el robot cargaba con 22 juntas y cero geometría.
+  // Solo en desarrollo o con `?debug=viewer`: un estudiante no tiene por qué verlo.
   const [status, setStatus] = useState('cargando…')
 
   useEffect(() => {
@@ -76,7 +88,8 @@ export default function UrdfViewer({ jointAngles, cameraView = 'free', urdf = DE
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
 
     const scene = new Scene()
-    scene.background = new Color(0x14171f)
+    // Paleta del rediseño (change `simulator-dark-redesign`): el lienzo del simulador.
+    scene.background = new Color(0x0a0a0c)
 
     const camera = new PerspectiveCamera(50, 1, 0.01, 100)
     cameraRef.current = camera
@@ -97,7 +110,9 @@ export default function UrdfViewer({ jointAngles, cameraView = 'free', urdf = DE
     key.position.set(-1, 2, 1)
     scene.add(key)
 
-    const grid = new GridHelper(4, 16, 0x4d99ff, 0x2e4767)
+    // Rejilla en los grises de la paleta, con el eje central en el acento: sitúa al
+    // estudiante sin competir con el robot, que es lo que tiene que mirar.
+    const grid = new GridHelper(4, 16, 0x7d79e3, 0x2c2c34)
     scene.add(grid)
 
     // ── Carga del robot ────────────────────────────────────────────────
@@ -255,9 +270,11 @@ export default function UrdfViewer({ jointAngles, cameraView = 'free', urdf = DE
   return (
     <div className="relative h-full w-full">
       <canvas ref={canvasRef} className="block h-full w-full outline-none" style={{ touchAction: 'none' }} />
-      <div className="pointer-events-none absolute left-2 top-2 rounded bg-black/60 px-2 py-1 font-mono text-[11px] text-emerald-300">
-        visor URDF · {status}
-      </div>
+      {SHOW_DIAGNOSTICS && (
+        <div className="pointer-events-none absolute bottom-2 left-2 rounded bg-black/60 px-2 py-1 font-mono text-[11px] text-[#a5a1ee]">
+          {status}
+        </div>
+      )}
     </div>
   )
 }
