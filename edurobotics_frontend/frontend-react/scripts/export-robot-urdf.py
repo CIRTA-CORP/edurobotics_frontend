@@ -117,10 +117,15 @@ def copy_meshes(urdf_path: Path, public_dir: Path) -> int:
         if not filename.startswith("package://robot_description/"):
             continue
         relative = filename.replace("package://robot_description/", "")
+        destination = public_dir / PACKAGE_WEB_ROOT / relative
+        # Las mallas de un robot nuevo las deja ya en su sitio `convert-meshes.py`.
+        if destination.is_file():
+            continue
+
         group = Path(relative).parent.parent.parent.name + "/" + Path(relative).parent.parent.name
         source_dir = MESH_SOURCE_DIRS.get(group)
         if source_dir is None:
-            missing.append(group)
+            missing.append(f"{group} (¿falta correr convert-meshes.py --robot …?)")
             continue
 
         source = public_dir / source_dir / Path(relative).name
@@ -128,7 +133,6 @@ def copy_meshes(urdf_path: Path, public_dir: Path) -> int:
             missing.append(str(source.relative_to(public_dir)))
             continue
 
-        destination = public_dir / PACKAGE_WEB_ROOT / relative
         destination.parent.mkdir(parents=True, exist_ok=True)
         shutil.copyfile(source, destination)
         copied += 1
