@@ -13,6 +13,25 @@ pip install xacro pyyaml
 python scripts/export-robot-urdf.py --simulation-repo /ruta/a/cirta_simulation
 ```
 
+## Añadir un robot nuevo
+
+No hace falta Fly ni Docker: el visor solo dibuja, y todo esto corre en un portátil.
+
+```bash
+pip install "trimesh[easy]" pycollada
+python scripts/convert-meshes.py    --simulation-repo /ruta/a/cirta_simulation --robot ur10e
+python scripts/export-robot-urdf.py --simulation-repo /ruta/a/cirta_simulation --robot ur10e
+```
+
+Después, una línea en `ROBOTS` dentro de `RobotComparePage.jsx`. El visor no contiene nada
+específico de ningún robot: recibe la ruta de un URDF y dibuja lo que ese archivo describa.
+
+Probado con el UR10e —se dibujó sin tocar una línea del visor— y retirado a la espera de que
+CIRTA apruebe el enfoque, para no dar por hecha una decisión que no está tomada.
+
+**Ojo con Git LFS**: las mallas viajan por LFS. Un clon sin `git lfs pull` trae punteros de
+texto de 131 bytes en vez de geometría. `convert-meshes.py` lo detecta y lo dice.
+
 ## Verificar
 
 ```bash

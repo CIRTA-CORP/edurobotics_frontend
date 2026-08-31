@@ -86,6 +86,9 @@ predeterminado durante todo el change.
       exportarla mal da un robot 1000× más grande.
 - [x] 7.2 UR10e exportado y dibujado en el mismo visor, sin una línea de código nueva.
       Se comprobó que es visiblemente mayor que el UR5e (antebrazo 0,676 m vs 0,489 m).
+      **Retirado después a propósito**: la rama queda solo con el UR5e, el robot que estaba
+      mal, para presentarlo como corrección de un defecto y no como una ampliación ya
+      decidida. Reponerlo son dos comandos (ver `public/robots/README.md`).
 - [x] 7.3 La etiqueta en pantalla pasa a salir del `robot name` del propio URDF: decía
       «ur5e» mientras dibujaba un UR10e.
 - [ ] 7.4 `pupi` (9 juntas): sus mallas no están en `meshes/arms/`, hay que localizarlas.
