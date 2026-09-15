@@ -202,7 +202,10 @@ export default function LeftPanel({ setAlertType, handleHide, onJointAngles, onQ
         const data = JSON.parse(event.data);
 
         if (data.type === "joint_angles") {
-          onJointAngles?.(data.angles);
+          // `t` es el instante de captura, en segundos desde que arrancó la
+          // grabación. El visor lo necesita para saber cuánto tardó el robot en
+          // ir de una posición a la siguiente, y reproducirlo a esa velocidad.
+          onJointAngles?.(data.angles, data.t);
           return;
         }
 

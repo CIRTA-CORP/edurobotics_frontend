@@ -30,20 +30,22 @@ const DEFAULT_URDF = '/robots/ur5e/ur5e_robotiq.urdf'
 // Espejo web del paquete `robot_description` de ROS.
 const PACKAGE_ROOT = '/robots/robot_description'
 
-// El diagnóstico se muestra en desarrollo, o a demanda con `?debug=viewer` en producción
-// (sirve para saber qué cargó sin abrir la consola).
+// El diagnóstico se pide con `?debug=viewer`, y en ningún otro caso. Antes salía además en
+// cualquier entorno de desarrollo, que es donde se prueba el simulador, así que en la
+// práctica estaba siempre en pantalla tapando una esquina del robot sin que nadie lo
+// hubiera pedido.
 const SHOW_DIAGNOSTICS = (() => {
   try {
-    return import.meta.env.DEV
-      || new URLSearchParams(window.location.search).get('debug') === 'viewer'
+    return new URLSearchParams(window.location.search).get('debug') === 'viewer'
   } catch {
     return false
   }
 })()
 
-// Constante de tiempo del seguimiento suavizado, en segundos. Igual que en el visor
-// anterior: el robot se acerca al último objetivo cada frame, independiente del framerate.
-const SMOOTH_TAU = 0.12
+// Separación supuesta entre dos posiciones cuando no viene marcada: los movimientos
+// manuales de los deslizadores, y los fotogramas de un backend anterior a las marcas de
+// tiempo. Es el ritmo al que el contenedor escribe las posiciones del robot.
+const DEFAULT_FRAME_GAP = 0.1
 
 // Encuadres heredados del visor anterior, expresados como cámara orbital
 // (alpha alrededor del eje vertical, beta desde el eje vertical, radius distancia). Se
@@ -67,18 +69,25 @@ function presetToPosition({ alpha, beta, radius, target }) {
   }
 }
 
-export default function UrdfViewer({ jointAngles, cameraView = 'free', urdf = DEFAULT_URDF }) {
+export default function UrdfViewer({ jointAngles, frameTime, cameraView = 'free', urdf = DEFAULT_URDF }) {
   const canvasRef = useRef(null)
   const robotRef = useRef(null)
-  const targetAnglesRef = useRef(null)
+  // El tramo que se está recorriendo ahora mismo: de dónde viene el brazo, a dónde va, y
+  // cuánto tardó el robot de verdad en hacer ese tramo.
+  const segmentRef = useRef(null)
   const currentAnglesRef = useRef({})
   const latestAnglesRef = useRef(null)
+  const lastFrameTimeRef = useRef(null)
   const controlsRef = useRef(null)
   const cameraRef = useRef(null)
-  // Diagnóstico en pantalla: qué robot cargó, cuántas mallas entraron o qué falló. Fue lo
-  // que hizo legible un fallo en el que el robot cargaba con 22 juntas y cero geometría.
-  // Solo en desarrollo o con `?debug=viewer`: un estudiante no tiene por qué verlo.
+  // Diagnóstico: qué robot cargó y cuánta geometría entró. Fue lo que hizo legible un
+  // fallo en el que el robot cargaba con 22 juntas y cero mallas. Solo con `?debug=viewer`:
+  // un estudiante no tiene por qué verlo.
   const [status, setStatus] = useState('cargando…')
+  // Un fallo de carga es otra cosa y se muestra SIEMPRE. Si el URDF no carga, el visor se
+  // queda vacío, y un rectángulo negro sin explicación es indistinguible de un robot que
+  // todavía no ha llegado.
+  const [loadError, setLoadError] = useState(null)
 
   useEffect(() => {
     const canvas = canvasRef.current
@@ -167,12 +176,12 @@ export default function UrdfViewer({ jointAngles, cameraView = 'free', urdf = DE
           }
         },
         undefined,
-        (error) => setStatus(`error al cargar: ${error?.message ?? error}`),
+        (error) => setLoadError(`No se pudo cargar el robot: ${error?.message ?? error}`),
       )
     } catch (error) {
       // Diferido a propósito: actualizar estado de forma síncrona dentro del efecto
       // provoca renders en cascada. Los callbacks de arriba ya son asíncronos.
-      queueMicrotask(() => setStatus(`excepción: ${error?.message ?? error}`))
+      queueMicrotask(() => setLoadError(`No se pudo cargar el robot: ${error?.message ?? error}`))
     }
 
     // ── Bucle de render ────────────────────────────────────────────────
@@ -195,16 +204,31 @@ export default function UrdfViewer({ jointAngles, cameraView = 'free', urdf = DE
       resize()
 
       const robot = robotRef.current
-      const target = targetAnglesRef.current
-      if (robot && target) {
-        const alpha = 1 - Math.exp(-dt / SMOOTH_TAU)
+      const segment = segmentRef.current
+      if (robot && segment) {
+        // Interpolación entre la posición anterior y la actual, gobernada por el tiempo
+        // que el robot tardó de verdad en ir de una a otra.
+        //
+        // Antes esto perseguía el último objetivo con un filtro exponencial de τ=0,12 s,
+        // que necesita ~0,36 s para llegar. Como llegaba una posición nueva cada 0,1 s, el
+        // brazo no alcanzaba ninguna: recortaba todas las curvas por dentro y se quedaba a
+        // media distancia en cada cambio de dirección. De ahí que pareciera que el robot
+        // «no ejecuta todo» — literalmente no pasaba por donde el robot pasó.
+        //
+        // Al interpolar, cada posición grabada se alcanza exacta, en el instante que le
+        // toca, y entre dos posiciones se dibujan los pasos intermedios que hagan falta
+        // para llenar el refresco de la pantalla.
+        segment.elapsed += dt
+        // Acotado a 1: si el siguiente fotograma tarda, el brazo se queda quieto en la
+        // última posición conocida en vez de seguir moviéndose hacia un objetivo viejo.
+        const t = segment.duration > 0 ? Math.min(segment.elapsed / segment.duration, 1) : 1
         // El brazo, junta por junta. El gripper se gobierna con una sola: las otras cinco
         // son `mimic` en el URDF y siguen solas.
         for (const name of [...ARM_JOINT_NAMES, GRIPPER_DRIVER_JOINT]) {
-          const to = target[name]
+          const to = segment.to[name]
           if (to === undefined) continue
-          const from = currentAnglesRef.current[name] ?? robot.joints[name]?.angle ?? 0
-          const value = from + (to - from) * alpha
+          const from = segment.from[name] ?? robot.joints[name]?.angle ?? 0
+          const value = from + (to - from) * t
           currentAnglesRef.current[name] = value
           robot.setJointValue(name, value)
         }
@@ -239,9 +263,34 @@ export default function UrdfViewer({ jointAngles, cameraView = 'free', urdf = DE
     if (!jointAngles) return
     const normalized = normalizeJointAngles(jointAngles, latestAnglesRef.current)
     if (!normalized) return
+
+    const previous = segmentRef.current
+
+    // Cuánto tardó el robot en ir de la posición anterior a esta. Se calcula con las marcas
+    // de tiempo que manda el backend, que son las de la captura: reproducir con ellas es lo
+    // que hace que la animación dure lo que duró la ejecución.
+    //
+    // Sin marca —deslizadores manuales, o un backend anterior a este cambio— se usa una
+    // separación por defecto. No se rompe nada durante un despliegue, que en Railway y
+    // Vercel no es simultáneo.
+    let duration = DEFAULT_FRAME_GAP
+    if (typeof frameTime === 'number' && typeof lastFrameTimeRef.current === 'number') {
+      const gap = frameTime - lastFrameTimeRef.current
+      // Una marca que retrocede significa que empezó otra ejecución: el tiempo vuelve a
+      // cero. Ese tramo no se interpola desde la ejecución anterior.
+      if (gap > 0) duration = gap
+    }
+    lastFrameTimeRef.current = typeof frameTime === 'number' ? frameTime : null
+
+    // El primer fotograma no tiene desde. Se coloca directo: el robot ya estaba ahí, y
+    // barrer hasta él desde la postura de reposo sería un movimiento que nadie hizo.
+    const from = previous
+      ? { ...previous.to, ...currentAnglesRef.current }
+      : normalized
+
     latestAnglesRef.current = normalized
-    targetAnglesRef.current = normalized
-  }, [jointAngles])
+    segmentRef.current = { from, to: normalized, duration: previous ? duration : 0, elapsed: 0 }
+  }, [jointAngles, frameTime])
 
   useEffect(() => {
     const camera = cameraRef.current
@@ -270,6 +319,14 @@ export default function UrdfViewer({ jointAngles, cameraView = 'free', urdf = DE
   return (
     <div className="relative h-full w-full">
       <canvas ref={canvasRef} className="block h-full w-full outline-none" style={{ touchAction: 'none' }} />
+      {loadError && (
+        <div
+          role="alert"
+          className="pointer-events-none absolute inset-x-4 top-4 rounded-lg border border-[#f87171]/30 bg-[#f87171]/[0.12] px-3 py-2 text-[12.5px] text-[#fca5a5]"
+        >
+          {loadError}
+        </div>
+      )}
       {SHOW_DIAGNOSTICS && (
         <div className="pointer-events-none absolute bottom-2 left-2 rounded bg-black/60 px-2 py-1 font-mono text-[11px] text-[#a5a1ee]">
           {status}

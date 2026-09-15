@@ -92,7 +92,7 @@ const START_STEPS = [
   { text: "Conectando el visor 3D", time: "", state: "wait" },
 ];
 
-export default function SimulatorPanel({ jointAngles, queue, onCopyToEditor }) {
+export default function SimulatorPanel({ jointAngles, frameTime, queue, onCopyToEditor }) {
   const [serverRunning, setServerRunning] = useState(false);
   const [showSliders, setShowSliders] = useState(false);
   const [manualAngles, setManualAngles] = useState(DEFAULT_ANGLES);
@@ -203,7 +203,14 @@ export default function SimulatorPanel({ jointAngles, queue, onCopyToEditor }) {
           {/* 3D viewer — takes remaining width */}
           <div className="relative min-w-0 flex-1">
             <Suspense fallback={<div className="grid h-full w-full place-items-center bg-[#0a0a0c] text-xs text-[#6e6d78]">Cargando visor 3D…</div>}>
-              <UrdfViewer jointAngles={effectiveAngles} cameraView={cameraView} />
+              {/* El instante de captura solo acompaña a los fotogramas del servidor. Los
+                  deslizadores manuales no tienen grabación detrás, así que el visor los
+                  interpola con su separación por defecto. */}
+              <UrdfViewer
+                jointAngles={effectiveAngles}
+                frameTime={effectiveAngles === jointAngles ? frameTime : undefined}
+                cameraView={cameraView}
+              />
             </Suspense>
 
             {/* Estado del programa — top-left (canvas §estado del programa) */}

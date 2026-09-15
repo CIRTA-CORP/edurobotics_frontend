@@ -9,7 +9,10 @@ const DEFAULT_LEFT_PANEL_WIDTH = 50;
 
 export function Ide() {
   const [alertType, setAlertType] = useState();
-  const [jointAngles, setJointAngles] = useState(null);
+  // Ángulos y su instante de captura juntos en un solo estado, a propósito: en dos
+  // estados separados un render intermedio emparejaría los ángulos nuevos con el
+  // instante del fotograma anterior, y el visor calcularía mal la duración del tramo.
+  const [jointFrame, setJointFrame] = useState(null);
   // Estado de espera de turno. Vive aquí porque lo produce el WebSocket del panel
   // izquierdo y lo muestra el panel del simulador: el alumno mira el visor
   // mientras espera, no la terminal.
@@ -110,7 +113,7 @@ export function Ide() {
             <LeftPanel
               setAlertType={setAlertType}
               handleHide={() => setHideLeftPanel(true)}
-              onJointAngles={setJointAngles}
+              onJointAngles={(angles, t) => setJointFrame({ angles, t })}
               onQueueChange={setQueue}
               editorApiRef={editorApiRef}
             />
@@ -141,7 +144,12 @@ export function Ide() {
           id="simulator-panel-container"
           className="flex-grow h-full overflow-hidden"
         >
-          <SimulatorPanel jointAngles={jointAngles} queue={queue} onCopyToEditor={handleCopyToEditor} />
+          <SimulatorPanel
+            jointAngles={jointFrame?.angles}
+            frameTime={jointFrame?.t}
+            queue={queue}
+            onCopyToEditor={handleCopyToEditor}
+          />
         </div>
       </div>
 
