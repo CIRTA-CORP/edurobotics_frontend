@@ -10,6 +10,10 @@ const DEFAULT_LEFT_PANEL_WIDTH = 50;
 export function Ide() {
   const [alertType, setAlertType] = useState();
   const [jointAngles, setJointAngles] = useState(null);
+  // Estado de espera de turno. Vive aquí porque lo produce el WebSocket del panel
+  // izquierdo y lo muestra el panel del simulador: el alumno mira el visor
+  // mientras espera, no la terminal.
+  const [queue, setQueue] = useState(null);
   const [leftPanelMaxWidth, setLeftPanelMaxWidth] = useState(
     parseInt(localStorage.getItem("LPWidth")) || 50
   );
@@ -107,6 +111,7 @@ export function Ide() {
               setAlertType={setAlertType}
               handleHide={() => setHideLeftPanel(true)}
               onJointAngles={setJointAngles}
+              onQueueChange={setQueue}
               editorApiRef={editorApiRef}
             />
           </div>
@@ -136,7 +141,7 @@ export function Ide() {
           id="simulator-panel-container"
           className="flex-grow h-full overflow-hidden"
         >
-          <SimulatorPanel jointAngles={jointAngles} onCopyToEditor={handleCopyToEditor} />
+          <SimulatorPanel jointAngles={jointAngles} queue={queue} onCopyToEditor={handleCopyToEditor} />
         </div>
       </div>
 

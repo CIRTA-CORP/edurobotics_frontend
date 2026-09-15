@@ -32,6 +32,10 @@
 
 - [x] 4.1 Al pulsar Ejecutar con la máquina ocupada: mensaje con su puesto en la
       fila, en español.
+      **Corregido tras revisarlo**: al principio el aviso iba solo a la terminal,
+      una línea pequeña abajo. Para una espera de varios segundos eso se pierde.
+      Ahora hay un panel sobre el visor 3D —que es donde el alumno mira mientras
+      espera— con el puesto, y la terminal conserva el detalle.
 - [x] 4.2 Actualizar el puesto según avanza.
 - [x] 4.3 Al llegar su turno, que se ejecute solo y se note el cambio.
 - [x] 4.4 Permitir cancelar la espera (el botón Detener ya cierra el WebSocket).

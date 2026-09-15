@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef, lazy, Suspense } from "react";
-import { Loader2, Play, SlidersHorizontal, Home, AlertCircle, Globe, ArrowDown, Focus, MoveRight } from "lucide-react";
+import { Loader2, Play, SlidersHorizontal, Home, AlertCircle, Globe, ArrowDown, Focus, MoveRight, Users } from "lucide-react";
 import { getSimulatorStatus, startSimulator } from '@/features/simulator/services/simulator';
 import JointSliders from "./JointSliders";
 
@@ -51,13 +51,48 @@ function RobotIllustration() {
   );
 }
 
+/**
+ * Aviso de turno, encima del visor.
+ *
+ * Va aquí y no solo en la terminal porque es donde el alumno está mirando
+ * mientras espera a que su programa corra, y porque una espera de varios
+ * segundos contada en una línea de texto pequeña se pierde.
+ */
+function QueueOverlay({ position }) {
+  return (
+    <div className="absolute inset-0 z-30 grid place-items-center bg-[#0a0a0c]/85 backdrop-blur-sm">
+      <div className="w-[360px] text-center">
+        <div className="mx-auto grid h-[58px] w-[58px] place-items-center rounded-[18px] border border-[#7d79e3]/30 bg-[#7d79e3]/[0.12]">
+          <Users className="h-6 w-6 text-[#a5a1ee]" strokeWidth={1.7} />
+        </div>
+        <h3 className="mt-5 text-[22px] font-bold leading-[1.2] tracking-[-0.014em] text-[#f4f4f6]">
+          Esperando tu turno
+        </h3>
+        <div className="mt-4 inline-flex h-9 items-center gap-2.5 rounded-full border border-[#2c2c34] bg-[#101014]/80 px-4">
+          <span className="h-[7px] w-[7px] animate-pulse rounded-full bg-[#a5a1ee]" />
+          <span className="text-[13px] font-semibold text-[#a5a1ee]">
+            {position === 1 ? "Eres el siguiente" : `Puesto ${position} en la fila`}
+          </span>
+        </div>
+        <p className="mx-auto mt-4 max-w-[300px] text-[13.5px] leading-[1.6] text-[#a1a0ab]">
+          Hay un solo robot, así que se ejecuta de a uno. Tu programa arrancará
+          solo cuando te toque — no hace falta que pulses nada.
+        </p>
+        <p className="mt-4 font-mono text-[11px] text-[#55555f]">
+          Puedes seguir editando tu código mientras esperas
+        </p>
+      </div>
+    </div>
+  );
+}
+
 const START_STEPS = [
   { text: "Reservando un contenedor", time: "3 s", state: "done" },
   { text: "Levantando ROS 2 y el modelo del UR5e", time: "38 s", state: "busy" },
   { text: "Conectando el visor 3D", time: "", state: "wait" },
 ];
 
-export default function SimulatorPanel({ jointAngles, onCopyToEditor }) {
+export default function SimulatorPanel({ jointAngles, queue, onCopyToEditor }) {
   const [serverRunning, setServerRunning] = useState(false);
   const [showSliders, setShowSliders] = useState(false);
   const [manualAngles, setManualAngles] = useState(DEFAULT_ANGLES);
@@ -160,6 +195,9 @@ export default function SimulatorPanel({ jointAngles, onCopyToEditor }) {
 
   return (
     <div id="right-panel" className="pointer-events-auto relative flex h-full w-full flex-row bg-[#0a0a0c]">
+      {/* Por encima de cualquier estado del panel: esperando turno, lo que
+          importa es la espera, no si el servidor está levantando o en línea. */}
+      {queue && <QueueOverlay position={queue.position} />}
       {serverRunning && (
         <>
           {/* 3D viewer — takes remaining width */}

@@ -55,7 +55,7 @@ robot.move_joints({
 }, duration=2.0)
 `;
 
-export default function LeftPanel({ setAlertType, handleHide, onJointAngles, editorApiRef }) {
+export default function LeftPanel({ setAlertType, handleHide, onJointAngles, onQueueChange, editorApiRef }) {
   const [enviromentConfig, setEnviromentConfig] = useState({
     language: "python",
     editor: "python",
@@ -212,16 +212,19 @@ export default function LeftPanel({ setAlertType, handleHide, onJointAngles, edi
         // programa arranca solo. El indicador de "ejecutando" se mantiene, porque
         // desde su punto de vista sigue esperando a que su código corra.
         if (data.type === "queued") {
+          onQueueChange?.({ position: data.position });
           appendLine(`En cola — tu turno: ${data.position}. Esperando a que se libere el simulador…`);
           return;
         }
 
         if (data.type === "queue_ready") {
+          onQueueChange?.(null);
           appendLine("Es tu turno. Ejecutando…");
           return;
         }
 
         if (data.type === "queue_timeout") {
+          onQueueChange?.(null);
           appendLine(data.msg);
           setRunLoading(false);
           return;
@@ -257,14 +260,16 @@ export default function LeftPanel({ setAlertType, handleHide, onJointAngles, edi
     };
 
     ws.onerror = () => {
+      onQueueChange?.(null);
       appendLine("Error: no se pudo conectar. ¿Está el backend corriendo?");
       setRunLoading(false);
     };
 
     ws.onclose = () => {
+      onQueueChange?.(null);
       setRunLoading(false);
     };
-  }, [appendLine, onJointAngles, clearDecorations, highlightErrorLine]);
+  }, [appendLine, onJointAngles, onQueueChange, clearDecorations, highlightErrorLine]);
 
   const handleStop = useCallback(() => {
     if (wsRef.current) {
