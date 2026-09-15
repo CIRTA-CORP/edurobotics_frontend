@@ -124,7 +124,6 @@ export function SpecializationsTab() {
           <span className="font-mono text-[9.5px] font-semibold uppercase tracking-[0.14em] text-[#a9a8b4]">Contenido</span>
           <h1
             className="mt-2 text-[26px] font-bold leading-[1.16] tracking-[-0.014em] text-[#16151b]"
-            style={{ fontFamily: "'Iowan Old Style', 'Palatino Linotype', Palatino, Georgia, serif" }}
           >
             Especializaciones
           </h1>

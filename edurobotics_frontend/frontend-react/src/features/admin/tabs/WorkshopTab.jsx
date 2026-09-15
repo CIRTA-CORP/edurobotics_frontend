@@ -113,7 +113,7 @@ export function WorkshopTab() {
 
                 <h2
                   className="mt-3.5 truncate font-bold tracking-[-0.014em] text-[#16151b]"
-                  style={{ fontFamily: "'Iowan Old Style', 'Palatino Linotype', Palatino, Georgia, serif", fontSize: 28, lineHeight: 1.16 }}
+                  style={{ fontSize: 28, lineHeight: 1.16 }}
                 >
                   {selectedUnit.title}
                 </h2>

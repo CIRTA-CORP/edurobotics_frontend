@@ -15,7 +15,6 @@ import { getLandingContent, saveLandingContent } from '@/features/landing/servic
 import { mergeLandingContent } from '@/features/landing/landingContent'
 import { Check, ChevronDown, ExternalLink, ImageIcon, Loader2, Plus, Trash2, Upload, X } from 'lucide-react'
 
-const SERIF = { fontFamily: "'Iowan Old Style', 'Palatino Linotype', Palatino, Georgia, serif" }
 
 function Toggle({ value, onChange }) {
   return (
@@ -153,7 +152,7 @@ export function LandingTab() {
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
           <span className="font-mono text-[9.5px] font-semibold uppercase tracking-[0.14em] text-[#a9a8b4]">Sitio</span>
-          <h1 className="mt-2 text-[28px] font-bold leading-[1.16] tracking-[-0.014em] text-[#16151b]" style={SERIF}>
+          <h1 className="mt-2 text-[28px] font-bold leading-[1.16] tracking-[-0.014em] text-[#16151b]">
             Página de inicio
           </h1>
           <p className="mt-2.5 max-w-[620px] text-[14px] text-[#55545f]">

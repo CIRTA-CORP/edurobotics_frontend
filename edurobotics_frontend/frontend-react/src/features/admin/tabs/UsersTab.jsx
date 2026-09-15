@@ -142,7 +142,6 @@ export function UsersTab() {
           </div>
           <h1
             className="mt-2 text-[28px] font-bold leading-[1.16] tracking-[-0.014em] text-[#16151b]"
-            style={{ fontFamily: "'Iowan Old Style', 'Palatino Linotype', Palatino, Georgia, serif" }}
           >
             Usuarios
           </h1>

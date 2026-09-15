@@ -54,7 +54,6 @@ const daysAgo = (iso) => {
   return `hace ${days} días`
 }
 
-const SERIF = { fontFamily: "'Iowan Old Style', 'Palatino Linotype', Palatino, Georgia, serif" }
 
 function SectionLabel({ children }) {
   return <span className="font-mono text-[9.5px] font-semibold uppercase tracking-[0.14em] text-[#a9a8b4]">{children}</span>
@@ -199,7 +198,7 @@ export function AnalyticsTab() {
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
           <SectionLabel>Panel</SectionLabel>
-          <h1 className="mt-2 text-[28px] font-bold leading-[1.16] tracking-[-0.014em] text-[#16151b]" style={SERIF}>
+          <h1 className="mt-2 text-[28px] font-bold leading-[1.16] tracking-[-0.014em] text-[#16151b]">
             Analítica
           </h1>
         </div>
