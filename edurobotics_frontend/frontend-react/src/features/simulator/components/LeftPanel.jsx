@@ -1,11 +1,10 @@
 import React, { useEffect, useState, useRef, useCallback } from "react";
 import CodeButtons from '@/features/simulator/components/CodeButtons';
 import Panel from '@/features/simulator/components/Panel';
-import BlocklyPanel from '@/features/simulator/editors/BlocklyPanel';
 import EditorPanel from '@/features/simulator/editors/EditorPanel';
 import DocumentationPanel from '@/features/simulator/components/DocumentationPanel';
 import Terminal from '@/features/simulator/components/Terminal';
-import { Puzzle, Code2, BookOpen } from "lucide-react";
+import { Code2, BookOpen } from "lucide-react";
 import { getToken } from '@/features/auth/services/auth';
 
 const BLOCKLY = "blockly";
@@ -60,10 +59,6 @@ export default function LeftPanel({ setAlertType, handleHide, onJointAngles, edi
   const [enviromentConfig, setEnviromentConfig] = useState({
     language: "python",
     editor: "python",
-    // Pestaña "Bloques" OCULTA hasta que la ejecución de bloques funcione (issue
-    // #21, pedido de la directora). Queda solo Editor + Guía + Terminal. El código
-    // de Blockly NO se borra — poner en `true` la reactiva.
-    "blockly?": false,
   });
   const runningEnviroment = "python_env";
 
@@ -71,7 +66,8 @@ export default function LeftPanel({ setAlertType, handleHide, onJointAngles, edi
   const [terminalOutput, setTerminalOutput] = useState("");
   const [panelSelected, setPanelSelected] = useState(() => {
     const stored = localStorage.getItem("panelSelected") || EDITOR;
-    // Bloques está oculto: nunca arrancar en esa pestaña (quedaría en blanco).
+    // Blockly se retiró, pero queda gente con esa pestaña guardada de antes:
+    // sin esta guarda, abrirían el simulador en un panel que ya no existe.
     return stored === BLOCKLY ? EDITOR : stored;
   });
 
@@ -111,15 +107,8 @@ export default function LeftPanel({ setAlertType, handleHide, onJointAngles, edi
     editor.revealLineInCenter(userLine);
   }, []);
 
-  // HANDLING BLOCKLY
-  const blocklyCodeRef = useRef("");
   const panelSelectedRef = useRef(panelSelected);
   useEffect(() => { panelSelectedRef.current = panelSelected; }, [panelSelected]);
-
-  // Blockly just keeps its own ref — never touches the editor.
-  const handleBlocklyChange = useCallback((code) => {
-    blocklyCodeRef.current = code;
-  }, []);
 
   // HANDLING EDITOR
   const editorRef = useRef();
@@ -177,9 +166,7 @@ export default function LeftPanel({ setAlertType, handleHide, onJointAngles, edi
   const wsRef = useRef(null);
 
   const handleRun = useCallback(() => {
-    const code = panelSelectedRef.current === BLOCKLY
-      ? blocklyCodeRef.current?.trim()
-      : editorRef.current?.getValue()?.trim();
+    const code = editorRef.current?.getValue()?.trim();
     if (!code) {
       appendLine("Error: no hay código para ejecutar.");
       return;
@@ -302,14 +289,6 @@ export default function LeftPanel({ setAlertType, handleHide, onJointAngles, edi
             active={panelSelected === EDITOR}
             onClick={() => setPanelSelected(EDITOR)}
           />
-          {enviromentConfig && enviromentConfig["blockly?"] && (
-            <TabButton
-              label="Bloques"
-              icon={<Puzzle className="w-3.5 h-3.5" strokeWidth={1.8} />}
-              active={panelSelected === BLOCKLY}
-              onClick={() => setPanelSelected(BLOCKLY)}
-            />
-          )}
           <TabButton
             label="Guía"
             icon={<BookOpen className="w-3.5 h-3.5" strokeWidth={1.8} />}
@@ -329,16 +308,6 @@ export default function LeftPanel({ setAlertType, handleHide, onJointAngles, edi
       </div>
 
       <div className="flex-grow flex flex-col w-full overflow-hidden relative">
-        {enviromentConfig && enviromentConfig["blockly?"] && (
-          <div className={`absolute inset-0 ${panelSelected === BLOCKLY ? 'block' : 'hidden'}`}>
-            <Panel selected={panelSelected === BLOCKLY}>
-              {panelSelected === BLOCKLY && (
-                <BlocklyPanel blocklyCodeRef={blocklyCodeRef} onCodeChange={handleBlocklyChange} />
-              )}
-            </Panel>
-          </div>
-        )}
-
         <div className={`absolute inset-0 ${panelSelected === EDITOR ? 'flex flex-col' : 'hidden'}`}>
           <Panel selected={panelSelected === EDITOR}>
             <div className="flex-grow h-[70%]">

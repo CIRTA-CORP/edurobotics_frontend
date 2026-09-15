@@ -5,7 +5,7 @@
  * (`shoulder_pan`) o completos. Esta tabla los lleva a un nombre canónico para que un
  * renombrado aguas arriba no rompa la animación.
  *
- * Compartido por los dos visores (el actual de Babylon y el nuevo basado en URDF) para que
+ * Usado por el visor URDF para que
  * ambos hablen exactamente el mismo idioma con el backend.
  */
 

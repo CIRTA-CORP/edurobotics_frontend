@@ -45,7 +45,7 @@ const SHOW_DIAGNOSTICS = (() => {
 // anterior: el robot se acerca al último objetivo cada frame, independiente del framerate.
 const SMOOTH_TAU = 0.12
 
-// Los mismos encuadres que el visor anterior, en coordenadas de ArcRotateCamera de Babylon
+// Encuadres heredados del visor anterior, expresados como cámara orbital
 // (alpha alrededor del eje vertical, beta desde el eje vertical, radius distancia). Se
 // convierten a una posición cartesiana más abajo, de modo que el encuadre sea idéntico y la
 // comparación lado a lado sea honesta.

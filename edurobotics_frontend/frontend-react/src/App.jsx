@@ -29,7 +29,6 @@ const PrintCoursePage = lazy(() => import('@/features/courses/pages/PrintCourseP
 const LegalPage = lazy(() => import('@/features/legal/pages/LegalPage.jsx'))
 // Herramienta de evaluación del change `simulator-urdf-viewer`: los dos visores lado a
 // lado con la misma pose. No habla con el backend, así que no ocupa cupo del simulador.
-const RobotComparePage = lazy(() => import('@/features/simulator/pages/RobotComparePage.jsx'))
 
 // ── Fallback spinner shown while a lazy chunk downloads ──
 const PageLoader = () => (
@@ -60,7 +59,6 @@ function App() {
           <Route path="/legal" element={<LegalPage type="terminos" />} />
           <Route path="/privacidad" element={<LegalPage type="privacidad" />} />
           <Route path="/cookies" element={<LegalPage type="cookies" />} />
-          <Route path="/robot-compare" element={<RobotComparePage />} />
 
           {/* Rutas protegidas - requieren autenticación */}
           <Route

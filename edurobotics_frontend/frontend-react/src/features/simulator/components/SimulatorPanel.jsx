@@ -10,22 +10,6 @@ import JointSliders from "./JointSliders";
 // Va en `lazy` porque arrastra three.js: así solo lo descarga quien abre el simulador.
 const UrdfViewer = lazy(() => import('@/features/simulator/viewer/UrdfViewer'));
 
-// Babylon TAMBIÉN va en `lazy`, y esto importa más de lo que parece: importado de forma
-// estática entraba en el grafo del chunk del simulador y se descargaba en toda visita a
-// /simulator (1.430 kB gzip) aunque el visor que se renderiza sea el URDF (184 kB gzip),
-// anulando en runtime la ganancia de haber cambiado de motor.
-const BabylonViewer = lazy(() => import('@/features/simulator/viewer/BabylonViewer'));
-
-// El visor anterior sigue accesible con `?viewer=babylon` mientras CIRTA no formalice la
-// decisión, para poder mostrar el antes y el después sin desplegar dos versiones.
-const useLegacyViewer = () => {
-  try {
-    return new URLSearchParams(window.location.search).get('viewer') === 'babylon';
-  } catch {
-    return false;
-  }
-};
-
 const DEFAULT_ANGLES = {
   shoulder_pan_joint: 0, shoulder_lift_joint: 0, elbow_joint: 0,
   wrist_1_joint: 0,      wrist_2_joint: 0,       wrist_3_joint: 0,
@@ -74,7 +58,6 @@ const START_STEPS = [
 ];
 
 export default function SimulatorPanel({ jointAngles, onCopyToEditor }) {
-  const legacyViewer = useLegacyViewer();
   const [serverRunning, setServerRunning] = useState(false);
   const [showSliders, setShowSliders] = useState(false);
   const [manualAngles, setManualAngles] = useState(DEFAULT_ANGLES);
@@ -182,11 +165,7 @@ export default function SimulatorPanel({ jointAngles, onCopyToEditor }) {
           {/* 3D viewer — takes remaining width */}
           <div className="relative min-w-0 flex-1">
             <Suspense fallback={<div className="grid h-full w-full place-items-center bg-[#0a0a0c] text-xs text-[#6e6d78]">Cargando visor 3D…</div>}>
-              {legacyViewer ? (
-                <BabylonViewer jointAngles={effectiveAngles} cameraView={cameraView} />
-              ) : (
-                <UrdfViewer jointAngles={effectiveAngles} cameraView={cameraView} />
-              )}
+              <UrdfViewer jointAngles={effectiveAngles} cameraView={cameraView} />
             </Suspense>
 
             {/* Estado del programa — top-left (canvas §estado del programa) */}
