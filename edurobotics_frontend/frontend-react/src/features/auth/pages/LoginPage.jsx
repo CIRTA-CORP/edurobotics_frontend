@@ -9,7 +9,7 @@ import { LoginForm } from '@/features/auth/components/LoginForm'
 
 const CLAIMS = [
   'Tu progreso guardado unidad por unidad',
-  'El simulador del UR5, sin instalar nada',
+  'El simulador del UR5e, sin instalar nada',
   'Todos los cursos, siempre gratis',
 ]
 

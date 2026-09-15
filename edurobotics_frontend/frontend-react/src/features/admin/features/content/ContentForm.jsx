@@ -179,7 +179,7 @@ export function ContentForm({
                     <textarea
                       value={simulatorDesc}
                       onChange={(e) => setSimulatorDesc(e.target.value)}
-                      placeholder="Ej: Practica los movimientos del robot UR5 antes de continuar."
+                      placeholder="Ej: Practica los movimientos del robot UR5e antes de continuar."
                       rows={2}
                       className="min-h-[44px] flex-1 rounded-[10px] border border-white/15 bg-white/[0.06] px-3 py-2.5 text-[13px] text-white/85 placeholder:text-white/30 focus:outline-none focus:ring-2 focus:ring-white/30 resize-none"
                     />
