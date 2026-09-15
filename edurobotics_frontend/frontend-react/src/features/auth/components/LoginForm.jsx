@@ -1,10 +1,11 @@
 // Login form: validates credentials, calls loginUser, and redirects on success.
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { loginUser } from '@/features/auth/services/auth'
+import { getStoredUser, loginUser } from '@/features/auth/services/auth'
 import { Button } from '@/shared/components/button'
 import { Input } from '@/shared/components/input'
-import { AlertCircle, CheckCircle2 } from 'lucide-react'
+import { PasswordInput } from '@/shared/components/PasswordInput'
+import { AlertCircle } from 'lucide-react'
 
 /**
  * LoginForm — formulario de inicio de sesión reutilizable.
@@ -17,8 +18,8 @@ import { AlertCircle, CheckCircle2 } from 'lucide-react'
  */
 export function LoginForm({ onSwitchToRegister }) {
   const [form, setForm] = useState({ username: '', password: '' })
-  const [message, setMessage] = useState(null)
-  const [messageType, setMessageType] = useState('success')
+  const [error, setError] = useState(null)
+  const [welcome, setWelcome] = useState(null)   // user, once the login landed
   const [loading, setLoading] = useState(false)
   const navigate = useNavigate()
 
@@ -29,37 +30,59 @@ export function LoginForm({ onSwitchToRegister }) {
 
   const handleSubmit = async (event) => {
     event.preventDefault()
-    setMessage(null)
+    setError(null)
     setLoading(true)
 
     try {
       await loginUser(form)
-      setMessageType('success')
-      setMessage('¡Bienvenido! Redirigiendo...')
-      setTimeout(() => navigate('/dashboard'), 800)
-    } catch (error) {
-      setMessageType('error')
-      setMessage(error.message)
-    } finally {
+      // Hand over with a proper panel instead of a green strip: it says who
+      // came in and where they are being taken, and holds long enough to read.
+      setWelcome(getStoredUser())
+      setTimeout(() => navigate('/dashboard'), 1100)
+    } catch (err) {
+      setError(err.message)
       setLoading(false)
     }
   }
 
+  if (welcome) {
+    const initials = `${welcome.first_name?.[0] || ''}${welcome.last_name?.[0] || ''}`.toUpperCase()
+      || (welcome.username?.[0] || '').toUpperCase()
+    const name = welcome.first_name || welcome.username
+
+    return (
+      <div className="py-2 text-center" role="status" aria-live="polite">
+        <div className="mx-auto grid h-14 w-14 place-items-center rounded-full bg-[#16151b] text-[15px] font-bold text-white">
+          {initials}
+        </div>
+        <p className="mt-4 text-[19px] font-bold tracking-[-0.01em] text-[#16151b]">
+          Hola, {name}
+        </p>
+        <p className="mt-1.5 text-[14px] text-[#55545f]">
+          Te estamos llevando a tu dashboard.
+        </p>
+        {/* A thin determinate bar reads as handover, not as "still loading". */}
+        <div className="mx-auto mt-5 h-[3px] w-40 overflow-hidden rounded-full bg-[#efeef3]">
+          <div className="h-full w-full origin-left animate-[loginHandoff_1.1s_ease-out_forwards] rounded-full bg-[#16151b]" />
+        </div>
+      </div>
+    )
+  }
+
   return (
     <>
-      {message && (
-        <div
-          className={`mb-4 p-3 rounded-lg flex items-start gap-2 text-sm ${messageType === 'success'
-            ? 'bg-green-50 text-green-900 border border-green-200'
-            : 'bg-red-50 text-red-900 border border-red-200'
-            }`}
-        >
-          {messageType === 'success' ? (
-            <CheckCircle2 className="w-4 h-4 mt-0.5 flex-shrink-0" />
-          ) : (
-            <AlertCircle className="w-4 h-4 mt-0.5 flex-shrink-0" />
-          )}
-          <span>{message}</span>
+      {error && (
+        <div className="mb-4 flex items-start gap-2.5 rounded-[10px] border border-[#b4425a]/25 bg-[#b4425a]/[0.05] p-3.5">
+          <AlertCircle className="mt-0.5 h-4 w-4 flex-shrink-0 text-[#b4425a]" />
+          <div className="min-w-0">
+            <p className="text-[13.5px] font-semibold text-[#16151b]">{error}</p>
+            <p className="mt-1 text-[12.5px] leading-relaxed text-[#55545f]">
+              Revisa que el usuario esté bien escrito. Si no lo recuerdas, puedes{' '}
+              <Link to="/forgot-password" className="font-medium text-[#4b46d6] hover:underline">
+                restablecer la contraseña
+              </Link>.
+            </p>
+          </div>
         </div>
       )}
 
@@ -84,8 +107,7 @@ export function LoginForm({ onSwitchToRegister }) {
           <label htmlFor="password" className="text-sm font-medium leading-none">
             Contraseña
           </label>
-          <Input
-            type="password"
+          <PasswordInput
             id="password"
             name="password"
             placeholder="••••••••"

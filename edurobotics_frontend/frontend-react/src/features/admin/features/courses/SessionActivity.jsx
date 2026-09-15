@@ -5,7 +5,7 @@
  * recent, by login), login totals, and a list of the latest sessions.
  */
 import { useQuery } from '@tanstack/react-query'
-import { Activity, UserCheck, LogIn, Shield } from 'lucide-react'
+import { UserCheck, LogIn, Shield } from 'lucide-react'
 import { getAdminSessions } from '@/features/courses/services/courses'
 
 /** "hace 5 min" / "hace 2 h" / "hace 3 días". */
@@ -22,14 +22,15 @@ function timeAgo(iso) {
   return `hace ${d} ${d === 1 ? 'día' : 'días'}`
 }
 
-function StatCard({ icon: Icon, label, value }) {
+function StatCard({ icon, label, value }) {
+  const Icon = icon
   return (
-    <div className="rounded-xl border border-gray-200 bg-white p-4">
-      <div className="mb-2 flex h-9 w-9 items-center justify-center rounded-lg bg-blue-50 text-blue-600">
-        <Icon className="h-5 w-5" />
+    <div className="rounded-[14px] border border-[#e9e9ee] bg-white p-[18px_20px]">
+      <div className="flex items-center gap-2 font-mono text-[9.5px] font-semibold uppercase tracking-[0.14em] text-[#a9a8b4]">
+        <Icon className="h-3.5 w-3.5" strokeWidth={1.7} />
+        {label}
       </div>
-      <div className="text-2xl font-bold text-gray-900">{value}</div>
-      <div className="mt-0.5 text-xs text-gray-500">{label}</div>
+      <div className="mt-3 font-mono text-[30px] font-bold leading-none tracking-[-0.025em] text-[#16151b]">{value}</div>
     </div>
   )
 }
@@ -53,7 +54,7 @@ export function SessionActivity() {
     return (
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
         {[...Array(4)].map((_, i) => (
-          <div key={i} className="h-24 animate-pulse rounded-xl border border-gray-200 bg-white" />
+          <div key={i} className="h-24 animate-pulse rounded-[14px] border border-[#e9e9ee] bg-white" />
         ))}
       </div>
     )
@@ -61,54 +62,50 @@ export function SessionActivity() {
   if (!s) return null
 
   return (
-    <div className="space-y-4">
-      <div className="flex items-center gap-2">
-        <Activity className="h-5 w-5 text-gray-700" />
-        <h3 className="text-lg font-semibold text-gray-900">Actividad y sesiones</h3>
-        <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-semibold text-emerald-600">
-          datos reales
-        </span>
-      </div>
+    <div className="space-y-3">
+      <span className="font-mono text-[9.5px] font-semibold uppercase tracking-[0.14em] text-[#a9a8b4]">
+        Actividad y sesiones
+      </span>
 
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-        <StatCard icon={UserCheck} label="Activos (últimos 7 días)" value={s.active_7d} />
-        <StatCard icon={UserCheck} label="Activos (hoy)" value={s.active_24h} />
-        <StatCard icon={LogIn} label="Logins (7 días)" value={s.logins_7d} />
-        <StatCard icon={LogIn} label="Logins (hoy)" value={s.logins_24h} />
+        <StatCard icon={UserCheck} label="Activos · 7 días" value={s.active_7d} />
+        <StatCard icon={UserCheck} label="Activos · hoy" value={s.active_24h} />
+        <StatCard icon={LogIn} label="Logins · 7 días" value={s.logins_7d} />
+        <StatCard icon={LogIn} label="Logins · hoy" value={s.logins_24h} />
       </div>
 
       {/* Recent sessions */}
-      <div className="rounded-xl border border-gray-200 bg-white">
-        <div className="border-b border-gray-100 px-4 py-3">
-          <h4 className="text-sm font-semibold text-gray-900">Sesiones recientes</h4>
-          <p className="text-xs text-gray-400">Últimos inicios de sesión</p>
+      <div className="overflow-hidden rounded-[14px] border border-[#e9e9ee] bg-white">
+        <div className="border-b border-[#f2f1f6] bg-[#fcfcfd] px-4 py-3">
+          <h4 className="text-sm font-semibold text-[#16151b]">Sesiones recientes</h4>
+          <p className="mt-0.5 text-[12px] text-[#a9a8b4]">Últimos inicios de sesión</p>
         </div>
         {s.recent?.length > 0 ? (
-          <ul className="max-h-80 divide-y divide-gray-50 overflow-y-auto">
+          <ul className="max-h-80 overflow-y-auto">
             {s.recent.map((r, i) => (
-              <li key={i} className="flex items-center justify-between gap-3 px-4 py-2.5">
+              <li key={i} className="flex items-center justify-between gap-3 border-t border-[#f2f1f6] px-4 py-2.5 first:border-t-0">
                 <div className="flex min-w-0 items-center gap-3">
-                  <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-blue-500 to-blue-700 text-[11px] font-bold text-white">
+                  <div className="grid h-8 w-8 flex-shrink-0 place-items-center rounded-full bg-[#16151b] font-mono text-[11px] font-bold text-white">
                     {initials(r.name, r.username)}
                   </div>
                   <div className="min-w-0">
-                    <p className="truncate text-sm font-medium text-gray-800">
+                    <p className="truncate text-[13.5px] font-semibold text-[#16151b]">
                       {r.name || r.username}
                       {r.role === 'admin' && (
-                        <span className="ml-1.5 inline-flex items-center gap-0.5 rounded bg-slate-800 px-1.5 py-0.5 text-[9px] font-semibold text-white align-middle">
+                        <span className="ml-1.5 inline-flex items-center gap-0.5 rounded bg-[#16151b] px-1.5 py-0.5 align-middle font-mono text-[9px] font-bold text-white">
                           <Shield className="h-2 w-2" /> ADMIN
                         </span>
                       )}
                     </p>
-                    <p className="truncate text-xs text-gray-400">@{r.username}</p>
+                    <p className="mt-0.5 truncate font-mono text-[10.5px] text-[#a9a8b4]">@{r.username}</p>
                   </div>
                 </div>
-                <span className="flex-shrink-0 text-xs text-gray-400">{timeAgo(r.at)}</span>
+                <span className="flex-shrink-0 font-mono text-[12px] text-[#8b8a95]">{timeAgo(r.at)}</span>
               </li>
             ))}
           </ul>
         ) : (
-          <div className="px-4 py-10 text-center text-sm text-gray-400">
+          <div className="px-4 py-10 text-center text-sm text-[#a9a8b4]">
             Aún no hay inicios de sesión registrados. Se llenarán a medida que los usuarios entren.
           </div>
         )}

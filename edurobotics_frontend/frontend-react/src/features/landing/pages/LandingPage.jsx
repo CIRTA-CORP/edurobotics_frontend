@@ -5,12 +5,10 @@ import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import {
-  Bot, Blocks, Code2, Play, ArrowRight, GraduationCap,
-  Building2, BookOpen, Cpu, CheckCircle2, ChevronDown,
+  Bot, Ruler, Code2, Play, ArrowRight, GraduationCap,
+  Building2, BookOpen, Cpu, CheckCircle2,
 } from 'lucide-react'
 import { Button } from '@/shared/components/button'
-import { Card, CardContent } from '@/shared/components/card'
-import { Badge } from '@/shared/components/badge'
 import { PublicNav } from '@/shared/components/PublicNav'
 import { HeroBand } from '@/shared/components/HeroBand'
 import { getCourses } from '@/features/courses/services/courses'
@@ -23,19 +21,22 @@ import { levelOf } from '@/shared/lib/courseLevel'
 /**
  * LandingPage — Página pública de marketing (ruta "/").
  *
- * Primer borrador inspirado en la academia de midudev, adaptado al
- * diferenciador de EduRobotics: el simulador de robótica 3D en el navegador.
+ * El diseño descansa en un cambio de fondo: la banda oscura de la marca abre y
+ * cierra la página (hero y CTA final) y todo lo del medio es blanco separado por
+ * filetes. Antes la banda estaba enterrada al medio, en "Cómo funciona", y las
+ * secciones se separaban con degradados apilados.
  *
- * Reutiliza el sistema de diseño existente (Tailwind + shadcn/ui, paleta slate).
- * Los textos, números y placeholders son de muestra: ajústalos a la realidad.
+ * Los textos y la visibilidad de cada sección los edita la directora desde el
+ * panel admin; aquí sólo se renderiza lo que devuelve la configuración.
  */
 
 // ─────────────────────────────────────────────────────────────
 // Hero
 // ─────────────────────────────────────────────────────────────
 
-// Renders a title where words wrapped in *asterisks* get a highlighted chip,
-// like midu's boxed "IA". Editable from the CMS (the director moves the *).
+// Renders a title where words wrapped in *asterisks* get a highlighted chip.
+// Editable from the CMS (the director moves the *). On the dark band the chip is
+// a glass outline, not a colour — the page has one accent and this isn't it.
 function renderHeroTitle(title) {
   const parts = (title || '').split(/(\*[^*]+\*)/g)
   return parts.map((part, i) => {
@@ -43,7 +44,7 @@ function renderHeroTitle(title) {
       return (
         <span
           key={i}
-          className="mx-1 inline-block rounded-2xl border border-blue-200 bg-blue-100/70 px-3 py-0.5 text-blue-700"
+          className="mx-1 inline-block rounded-2xl border border-white/25 bg-white/[0.08] px-3 py-0.5"
         >
           {part.slice(1, -1)}
         </span>
@@ -53,92 +54,159 @@ function renderHeroTitle(title) {
   })
 }
 
+/**
+ * Hero — now the brand band itself.
+ *
+ * The dark band used to be buried mid-page under "Cómo funciona"; it opens and
+ * closes the landing instead, and everything between is white with hairlines.
+ */
 function Hero({ onAuth, user, data, loading }) {
   return (
-    <section className="relative overflow-hidden bg-gradient-to-b from-gray-50 to-white">
-      <div className="mx-auto grid max-w-6xl items-center gap-12 px-4 py-20 lg:grid-cols-2 lg:py-28">
+    <HeroBand className="on-brand-band">
+      <div className="mx-auto grid max-w-6xl items-center gap-14 px-4 py-20 lg:grid-cols-2 lg:py-24">
         <div>
           <div className="mb-6 flex flex-wrap items-center gap-2">
-            <Badge className="inline-flex items-center gap-1.5 bg-slate-900 text-white">
+            <span className="inline-flex h-7 items-center rounded-full border border-white/15 bg-white/10 px-3 text-[11.5px] font-semibold text-white">
               {data.badge}
-            </Badge>
-            <Badge className="inline-flex items-center gap-1.5 bg-emerald-100 text-emerald-700">
-              100% Gratis
-            </Badge>
+            </span>
+            <span className="inline-flex h-7 items-center rounded-full bg-emerald-400/[0.16] px-3 text-[11.5px] font-semibold text-emerald-300">
+              100% gratis
+            </span>
           </div>
-          <h1 className="text-4xl font-bold leading-tight tracking-tight sm:text-5xl lg:text-6xl">
+          <h1 className="text-4xl font-bold leading-[1.06] tracking-tight text-white sm:text-5xl lg:text-[54px]">
             {renderHeroTitle(data.title)}
           </h1>
-          <p className="mt-6 max-w-lg text-lg text-muted-foreground">
+          <p className="mt-6 max-w-lg text-[17px] leading-relaxed text-white/60">
             {data.subtitle}
           </p>
           <div className="mt-8 flex flex-col gap-3 sm:flex-row">
             {user ? (
               <Link to="/dashboard">
-                <Button size="lg" className="w-full gap-2 sm:w-auto">
+                <Button size="lg" variant="onBrand" className="w-full gap-2 sm:w-auto">
                   Ir a mi dashboard <ArrowRight className="h-4 w-4" />
                 </Button>
               </Link>
             ) : (
-              <Button size="lg" className="w-full gap-2 sm:w-auto" onClick={() => onAuth('register')}>
+              <Button size="lg" variant="onBrand" className="w-full gap-2 sm:w-auto" onClick={() => onAuth('register')}>
                 Empezar gratis <ArrowRight className="h-4 w-4" />
               </Button>
             )}
             <a href="#simulador">
-              <Button size="lg" variant="outline" className="w-full gap-2 sm:w-auto">
+              <Button
+                size="lg"
+                className="w-full gap-2 border border-white/25 bg-transparent text-white hover:bg-white/10 sm:w-auto"
+              >
                 <Play className="h-4 w-4" /> Ver el simulador
               </Button>
             </a>
           </div>
         </div>
 
-        {/* Mockup del simulador; su panel derecho usa la foto subida por la directora */}
+        {/* Panel del simulador; su vista 3D usa la foto subida por la directora */}
         <SimulatorMockup imageUrl={data.imageUrl} loading={loading} />
       </div>
-    </section>
+    </HeroBand>
   )
 }
 
+/**
+ * SimulatorMockup — the product running in a browser tab.
+ *
+ * The chrome earns its place: "sin instalar nada" is the promise, and the URL
+ * is what proves it. The window dots stay neutral instead of the toy-coloured
+ * traffic lights.
+ *
+ * Las dos pestañas son los dos momentos reales del ciclo de trabajo —escribes
+ * Python, lo ejecutas, lees la salida— y no dos formas alternativas de hacer lo
+ * mismo. El código que se muestra es el API de verdad (`robot_api.py`): enseñar
+ * una API inventada se desmontaría en cuanto alguien entra al simulador.
+ */
 function SimulatorMockup({ imageUrl, loading }) {
+  const [mode, setMode] = useState('code')
+
+  const tab = (active) =>
+    `h-7 rounded-lg px-3 text-[12px] font-semibold transition-colors ${
+      active ? 'bg-white/[0.14] text-white' : 'text-white/50 hover:text-white/80'
+    }`
+
   return (
-    <div className="relative">
-      <div className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-2xl">
-        {/* Barra de ventana */}
-        <div className="flex items-center gap-1.5 border-b border-gray-200 bg-gray-50 px-4 py-3">
-          <span className="h-3 w-3 rounded-full bg-red-400" />
-          <span className="h-3 w-3 rounded-full bg-yellow-400" />
-          <span className="h-3 w-3 rounded-full bg-green-400" />
-          <span className="ml-3 text-xs text-muted-foreground">edurobotics.cl/simulator</span>
+    <div className="overflow-hidden rounded-[18px] border border-white/[0.14] bg-[#111114] shadow-2xl">
+      {/* Browser chrome: the address is the proof that nothing gets installed */}
+      <div className="flex h-9 items-center gap-3 border-b border-white/[0.07] px-3.5">
+        <div className="flex flex-shrink-0 items-center gap-[5px]" aria-hidden="true">
+          <span className="h-2.5 w-2.5 rounded-full bg-white/[0.16]" />
+          <span className="h-2.5 w-2.5 rounded-full bg-white/[0.16]" />
+          <span className="h-2.5 w-2.5 rounded-full bg-white/[0.16]" />
         </div>
-        {/* Cuerpo: editor de bloques + escena 3D */}
-        <div className="grid grid-cols-5">
-          <div className="col-span-2 space-y-2 border-r border-gray-200 bg-slate-50 p-4">
-            <div className="rounded-md bg-blue-500 px-3 py-2 text-xs font-medium text-white shadow-sm">
-              ▸ mover articulación 1
+        <div className="flex h-[22px] min-w-0 flex-1 items-center justify-center rounded-md bg-white/[0.05] px-3">
+          <span className="truncate font-mono text-[10.5px] text-white/40">
+            www.edurobotics.cl/simulator
+          </span>
+        </div>
+      </div>
+
+      {/* Toolbar: the two modes, the robot, and the run affordance */}
+      <div className="flex h-[46px] items-center justify-between border-b border-white/[0.09] px-3.5">
+        <div className="flex items-center gap-0.5 rounded-[9px] bg-white/[0.07] p-[3px]">
+          <button onClick={() => setMode('code')} className={tab(mode === 'code')}>Código</button>
+          <button onClick={() => setMode('output')} className={tab(mode === 'output')}>Salida</button>
+        </div>
+        <div className="flex items-center gap-2.5">
+          <span className="font-mono text-[10.5px] text-white/40">UR5e</span>
+          <span className="inline-flex h-7 items-center gap-1.5 rounded-lg bg-emerald-400/[0.16] px-3 text-[11.5px] font-semibold text-emerald-300">
+            <Play className="h-2.5 w-2.5 fill-current" />
+            Ejecutar
+          </span>
+        </div>
+      </div>
+
+      <div className="grid min-h-[296px] grid-cols-[minmax(0,1fr)] sm:grid-cols-[244px_minmax(0,1fr)]">
+        <div className="border-b border-white/[0.09] p-3.5 sm:border-b-0 sm:border-r">
+          {mode === 'code' ? (
+            <div className="font-mono text-[10.5px] leading-[1.85] text-white/75">
+              <div><span className="text-[#a5a1ee]">from</span> robot_api <span className="text-[#a5a1ee]">import</span> Robot</div>
+              <div className="h-[0.9em]" />
+              <div>robot = <span className="text-[#a5a1ee]">Robot</span>()</div>
+              <div className="h-[0.9em]" />
+              <div className="text-white/40"># girar la base</div>
+              <div>robot.<span className="text-[#a5a1ee]">move_joints</span>(</div>
+              <div className="pl-3">{'{'}<span className="text-emerald-300">&quot;shoulder_pan_joint&quot;</span>: <span className="text-emerald-300">1.57</span>{'}'},</div>
+              <div className="pl-3">duration=<span className="text-emerald-300">2.0</span>,</div>
+              <div>)</div>
             </div>
-            <div className="ml-3 rounded-md bg-emerald-500 px-3 py-2 text-xs font-medium text-white shadow-sm">
-              ▸ esperar 1s
+          ) : (
+            <div className="font-mono text-[10.5px] leading-[1.85] text-white/60">
+              <div className="text-white/40">[sim] Simulación lista.</div>
+              <div>[robot_api] CMD written:</div>
+              <div className="pl-3 text-white/45">dur=2.0s</div>
+              <div>[robot_api] Waiting 2.4s</div>
+              <div className="pl-3 text-white/45">for trajectory...</div>
+              <div>[robot_api] Trajectory</div>
+              <div className="pl-3 text-white/45">wait done.</div>
+              <div className="h-[0.9em]" />
+              <div className="text-emerald-300">Done.</div>
+              <div className="text-white/40">Animation: 24 frames</div>
             </div>
-            <div className="rounded-md bg-amber-500 px-3 py-2 text-xs font-medium text-white shadow-sm">
-              ▸ cerrar gripper
+          )}
+        </div>
+
+        <div className="bg-[#0a0a0c]">
+          {loading ? (
+            // Mientras llega el contenido del backend, no mostramos el robot
+            // (evita el parpadeo robot→foto); solo un panel oscuro con pulso.
+            <div className="h-full w-full animate-pulse bg-white/[0.04]" />
+          ) : imageUrl ? (
+            <img
+              src={imageUrl}
+              alt="Simulador EduRobotics"
+              decoding="async"
+              className="h-full w-full object-cover"
+            />
+          ) : (
+            <div className="flex h-full items-center justify-center p-8">
+              <Bot className="h-24 w-24 text-white/25" strokeWidth={1.2} />
             </div>
-            <div className="ml-3 rounded-md bg-purple-500 px-3 py-2 text-xs font-medium text-white shadow-sm">
-              ▸ repetir x3
-            </div>
-          </div>
-          <div className="col-span-3 bg-gradient-to-br from-slate-800 to-slate-900">
-            {loading ? (
-              // Mientras llega el contenido del backend, no mostramos el robot
-              // (evita el parpadeo robot→foto); solo un panel oscuro con pulso.
-              <div className="h-full w-full animate-pulse bg-slate-700/30" />
-            ) : imageUrl ? (
-              <img src={imageUrl} alt="Simulador EduRobotics" className="h-full w-full object-cover" />
-            ) : (
-              <div className="flex h-full items-center justify-center p-8">
-                <Bot className="h-28 w-28 text-blue-400" strokeWidth={1.2} />
-              </div>
-            )}
-          </div>
+          )}
         </div>
       </div>
     </div>
@@ -148,24 +216,68 @@ function SimulatorMockup({ imageUrl, loading }) {
 // ─────────────────────────────────────────────────────────────
 // Banda de estadísticas
 // ─────────────────────────────────────────────────────────────
+/** Un grupo de la cinta. El segundo es un duplicado visual: va aria-hidden. */
+function FactsTrack({ items, hidden }) {
+  return (
+    <div className="facts-marquee__track" aria-hidden={hidden || undefined}>
+      {items.map((s, i) => (
+        <span key={`${s.label}-${i}`} className="flex flex-shrink-0 items-center">
+          <span className="flex items-baseline gap-2.5 px-7">
+            <span className="font-mono text-[19px] font-bold tracking-tight text-[#16151b]">
+              {s.value}
+            </span>
+            <span className="whitespace-nowrap text-[13px] text-[#8b8a95]">{s.label}</span>
+          </span>
+          <span className="h-1.5 w-1.5 rotate-45 bg-[#dcdbe4]" aria-hidden="true" />
+        </span>
+      ))}
+    </div>
+  )
+}
+
+/**
+ * Stats — la cinta de hechos, en movimiento continuo.
+ *
+ * Técnica de letigre.run: dos grupos idénticos de al menos el ancho de la
+ * pantalla; desplazar uno el 100% de su propio ancho lo saca justo cuando el
+ * otro ocupa su sitio, así el bucle no deja hueco. Los textos se repiten dentro
+ * de cada grupo para que `space-around` no los separe en pantallas anchas.
+ */
 function Stats() {
   const stats = [
-    { value: 'UR5', label: 'Robot industrial simulado' },
+    { value: 'UR5e', label: 'Robot industrial simulado' },
     { value: '3D', label: 'Visor en el navegador' },
     { value: '0', label: 'Instalaciones necesarias' },
-    { value: '2', label: 'Modos: bloques y código' },
+    { value: '1 mm', label: 'Precisión frente al robot real' },
   ]
+  // Repetidos dentro del grupo: evita huecos cuando la pantalla es más ancha
+  // que el contenido.
+  const repeated = [...stats, ...stats]
+
   return (
-    <section className="border-y border-gray-200 bg-white">
-      <div className="mx-auto grid max-w-6xl grid-cols-2 gap-8 px-4 py-12 md:grid-cols-4">
-        {stats.map((s) => (
-          <div key={s.label} className="text-center">
-            <div className="text-3xl font-bold tracking-tight sm:text-4xl">{s.value}</div>
-            <div className="mt-1 text-sm text-muted-foreground">{s.label}</div>
-          </div>
-        ))}
+    <section className="border-y border-[#ececf1] bg-white py-5">
+      <div className="facts-marquee" style={{ '--facts-duration': '34s' }}>
+        <FactsTrack items={repeated} />
+        <FactsTrack items={repeated} hidden />
       </div>
     </section>
+  )
+}
+
+// Shared section furniture: the mono eyebrow and the section heading.
+function SectionLabel({ children }) {
+  return (
+    <div className="font-mono text-[10px] font-semibold uppercase tracking-[0.14em] text-[#a9a8b4]">
+      {children}
+    </div>
+  )
+}
+
+function SectionTitle({ children, className = '' }) {
+  return (
+    <h2 className={`mt-3 text-[28px] font-bold leading-tight tracking-[-0.012em] text-[#16151b] sm:text-[32px] ${className}`}>
+      {children}
+    </h2>
   )
 }
 
@@ -174,35 +286,64 @@ function Stats() {
 // ─────────────────────────────────────────────────────────────
 function SimulatorSection({ data }) {
   const features = [
-    { icon: Blocks, title: 'Programación por bloques', text: 'Arrastra bloques tipo Scratch para construir la lógica del robot. Ideal para empezar sin saber programar.' },
-    { icon: Code2, title: 'Editor de código', text: 'Pasa a código real cuando estés listo. Los bloques se sincronizan con el editor automáticamente.' },
+    { icon: Ruler, title: 'Simulación fiel', text: 'El visor carga la misma descripción del robot que usa la simulación física. La cinemática coincide con el robot real dentro de 1 mm.' },
+    { icon: Code2, title: 'Python real', text: 'Escribes con la misma librería que mueve el brazo físico. No es un lenguaje de práctica: es el código que se usa de verdad.' },
     { icon: Cpu, title: 'Ejecución en vivo', text: 'Tu programa corre y el robot 3D se mueve al instante. Ves el resultado de cada cambio en tiempo real.' },
   ]
   return (
-    <section id="simulador" className="bg-gradient-to-b from-white to-gray-50 py-20 lg:py-28">
-      <div className="mx-auto max-w-6xl px-4">
-        <div className="mx-auto max-w-2xl text-center">
-          <Badge variant="secondary" className="mb-4">Lo que nos distingue</Badge>
-          <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">
-            {data.title}
-          </h2>
-          <p className="mt-4 text-lg text-muted-foreground">
-            {data.subtitle}
-          </p>
+    <section id="simulador" className="mx-auto max-w-6xl px-4 pt-22 lg:pt-24">
+      <SectionLabel>Lo que nos distingue</SectionLabel>
+      <SectionTitle className="max-w-3xl">{data.title}</SectionTitle>
+      <p className="mt-4 max-w-2xl text-[16.5px] leading-relaxed text-[#55545f]">{data.subtitle}</p>
+
+      <div className="mt-10 grid gap-6 md:grid-cols-3">
+        {features.map((f) => (
+          <div key={f.title} className="rounded-[14px] border border-[#e9e9ee] p-6">
+            <div className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-[#4b46d6]/[0.07] text-[#4b46d6]">
+              <f.icon className="h-5 w-5" />
+            </div>
+            <h3 className="mt-4 text-[16.5px] font-semibold tracking-[-0.008em] text-[#16151b]">{f.title}</h3>
+            <p className="mt-2 text-[14.5px] leading-relaxed text-[#55545f]">{f.text}</p>
+          </div>
+        ))}
+      </div>
+
+      {/* Código y movimiento: la idea sobre la que descansa el producto, mostrada
+          en vez de descrita. Antes este panel enseñaba bloques convirtiéndose en
+          código; ahora enseña el código real y lo que el robot hace con él, que
+          es el ciclo que el alumno vive de verdad. Se apila en pantallas
+          estrechas. */}
+      <div className="mt-6 grid overflow-hidden rounded-[14px] border border-[#e9e9ee] md:grid-cols-[minmax(0,1fr)_64px_minmax(0,1fr)]">
+        <div className="p-6">
+          <SectionLabel>Escribes esto</SectionLabel>
+          <div className="mt-4 font-mono text-[12px] leading-[2.05] text-[#3a3944]">
+            <div><span className="text-[#4b46d6]">from</span> robot_api <span className="text-[#4b46d6]">import</span> Robot</div>
+            <div>robot = <span className="text-[#4b46d6]">Robot</span>()</div>
+            <div>robot.<span className="text-[#4b46d6]">move_joints</span>(</div>
+            <div className="pl-4">{'{'}<span className="text-emerald-700">&quot;shoulder_pan_joint&quot;</span>: <span className="text-emerald-700">1.57</span>{'}'},</div>
+            <div className="pl-4">duration=<span className="text-emerald-700">2.0</span>,</div>
+            <div>)</div>
+          </div>
         </div>
 
-        <div className="mt-14 grid gap-6 md:grid-cols-3">
-          {features.map((f) => (
-            <Card key={f.title} className="border-gray-200 transition-shadow hover:shadow-lg">
-              <CardContent className="pt-6">
-                <div className="mb-4 inline-flex h-11 w-11 items-center justify-center rounded-lg bg-blue-50 text-blue-600">
-                  <f.icon className="h-6 w-6" />
-                </div>
-                <h3 className="text-lg font-semibold">{f.title}</h3>
-                <p className="mt-2 text-sm text-muted-foreground">{f.text}</p>
-              </CardContent>
-            </Card>
-          ))}
+        <div className="grid place-items-center border-y border-[#f2f1f6] bg-[#fafafa] py-3 md:border-x md:border-y-0 md:py-0">
+          <ArrowRight className="h-5 w-5 rotate-90 text-[#b3b2be] md:rotate-0" />
+        </div>
+
+        <div className="bg-[#0a0a0c] p-6">
+          <div className="font-mono text-[10px] font-semibold uppercase tracking-[0.14em] text-white/40">
+            El robot hace esto
+          </div>
+          <div className="mt-4 font-mono text-[12px] leading-[2.05] text-white/[0.78]">
+            <div className="text-white/40">shoulder_pan_joint</div>
+            <div>
+              0.00 <span className="text-white/35">→</span> <span className="text-emerald-300">1.57 rad</span>
+            </div>
+            <div className="mt-3 text-white/40">Trayectoria</div>
+            <div>2.0 s · <span className="text-emerald-300">24 frames</span></div>
+            <div className="mt-3 text-white/40">Desviación vs. ROS</div>
+            <div className="text-emerald-300">&lt; 1 mm</div>
+          </div>
         </div>
       </div>
     </section>
@@ -223,11 +364,13 @@ function CourseCard({ title, level, description, imageUrl, courseId }) {
         <img
           src={imageUrl}
           alt={title}
+          loading="lazy"
+          decoding="async"
           className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
         />
       ) : (
-        <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-slate-700 to-slate-900">
-          <BookOpen className="h-12 w-12 text-blue-300" strokeWidth={1.5} />
+        <div className="absolute inset-0 flex items-center justify-center bg-[#0a0a0c]">
+          <BookOpen className="h-12 w-12 text-white/30" strokeWidth={1.5} />
         </div>
       )}
 
@@ -248,7 +391,7 @@ function CourseCard({ title, level, description, imageUrl, courseId }) {
         </h3>
         <div className="max-h-0 overflow-hidden opacity-0 transition-all duration-300 ease-out group-hover:mt-2 group-hover:max-h-40 group-hover:opacity-100">
           <p className="mb-3 line-clamp-2 text-sm text-white/80">{description}</p>
-          <span className="flex w-full items-center justify-center gap-2 rounded-lg bg-white px-4 py-2.5 text-sm font-semibold text-slate-900 shadow-sm">
+          <span className="flex w-full items-center justify-center gap-2 rounded-lg bg-white px-4 py-2.5 text-sm font-semibold text-[#16151b] shadow-sm">
             Ver curso <ArrowRight className="h-4 w-4" />
           </span>
         </div>
@@ -270,17 +413,17 @@ function CoursesPreview({ data }) {
   const courses = (Array.isArray(coursesResp) ? coursesResp : coursesResp?.courses || []).slice(0, 6)
 
   return (
-    <section id="cursos" className="py-20 lg:py-28">
-      <div className="mx-auto max-w-6xl px-4">
-        <div className="mx-auto max-w-2xl text-center">
-          <Badge variant="secondary" className="mb-4">Catálogo</Badge>
-          <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">{data.title}</h2>
-          <p className="mt-4 text-lg text-muted-foreground">
+    <section id="cursos" className="mx-auto max-w-6xl px-4 pt-22 lg:pt-24">
+      <div>
+        <div className="max-w-2xl">
+          <SectionLabel>Catálogo</SectionLabel>
+          <SectionTitle>{data.title}</SectionTitle>
+          <p className="mt-4 text-[16.5px] leading-relaxed text-[#55545f]">
             {data.subtitle}
           </p>
         </div>
 
-        <div className="mt-14 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {courses.length > 0 ? (
             courses.map((c) => (
               <CourseCard
@@ -294,7 +437,7 @@ function CoursesPreview({ data }) {
             ))
           ) : (
             // Placeholders cuando no hay backend / aún no hay cursos publicados
-            ['Fundamentos de Robótica', 'Programación con Bloques', 'Manipulación con UR5'].map((title, i) => (
+            ['Fundamentos de Robótica', 'Programación en Python', 'Manipulación con UR5e'].map((title, i) => (
               <CourseCard
                 key={i}
                 title={title}
@@ -328,31 +471,30 @@ function CoursesPreview({ data }) {
 function HowItWorks({ data }) {
   const steps = [
     { n: '1', title: 'Elige un curso', text: 'Selecciona un curso según tu nivel y avanza por módulos y unidades.' },
-    { n: '2', title: 'Programa el robot', text: 'Usa bloques visuales o escribe código para definir el comportamiento del robot.' },
+    { n: '2', title: 'Programa el robot', text: 'Escribe tu programa en Python y ejecútalo sobre el robot simulado.' },
     { n: '3', title: 'Ejecuta y aprende', text: 'Corre tu programa y observa al robot 3D moverse. Itera y mejora al instante.' },
   ]
   return (
-    <HeroBand>
-      <section id="como-funciona" className="py-20 lg:py-28">
-        <div className="mx-auto max-w-6xl px-4">
-          <div className="mx-auto max-w-2xl text-center">
-            <Badge className="mb-4 bg-white/10 text-white">Cómo funciona</Badge>
-            <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">{data.title}</h2>
-          </div>
-          <div className="mt-14 grid gap-8 md:grid-cols-3">
-            {steps.map((s) => (
-              <div key={s.n} className="text-center">
-                <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-white text-black text-lg font-bold">
-                  {s.n}
-                </div>
-                <h3 className="mt-5 text-xl font-semibold">{s.title}</h3>
-                <p className="mt-2 text-sm text-white/70">{s.text}</p>
-              </div>
-            ))}
-          </div>
+    <section id="como-funciona" className="mx-auto max-w-6xl px-4 pt-23 lg:pt-26">
+      <SectionLabel>Cómo funciona</SectionLabel>
+      <SectionTitle>{data.title}</SectionTitle>
+
+      <div className="relative mt-11">
+        {/* The rule joining the three nodes, behind them. */}
+        <div className="absolute left-[16.6%] right-[16.6%] top-4 hidden h-0.5 bg-[#eceaf2] md:block" aria-hidden="true" />
+        <div className="relative grid gap-8 md:grid-cols-3">
+          {steps.map((s) => (
+            <div key={s.n} className="text-center">
+              <span className="mx-auto grid h-9 w-9 place-items-center rounded-full bg-[#16151b] font-mono text-[15px] font-bold text-white">
+                {s.n}
+              </span>
+              <h3 className="mt-5 text-[21px] font-semibold text-[#16151b]">{s.title}</h3>
+              <p className="mx-auto mt-2.5 max-w-[300px] text-[14.5px] leading-relaxed text-[#55545f]">{s.text}</p>
+            </div>
+          ))}
         </div>
-      </section>
-    </HeroBand>
+      </div>
+    </section>
   )
 }
 
@@ -364,7 +506,7 @@ function ForWho() {
     {
       icon: GraduationCap,
       title: 'Para estudiantes',
-      points: ['Aprende a tu ritmo', 'Sin hardware costoso', 'Del bloque al código real'],
+      points: ['Aprende a tu ritmo', 'Sin hardware costoso', 'Python real desde el primer curso'],
     },
     {
       icon: Building2,
@@ -373,24 +515,23 @@ function ForWho() {
     },
   ]
   return (
-    <section id="universidades" className="py-20 lg:py-28">
-      <div className="mx-auto grid max-w-6xl gap-6 px-4 md:grid-cols-2">
+    <section id="universidades" className="mx-auto max-w-6xl px-4 pt-23 lg:pt-26">
+      <SectionLabel>Para quién es</SectionLabel>
+      <div className="mt-7 grid gap-6 md:grid-cols-2">
         {audiences.map((a) => (
-          <Card key={a.title} className="border-gray-200">
-            <CardContent className="pt-6">
-              <div className="mb-4 inline-flex h-11 w-11 items-center justify-center rounded-lg bg-slate-900 text-white">
-                <a.icon className="h-6 w-6" />
-              </div>
-              <h3 className="text-xl font-semibold">{a.title}</h3>
-              <ul className="mt-4 space-y-2">
-                {a.points.map((p) => (
-                  <li key={p} className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <CheckCircle2 className="h-4 w-4 flex-shrink-0 text-blue-600" /> {p}
-                  </li>
-                ))}
-              </ul>
-            </CardContent>
-          </Card>
+          <div key={a.title} className="rounded-[14px] border border-[#e9e9ee] p-7">
+            <div className="inline-flex h-[42px] w-[42px] items-center justify-center rounded-xl bg-[#16151b] text-white">
+              <a.icon className="h-5 w-5" />
+            </div>
+            <h3 className="mt-5 text-[22px] font-semibold text-[#16151b]">{a.title}</h3>
+            <ul className="mt-4 space-y-2.5">
+              {a.points.map((p) => (
+                <li key={p} className="flex items-center gap-2.5 text-[14.5px] text-[#33323b]">
+                  <CheckCircle2 className="h-4 w-4 flex-shrink-0 text-[#4b46d6]" /> {p}
+                </li>
+              ))}
+            </ul>
+          </div>
         ))}
       </div>
     </section>
@@ -401,13 +542,15 @@ function ForWho() {
 // CTA final
 // ─────────────────────────────────────────────────────────────
 function FinalCTA({ onAuth, user, data }) {
+  // The second brand band: the page opens dark and closes dark, with everything
+  // between it white.
   return (
-    <section className="bg-gradient-to-b from-gray-50 to-white py-20 lg:py-28">
-      <div className="mx-auto max-w-3xl px-4 text-center">
-        <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">
+    <HeroBand className="on-brand-band mt-23 lg:mt-26">
+      <div className="mx-auto max-w-3xl px-4 py-20 text-center lg:py-22">
+        <h2 className="text-[32px] font-bold leading-[1.1] tracking-[-0.018em] text-white sm:text-[42px]">
           {data.title}
         </h2>
-        <p className="mt-4 text-lg text-muted-foreground">
+        <p className="mt-4.5 text-[16.5px] leading-relaxed text-white/60">
           {user
             ? 'Continúa donde lo dejaste y sigue avanzando en tus cursos.'
             : data.subtitle}
@@ -415,57 +558,64 @@ function FinalCTA({ onAuth, user, data }) {
         <div className="mt-8 flex justify-center">
           {user ? (
             <Link to="/dashboard">
-              <Button size="lg" className="gap-2">
+              <Button size="lg" variant="onBrand" className="gap-2">
                 Ir a mi dashboard <ArrowRight className="h-4 w-4" />
               </Button>
             </Link>
           ) : (
-            <Button size="lg" className="gap-2" onClick={() => onAuth('register')}>
+            <Button size="lg" variant="onBrand" className="gap-2" onClick={() => onAuth('register')}>
               Crear cuenta gratis <ArrowRight className="h-4 w-4" />
             </Button>
           )}
         </div>
       </div>
-    </section>
+    </HeroBand>
   )
 }
 
 // ─────────────────────────────────────────────────────────────
 // Preguntas frecuentes (editable desde el admin)
 // ─────────────────────────────────────────────────────────────
+/**
+ * FAQ — lista a lo ancho, sin tarjetas.
+ *
+ * Usa `<details>/<summary>` nativos (patrón de letigre.run): el navegador se
+ * encarga del teclado, del estado y de la semántica para lectores de pantalla,
+ * así que no hace falta estado en React ni `aria-expanded` a mano. Las preguntas
+ * se separan con filetes en vez de encerrarse en cajas, y el icono `+` gira 45°
+ * hasta volverse `×` al abrir.
+ */
 function FAQ({ data }) {
-  const [open, setOpen] = useState(null)
   const items = data.items || []
   if (items.length === 0) return null
 
   return (
-    <section id="faq" className="bg-gray-50 py-20 lg:py-28">
-      <div className="mx-auto max-w-3xl px-4">
-        <div className="mx-auto max-w-2xl text-center">
-          <Badge variant="secondary" className="mb-4">Dudas frecuentes</Badge>
-          <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">{data.title}</h2>
-          {data.subtitle && <p className="mt-4 text-lg text-muted-foreground">{data.subtitle}</p>}
-        </div>
+    <section id="faq" className="mx-auto max-w-6xl px-4 pt-23 lg:pt-26">
+      <div className="max-w-2xl">
+        <SectionLabel>Dudas frecuentes</SectionLabel>
+        <SectionTitle>{data.title}</SectionTitle>
+        {data.subtitle && (
+          <p className="mt-4 text-[16.5px] leading-relaxed text-[#55545f]">{data.subtitle}</p>
+        )}
+      </div>
 
-        <div className="mt-12 space-y-3">
-          {items.map((it, i) => {
-            const isOpen = open === i
-            return (
-              <div key={i} className="overflow-hidden rounded-xl border border-gray-200 bg-white">
-                <button
-                  onClick={() => setOpen(isOpen ? null : i)}
-                  className="flex w-full items-center justify-between gap-4 px-5 py-4 text-left transition-colors hover:bg-gray-50"
-                >
-                  <span className="font-medium text-gray-900">{it.question}</span>
-                  <ChevronDown className={`h-5 w-5 flex-shrink-0 text-gray-400 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
-                </button>
-                {isOpen && (
-                  <div className="border-t border-gray-100 px-5 py-4 leading-relaxed text-gray-600">{it.answer}</div>
-                )}
-              </div>
-            )
-          })}
-        </div>
+      <div className="mt-10 divide-y divide-[#ececf1] border-y border-[#ececf1]">
+        {items.map((it, i) => (
+          <details key={i} className="faq-item group">
+            <summary className="faq-item__summary">
+              <span className="text-[17px] font-semibold leading-snug text-[#16151b] sm:text-[19px]">
+                {it.question}
+              </span>
+              <span className="faq-item__icon" aria-hidden="true">
+                {/* Un + que se convierte en × al girar: una sola forma, dos estados */}
+                <svg viewBox="0 0 16 16" className="h-4 w-4" fill="none">
+                  <path d="M8 2.5v11M2.5 8h11" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+                </svg>
+              </span>
+            </summary>
+            <p className="faq-item__answer">{it.answer}</p>
+          </details>
+        ))}
       </div>
     </section>
   )
@@ -476,7 +626,7 @@ function FAQ({ data }) {
 // ─────────────────────────────────────────────────────────────
 function LandingFooter() {
   return (
-    <footer className="border-t border-gray-200 bg-white">
+    <footer className="mt-0 border-t border-[#ececf1] bg-white">
       <div className="mx-auto max-w-6xl px-4 py-10">
         <div className="flex flex-col items-center justify-between gap-4 sm:flex-row">
           <div className="flex items-center gap-2">

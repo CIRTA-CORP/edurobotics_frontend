@@ -25,7 +25,7 @@ import { PublicNav } from '@/shared/components/PublicNav'
 import { LogoutModal } from '@/shared/components/LogoutModal'
 import { HeroBand } from '@/shared/components/HeroBand'
 import {
-    ArrowLeft, BookOpen, ChevronDown, ChevronRight,
+    ArrowLeft, BookOpen, Check, ChevronDown, ChevronRight,
     PlayCircle, FileText, Link2, Loader2, CheckCircle,
     Lock, AlertTriangle, XCircle,
     Layers, Package, Shield, Map, ExternalLink,
@@ -35,93 +35,140 @@ import { COURSE_LEVELS } from '@/shared/lib/courseLevel'
 
 // ── Level config — label/icon from the shared source ──────────────────────────
 const LEVEL_CONFIG = {
-    beginner: { ...COURSE_LEVELS.beginner, color: 'bg-emerald-100 text-emerald-700', gradient: 'from-emerald-500 to-teal-600' },
-    intermediate: { ...COURSE_LEVELS.intermediate, color: 'bg-amber-100 text-amber-700', gradient: 'from-amber-500 to-orange-600' },
-    advanced: { ...COURSE_LEVELS.advanced, color: 'bg-rose-100 text-rose-700', gradient: 'from-rose-500 to-red-600' },
+    beginner: { ...COURSE_LEVELS.beginner, color: 'bg-emerald-100 text-emerald-700' },
+    intermediate: { ...COURSE_LEVELS.intermediate, color: 'bg-amber-100 text-amber-700' },
+    advanced: { ...COURSE_LEVELS.advanced, color: 'bg-rose-100 text-rose-700' },
 }
 
 // ── Content type icon ─────────────────────────────────────────────────────────
 const ContentIcon = ({ type }) => {
     switch (type) {
-        case 'video': return <PlayCircle className="w-4 h-4" />
-        case 'text': return <FileText className="w-4 h-4" />
-        case 'resource': return <Link2 className="w-4 h-4" />
-        default: return <BookOpen className="w-4 h-4" />
+        case 'video': return <PlayCircle className="w-3.5 h-3.5" />
+        case 'text': return <FileText className="w-3.5 h-3.5" />
+        case 'resource': return <Link2 className="w-3.5 h-3.5" />
+        default: return <BookOpen className="w-3.5 h-3.5" />
     }
 }
 
 const CONTENT_TYPE_COLORS = {
     video: 'text-purple-500',
-    text: 'text-blue-500',
+    text: 'text-gray-400',
     resource: 'text-amber-500',
 }
 
 // ── Collapsible module row ────────────────────────────────────────────────────
-function ModuleRow({ module, index, defaultOpen = false }) {
+/** "Video · Documento · Evaluación" for a unit, or '' when it holds nothing. */
+function unitKindLabel(unit) {
+    const types = new Set((unit.contents || []).map(c => c.content_type))
+    const labels = []
+    if (types.has('video')) labels.push('Video')
+    if (types.has('file')) labels.push('Documento')
+    if (types.has('resource')) labels.push('Recurso')
+    if (types.has('simulator')) labels.push('Simulador')
+    if (types.has('rich_text') || types.has('text')) labels.push('Lectura')
+    if (unit.quizzes?.length > 0) labels.push('Evaluación')
+    return labels.join(' · ')
+}
+
+/** Minutes the unit's contents declare, or null when none declare any. */
+function unitMinutes(unit) {
+    const total = (unit.contents || [])
+        .reduce((sum, c) => sum + (Number(c.duration_minutes) || 0), 0)
+    return total > 0 ? total : null
+}
+
+/**
+ * One module on the programme timeline: a node on a vertical line, its units
+ * listed underneath as plain rows. No card, no fill — the same line of modules
+ * the student meets inside the course.
+ */
+function ModuleRow({ module, index, isLast, unitDone, defaultOpen = false }) {
     const [open, setOpen] = useState(defaultOpen)
-    const unitCount = module.units?.length || 0
-    const contentCount = (module.units || []).reduce((acc, u) => acc + (u.contents?.length || 0), 0)
-    const quizCount = (module.units || []).reduce((acc, u) => acc + (u.quizzes?.length || 0), 0)
+    const units = module.units || []
+    const doneCount = units.filter(u => unitDone(u.id)).length
+    const allDone = units.length > 0 && doneCount === units.length
+    const minutes = units.reduce((sum, u) => sum + (unitMinutes(u) || 0), 0)
+
+    const meta = [
+        `${units.length} ${units.length === 1 ? 'unidad' : 'unidades'}`,
+        minutes > 0 ? `${minutes} min` : null,
+    ].filter(Boolean).join(' · ')
 
     return (
-        <div className={`rounded-xl border transition-all ${open ? 'border-gray-200 shadow-sm' : 'border-gray-100 hover:border-gray-200'}`}>
+        <div className="relative pl-11">
+            {!isLast && (
+                <div className="absolute left-[14px] top-[38px] -bottom-7 w-0.5 bg-[#eceaf2]" aria-hidden="true" />
+            )}
+
             <button
-                className="w-full flex items-center justify-between px-5 py-4 text-left transition-colors"
                 onClick={() => setOpen(o => !o)}
+                aria-expanded={open}
+                className="block w-full text-left rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4b46d6]"
             >
-                <div className="flex items-center gap-3.5">
-                    <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-xs font-bold flex-shrink-0 ${open ? 'bg-blue-500 text-white' : 'bg-gray-100 text-gray-500'
-                        }`}>
-                        {index + 1}
-                    </div>
-                    <div>
-                        <div className="font-semibold text-gray-800 text-sm">{module.title}</div>
-                        <div className="flex items-center gap-2 text-xs text-gray-400 mt-0.5">
-                            <span className="inline-flex items-center gap-1">
-                                <Layers className="w-3 h-3" />
-                                {unitCount} unidad{unitCount !== 1 ? 'es' : ''}
-                            </span>
-                            {contentCount > 0 && (
-                                <span className="inline-flex items-center gap-1">
-                                    <Package className="w-3 h-3" />
-                                    {contentCount} contenido{contentCount !== 1 ? 's' : ''}
-                                </span>
-                            )}
-                            {quizCount > 0 && (
-                                <span className="inline-flex items-center gap-1">
-                                    <ClipboardCheck className="w-3 h-3" />
-                                    {quizCount} evaluación{quizCount !== 1 ? 'es' : ''}
-                                </span>
-                            )}
-                        </div>
-                    </div>
-                </div>
-                <ChevronDown className={`w-4 h-4 text-gray-400 flex-shrink-0 transition-transform duration-200 ${open ? 'rotate-180' : ''}`} />
+                <span
+                    className={`absolute left-0 top-0 grid h-[30px] w-[30px] place-items-center rounded-full font-mono text-[13px] font-bold ${
+                        allDone ? 'bg-[#10b981] text-white' : 'bg-[#eceaf2] text-[#8b8a95]'
+                    }`}
+                    aria-hidden="true"
+                >
+                    {allDone ? <Check className="h-4 w-4" strokeWidth={2.8} /> : index + 1}
+                </span>
+
+                <span className="flex min-h-[30px] items-center gap-3">
+                    <span className="min-w-0 flex-1 text-base font-semibold tracking-[-0.008em] text-[#16151b]">
+                        {module.title}
+                    </span>
+                    <span className="flex-shrink-0 text-[12.5px] text-[#a9a8b4]">{meta}</span>
+                    <span
+                        className={`flex-shrink-0 font-mono text-[10.5px] font-semibold tracking-[0.06em] tabular-nums ${
+                            allDone ? 'text-[#10b981]' : 'text-[#a9a8b4]'
+                        }`}
+                    >
+                        {allDone ? 'LISTO' : `${doneCount}/${units.length}`}
+                    </span>
+                    <ChevronDown
+                        className={`h-3.5 w-3.5 flex-shrink-0 text-[#c4c3cd] transition-transform duration-200 ${open ? 'rotate-180' : ''}`}
+                        aria-hidden="true"
+                    />
+                </span>
             </button>
 
-            {open && module.units && module.units.length > 0 && (
-                <div className="border-t border-gray-100 bg-gray-50/50 rounded-b-xl">
-                    {module.units.map((unit, ui) => {
-                        const firstContentType = unit.contents?.[0]?.content_type
+            {open && units.length > 0 && (
+                <ul className="mt-3.5">
+                    {units.map((unit, ui) => {
+                        const done = unitDone(unit.id)
+                        const kind = unitKindLabel(unit)
+                        const min = unitMinutes(unit)
                         return (
-                            <div key={unit.id} className="px-5 py-2.5 pl-16 border-b border-gray-100 last:border-b-0">
-                                <div className="flex items-center gap-3">
-                                    <div className={CONTENT_TYPE_COLORS[firstContentType] || 'text-gray-400'}>
-                                        <ContentIcon type={firstContentType} />
-                                    </div>
-                                    <div className="flex-1 min-w-0">
-                                        <div className="text-sm text-gray-700 truncate">{unit.title}</div>
-                                        <div className="text-[10px] text-gray-400 mt-0.5">
-                                            {index + 1}.{ui + 1}
-                                            {unit.contents?.length > 0 && ` · ${unit.contents.length} contenido${unit.contents.length !== 1 ? 's' : ''}`}
-                                            {unit.quizzes?.length > 0 && ` · ${unit.quizzes.length} evaluación${unit.quizzes.length !== 1 ? 'es' : ''}`}
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
+                            <li
+                                key={unit.id}
+                                className={`flex min-h-[44px] items-center gap-3 rounded-[9px] px-3 py-[11px] ${
+                                    ui > 0 ? 'border-t border-[#f4f3f8]' : ''
+                                } ${done ? 'text-[#55545f]' : 'text-[#7b7a86]'}`}
+                            >
+                                <span
+                                    className={`grid h-5 w-5 flex-shrink-0 place-items-center rounded-full ${
+                                        done ? 'bg-[#10b981] text-white' : 'text-[#b3b2be]'
+                                    }`}
+                                    aria-hidden="true"
+                                >
+                                    {done
+                                        ? <Check className="h-3 w-3" strokeWidth={2.8} />
+                                        : <ContentIcon type={unit.contents?.[0]?.content_type} />}
+                                </span>
+                                <span className="flex-shrink-0 font-mono text-[11px] tabular-nums text-[#c4c3cd]">
+                                    {index + 1}.{ui + 1}
+                                </span>
+                                <span className="min-w-0 flex-1 truncate text-[14.5px]">{unit.title}</span>
+                                {kind && <span className="flex-shrink-0 text-[12px] text-[#a9a8b4]">{kind}</span>}
+                                {/* Declared duration only — never an invented estimate. */}
+                                <span className="w-[46px] flex-shrink-0 text-right font-mono text-[11px] tabular-nums text-[#bfbec9]">
+                                    {min ? `${min} min` : ''}
+                                </span>
+                            </li>
                         )
                     })}
-                </div>
+                </ul>
             )}
         </div>
     )
@@ -131,7 +178,7 @@ function ModuleRow({ module, index, defaultOpen = false }) {
 const STATE_LABELS = { completed: 'Completado', in_progress: 'En progreso', not_started: 'No iniciado' }
 const STATE_COLORS = {
     completed: 'text-emerald-700',
-    in_progress: 'text-blue-600',
+    in_progress: 'text-[#16151b]',
     not_started: 'text-gray-500',
 }
 
@@ -208,7 +255,7 @@ function MiniRoadmap({ currentCourseId, allCourses, roadmapData, navigate }) {
 
     const stateStyles = {
         completed: { ring: 'ring-emerald-400', bg: 'bg-white', text: 'text-gray-800', icon: CheckCircle, iconColor: 'text-emerald-500' },
-        in_progress: { ring: 'ring-blue-400', bg: 'bg-white', text: 'text-gray-800', icon: Loader2, iconColor: 'text-blue-500' },
+        in_progress: { ring: 'ring-[#16151b]/30', bg: 'bg-white', text: 'text-gray-800', icon: Loader2, iconColor: 'text-[#16151b]' },
         unlocked: { ring: 'ring-gray-200', bg: 'bg-white', text: 'text-gray-700', icon: null, iconColor: '' },
         locked: { ring: 'ring-gray-200', bg: 'bg-gray-50', text: 'text-gray-400', icon: Lock, iconColor: 'text-gray-300' },
     }
@@ -227,13 +274,13 @@ function MiniRoadmap({ currentCourseId, allCourses, roadmapData, navigate }) {
                 className={`
                     relative rounded-xl p-3 ring-2 transition-all text-left
                     ${style.ring} ${style.bg}
-                    ${isCurrent ? 'ring-blue-500 shadow-md scale-105' : ''}
+                    ${isCurrent ? 'ring-[#16151b] shadow-md scale-105' : ''}
                     ${isClickable ? 'cursor-pointer hover:shadow-lg hover:-translate-y-0.5' : !isCurrent ? 'cursor-not-allowed opacity-60' : ''}
                     ${isCurrent ? 'w-56' : 'w-44'}
                 `}
             >
                 {isCurrent && (
-                    <div className="absolute -top-2.5 left-1/2 -translate-x-1/2 bg-blue-500 text-white text-[9px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider">
+                    <div className="absolute -top-2.5 left-1/2 -translate-x-1/2 bg-[#16151b] text-white text-[9px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider">
                         Curso actual
                     </div>
                 )}
@@ -265,12 +312,12 @@ function MiniRoadmap({ currentCourseId, allCourses, roadmapData, navigate }) {
             <div className="bg-white rounded-2xl border border-gray-200 p-6">
                 <div className="flex items-center justify-between mb-5">
                     <div className="flex items-center gap-2">
-                        <Map className="w-4 h-4 text-blue-500" />
+                        <Map className="w-4 h-4 text-[#8b8a95]" />
                         <h2 className="text-sm font-bold text-gray-800">Posición en la Malla</h2>
                     </div>
                     <button
                         onClick={() => navigate('/roadmap')}
-                        className="inline-flex items-center gap-1 text-[11px] font-medium text-blue-600 hover:text-blue-700 bg-blue-50 hover:bg-blue-100 px-2.5 py-1 rounded-lg transition-colors"
+                        className="inline-flex items-center gap-1.5 text-[12.5px] font-semibold text-[#16151b] hover:text-[#4b46d6] transition-colors"
                     >
                         <ExternalLink className="w-3 h-3" />
                         Ver malla completa
@@ -405,7 +452,7 @@ function CoursePreviewPage() {
                 <div className="w-7 h-7 bg-gray-200 rounded-full" />
             </header>
             {/* Hero skeleton */}
-            <div className="bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
+            <div className="bg-[#0a0a0c]">
                 <div className="max-w-5xl mx-auto px-6 py-12 space-y-4">
                     <div className="flex gap-2">
                         <div className="w-24 h-6 bg-white/10 rounded-full" />
@@ -445,7 +492,7 @@ function CoursePreviewPage() {
                     <BookOpen className="w-6 h-6 text-red-500" />
                 </div>
                 <p className="text-red-600 mb-4 text-sm">{courseError?.message || 'Curso no encontrado'}</p>
-                <button onClick={() => navigate(user ? '/dashboard' : '/')} className="text-blue-600 hover:underline text-sm">
+                <button onClick={() => navigate(user ? '/dashboard' : '/')} className="text-[#16151b] hover:underline text-sm">
                     {user ? '← Volver al dashboard' : '← Volver al inicio'}
                 </button>
             </div>
@@ -465,6 +512,17 @@ function CoursePreviewPage() {
     const state = progress?.state ?? null
     const levelConf = LEVEL_CONFIG[course.level] || LEVEL_CONFIG.beginner
     const LevelIcon = levelConf.icon
+
+    // Per-unit completion for the programme timeline, read from this course's
+    // roadmap. Without it every unit simply shows as pending.
+    const doneUnitIds = new Set(
+        (singleRoadmap?.roadmap?.modules || [])
+            .flatMap(m => m.units || [])
+            .filter(u => u.state === 'completed')
+            .map(u => u.id)
+    )
+    const isUnitDone = (unitId) => doneUnitIds.has(unitId)
+    const unitsDone = doneUnitIds.size
 
     // Prerequisite state
     const isBlocked = prereqCheck?.allowed === false
@@ -491,7 +549,7 @@ function CoursePreviewPage() {
                 : <PublicNav />}
 
             {/* ── Hero ── */}
-            <HeroBand>
+            <HeroBand className="on-brand-band">
                 <div className="max-w-5xl mx-auto px-6 py-12">
                     {/* Badges */}
                     <div className="flex items-center gap-2 mb-4">
@@ -522,20 +580,20 @@ function CoursePreviewPage() {
                     <div className="flex flex-wrap items-center gap-6 text-sm text-white/60 mb-8">
                         <div className="flex items-center gap-1.5">
                             <BookOpen className="w-4 h-4" />
-                            <span><strong className="text-white">{totalModules}</strong> módulo{totalModules !== 1 ? 's' : ''}</span>
+                            <span><strong className="font-mono tabular-nums text-white">{totalModules}</strong> módulo{totalModules !== 1 ? 's' : ''}</span>
                         </div>
                         <div className="flex items-center gap-1.5">
                             <Layers className="w-4 h-4" />
-                            <span><strong className="text-white">{totalUnits}</strong> unidad{totalUnits !== 1 ? 'es' : ''}</span>
+                            <span><strong className="font-mono tabular-nums text-white">{totalUnits}</strong> unidad{totalUnits !== 1 ? 'es' : ''}</span>
                         </div>
                         <div className="flex items-center gap-1.5">
                             <Package className="w-4 h-4" />
-                            <span><strong className="text-white">{totalContents}</strong> contenido{totalContents !== 1 ? 's' : ''}</span>
+                            <span><strong className="font-mono tabular-nums text-white">{totalContents}</strong> contenido{totalContents !== 1 ? 's' : ''}</span>
                         </div>
                         {totalQuizzes > 0 && (
                             <div className="flex items-center gap-1.5">
                                 <ClipboardCheck className="w-4 h-4" />
-                                <span><strong className="text-white">{totalQuizzes}</strong> evaluación{totalQuizzes !== 1 ? 'es' : ''}</span>
+                                <span><strong className="font-mono tabular-nums text-white">{totalQuizzes}</strong> evaluación{totalQuizzes !== 1 ? 'es' : ''}</span>
                             </div>
                         )}
                     </div>
@@ -545,11 +603,11 @@ function CoursePreviewPage() {
                         <div className="mb-6 max-w-sm">
                             <div className="flex items-center justify-between text-xs text-white/50 mb-1.5">
                                 <span>Tu progreso</span>
-                                <span className="font-bold text-white">{percentage}%</span>
+                                <span className="font-mono font-semibold tabular-nums text-white">{percentage}%</span>
                             </div>
                             <div className="w-full bg-white/10 rounded-full h-2 overflow-hidden">
                                 <div
-                                    className={`h-2 rounded-full transition-all duration-700 ${percentage === 100 ? 'bg-emerald-400' : 'bg-blue-400'}`}
+                                    className={`h-2 rounded-full transition-all duration-700 ${percentage === 100 ? 'bg-emerald-400' : 'bg-emerald-400/90'}`}
                                     style={{ width: `${percentage}%` }}
                                 />
                             </div>
@@ -587,7 +645,7 @@ function CoursePreviewPage() {
                         ) : prereqLoading ? (
                             <button
                                 disabled
-                                className="inline-flex items-center gap-2.5 font-semibold px-7 py-3.5 rounded-xl bg-blue-500/50 text-white/70 cursor-not-allowed"
+                                className="inline-flex h-11 items-center gap-2.5 rounded-xl bg-white/20 px-6 font-semibold text-white/70 cursor-not-allowed"
                             >
                                 <Loader2 className="w-5 h-5 animate-spin" />
                                 Verificando acceso...
@@ -595,10 +653,7 @@ function CoursePreviewPage() {
                         ) : (
                             <button
                                 onClick={handleStartStudy}
-                                className={`inline-flex items-center gap-2.5 font-semibold px-7 py-3.5 rounded-xl transition-all shadow-lg hover:shadow-xl active:scale-[0.98] ${state === 'completed'
-                                    ? 'bg-emerald-500 hover:bg-emerald-600 text-white'
-                                    : 'bg-blue-500 hover:bg-blue-600 text-white'
-                                    }`}
+                                className="inline-flex h-11 items-center gap-2.5 rounded-xl bg-white px-6 font-semibold text-[#16151b] transition-colors hover:bg-white/90 active:scale-[0.98]"
                             >
                                 {state === 'completed'
                                     ? <CheckCircle className="w-5 h-5" />
@@ -616,22 +671,40 @@ function CoursePreviewPage() {
                 </div>
             </HeroBand>
 
-            {/* ── Module list ── */}
-            <div className="max-w-5xl mx-auto px-6 py-10">
-                <h2 className="text-lg font-bold text-gray-800 mb-5">Contenido del curso</h2>
+            {/* ── Programme: the same line of modules the student meets inside ── */}
+            <div className="max-w-5xl mx-auto px-6 pt-14 pb-10">
+                <div className="flex items-end justify-between gap-6">
+                    <div>
+                        <div className="font-mono text-[10px] font-semibold uppercase tracking-[0.14em] text-[#a9a8b4]">
+                            Programa
+                        </div>
+                        <h2 className="mt-3 text-[28px] font-bold leading-tight tracking-[-0.012em] text-[#16151b]">
+                            Contenido del curso
+                        </h2>
+                    </div>
+                    {totalUnits > 0 && (
+                        <p className="text-[13px] text-[#8b8a95]">
+                            {unitsDone > 0
+                                ? `Ya completaste ${unitsDone} de ${totalUnits} ${totalUnits === 1 ? 'unidad' : 'unidades'}`
+                                : `${totalUnits} ${totalUnits === 1 ? 'unidad' : 'unidades'} por delante`}
+                        </p>
+                    )}
+                </div>
 
                 {totalModules === 0 ? (
-                    <div className="text-center py-16 rounded-2xl border-2 border-dashed border-gray-200">
+                    <div className="mt-8 text-center py-16 rounded-2xl border-2 border-dashed border-gray-200">
                         <BookOpen className="w-12 h-12 mx-auto mb-3 text-gray-200" />
                         <p className="text-sm text-gray-400">Este curso aún no tiene módulos.</p>
                     </div>
                 ) : (
-                    <div className="space-y-3">
+                    <div className="mt-8 flex flex-col gap-7">
                         {course.modules.map((module, i) => (
                             <ModuleRow
                                 key={module.id}
                                 module={module}
                                 index={i}
+                                isLast={i === course.modules.length - 1}
+                                unitDone={isUnitDone}
                                 defaultOpen={i === 0}
                             />
                         ))}

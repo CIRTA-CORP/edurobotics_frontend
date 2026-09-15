@@ -9,13 +9,18 @@
 
 import { useEditor, EditorContent, ReactNodeViewRenderer, NodeViewWrapper } from '@tiptap/react'
 import StarterKit from '@tiptap/starter-kit'
+import CodeBlockLowlight from '@tiptap/extension-code-block-lowlight'
+import { createLowlight } from 'lowlight'
+import python from 'highlight.js/lib/languages/python'
+import javascript from 'highlight.js/lib/languages/javascript'
+import bash from 'highlight.js/lib/languages/bash'
 import Image from '@tiptap/extension-image'
 import Link from '@tiptap/extension-link'
 import Youtube from '@tiptap/extension-youtube'
 import Placeholder from '@tiptap/extension-placeholder'
 import TextAlign from '@tiptap/extension-text-align'
 import Underline from '@tiptap/extension-underline'
-import { useRef, useCallback, useEffect, useState } from 'react'
+import { useRef, useCallback, useEffect, useState, forwardRef, useImperativeHandle } from 'react'
 import { apiUploadFile } from '@/shared/services/api'
 import { sanitizeHtml } from '@/shared/lib/sanitizeHtml'
 import {
@@ -25,8 +30,10 @@ import {
   ImageIcon, Youtube as YoutubeIcon, FileDown, LinkIcon,
   AlignLeft, AlignCenter, AlignRight,
   Undo, Redo, Minus, Loader2,
-  PenLine, Eye, Columns2
+  PenLine, Eye, Columns2, Code, SquareCode
 } from 'lucide-react'
+
+const lowlight = createLowlight({ python, javascript, bash })
 
 // ── Resizable Image Node View ──
 function ResizableImageView({ node, updateAttributes, selected }) {
@@ -232,6 +239,16 @@ function EditorToolbar({ editor, onImageUpload, onFileUpload, uploading }) {
 
       <ToolbarDivider />
 
+      {/* Code */}
+      <ToolbarButton onClick={() => editor.chain().focus().toggleCodeBlock().run()} active={editor.isActive('codeBlock')} title="Bloque de código">
+        <SquareCode className="w-4 h-4" />
+      </ToolbarButton>
+      <ToolbarButton onClick={() => editor.chain().focus().toggleCode().run()} active={editor.isActive('code')} title="Código en línea">
+        <Code className="w-4 h-4" />
+      </ToolbarButton>
+
+      <ToolbarDivider />
+
       {/* Link */}
       <ToolbarButton onClick={addLink} active={editor.isActive('link')} title="Enlace">
         <LinkIcon className="w-4 h-4" />
@@ -278,7 +295,7 @@ const VIEW_MODES = [
   { id: 'preview', label: 'Vista previa', icon: Eye },
 ]
 
-export function RichTextEditor({ content, onSave, saving }) {
+export const RichTextEditor = forwardRef(function RichTextEditor({ content, onSave, saving, hideSave = false }, ref) {
   const imageInputRef = useRef(null)
   const fileInputRef = useRef(null)
   const [uploading, setUploading] = useState(false)
@@ -289,6 +306,7 @@ export function RichTextEditor({ content, onSave, saving }) {
     onUpdate: ({ editor }) => setLiveHtml(editor.getHTML()),
     extensions: [
       StarterKit.configure({
+        codeBlock: false,
         paragraph: {
           HTMLAttributes: {
             class: 'prose-paragraph',
@@ -314,6 +332,12 @@ export function RichTextEditor({ content, onSave, saving }) {
       Underline.configure({
         HTMLAttributes: {
           class: 'underline',
+        },
+      }),
+      CodeBlockLowlight.configure({
+        lowlight,
+        HTMLAttributes: {
+          class: 'code-block',
         },
       }),
       TextAlign.configure({
@@ -422,6 +446,12 @@ export function RichTextEditor({ content, onSave, saving }) {
     onSave(html)
   }, [editor, onSave])
 
+  // The workshop header owns the primary "Guardar" (canvas 2b.3): expose the
+  // same save action so the header button can trigger it from outside.
+  useImperativeHandle(ref, () => ({
+    save: handleSave,
+  }), [handleSave])
+
   return (
     <div className="space-y-4">
       {/* Hidden file inputs */}
@@ -491,22 +521,24 @@ export function RichTextEditor({ content, onSave, saving }) {
         )}
       </div>
 
-      {/* Save button */}
-      <button
-        type="button"
-        onClick={handleSave}
-        disabled={saving || uploading}
-        className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-      >
-        {saving ? (
-          <>
-            <Loader2 className="w-4 h-4 animate-spin" />
-            Guardando...
-          </>
-        ) : (
-          'Guardar Contenido'
-        )}
-      </button>
+      {/* Save button — hidden when the workshop header owns the save (canvas 2b.3) */}
+      {!hideSave && (
+        <button
+          type="button"
+          onClick={handleSave}
+          disabled={saving || uploading}
+          className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          {saving ? (
+            <>
+              <Loader2 className="w-4 h-4 animate-spin" />
+              Guardando...
+            </>
+          ) : (
+            'Guardar Contenido'
+          )}
+        </button>
+      )}
     </div>
   )
-}
+})

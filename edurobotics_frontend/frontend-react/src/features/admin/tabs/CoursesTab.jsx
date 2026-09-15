@@ -1,61 +1,45 @@
-// Courses tab: the course detail view — create/edit a course, its feedback and
-// time metrics, plus PDF/backup export and course import.
-import { useRef, useState } from 'react'
+// Detalle del curso: lo que antes vivía en un panel deslizante ahora está a la
+// vista. Cabecera con las acciones del curso, cuerpo en dos columnas —campos a
+// la izquierda, prerequisitos y zona sensible a la derecha— y las métricas y el
+// feedback en sus propias pestañas.
+import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
-import { Plus, Printer, Download, Upload, Pencil } from 'lucide-react'
-import { Button } from '@/shared/components/button'
-import { Drawer } from '@/shared/components/Drawer'
+import { Check, Download, Eye, Printer, Trash2 } from 'lucide-react'
 import { CourseForm } from '@/features/admin/features/courses/CourseForm'
 import { CourseFeedbackSummary } from '@/features/admin/features/courses/CourseFeedbackSummary'
 import { CourseTimeMetrics } from '@/features/admin/features/courses/CourseTimeMetrics'
-import { downloadCourseBackup, importCourse } from '@/features/courses/services/courses'
+import { downloadCourseBackup } from '@/features/courses/services/courses'
 import { useAdmin } from '@/features/admin/context/AdminContext'
 
+function HeaderAction({ onClick, children, disabled }) {
+  return (
+    <button
+      onClick={onClick}
+      disabled={disabled}
+      className="inline-flex h-10 items-center gap-2 rounded-xl border border-[#e9e9ee] bg-white px-3.5 text-[13px] font-semibold text-[#55545f] transition-colors hover:border-[#c4c3cd] hover:text-[#16151b] disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4b46d6]"
+    >
+      {children}
+    </button>
+  )
+}
+
 export function CoursesTab() {
-  const {
-    selectedCourse,
-    courses,
-    isCourseModalOpen,
-    setIsCourseModalOpen,
-    courseHooks,
-  } = useAdmin()
+  const { selectedCourse, courses, courseHooks, isTeacher } = useAdmin()
 
   const navigate = useNavigate()
-  const queryClient = useQueryClient()
-  const importInputRef = useRef(null)
   const [downloading, setDownloading] = useState(false)
-  const [importing, setImporting] = useState(false)
-  const [editOpen, setEditOpen] = useState(false)
+  const [tab, setTab] = useState('detalle')
 
-  // One drawer handles both create and edit.
-  const drawerOpen = isCourseModalOpen || editOpen
-  const drawerMode = editOpen ? 'edit' : 'create'
-  const closeDrawer = () => { setIsCourseModalOpen(false); setEditOpen(false) }
+  if (isTeacher) return null
 
-  const handleCourseCreate = async (e) => {
-    e.preventDefault()
-    await courseHooks.handleCourseCreate(e)
-    setIsCourseModalOpen(false)
-  }
-
-  const handleImportFile = async (e) => {
-    const file = e.target.files?.[0]
-    if (importInputRef.current) importInputRef.current.value = ''
-    if (!file) return
-    setImporting(true)
-    try {
-      const text = await file.text()
-      const data = JSON.parse(text)
-      const res = await importCourse(data)
-      toast.success(`Curso "${res.title}" importado (queda despublicado para revisar)`)
-      queryClient.invalidateQueries({ queryKey: ['admin-courses'] })
-    } catch (err) {
-      toast.error(err?.message?.includes('JSON') ? 'El archivo no es un respaldo válido' : (err.message || 'No se pudo importar'))
-    } finally {
-      setImporting(false)
-    }
+  if (!selectedCourse) {
+    return (
+      <div className="rounded-2xl border border-[#e9e9ee] bg-white p-10 text-center">
+        <p className="text-[14px] font-medium text-[#55545f]">Elige un curso en la lista</p>
+        <p className="mt-1 text-[13px] text-[#a9a8b4]">Aquí verás y editarás sus datos.</p>
+      </div>
+    )
   }
 
   const handleBackup = async () => {
@@ -70,99 +54,164 @@ export function CoursesTab() {
     }
   }
 
-  const handleCourseDelete = (course) => {
-    if (window.confirm(`¿Eliminar el curso "${course.title}"?`)) {
-      courseHooks.handleCourseDelete(course)
+  const handleDelete = () => {
+    if (window.confirm(`¿Eliminar el curso "${selectedCourse.title}"? Esta acción no se puede deshacer.`)) {
+      courseHooks.handleCourseDelete(selectedCourse)
     }
   }
 
+  const tabButton = (id, label) => (
+    <button
+      onClick={() => setTab(id)}
+      className={`h-9 rounded-lg px-4 text-[13.5px] font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4b46d6] ${
+        tab === id ? 'bg-white text-[#16151b] shadow-sm' : 'text-[#8b8a95] hover:text-[#16151b]'
+      }`}
+    >
+      {label}
+    </button>
+  )
+
   return (
     <div className="space-y-6">
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <h3 className="text-lg font-semibold text-gray-900">Gestión de Cursos</h3>
-        <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center">
-          <input
-            ref={importInputRef}
-            type="file"
-            accept="application/json,.json"
-            onChange={handleImportFile}
-            className="hidden"
-          />
-          <Button
-            variant="outline"
-            onClick={() => importInputRef.current?.click()}
-            disabled={importing}
-            className="w-full justify-center gap-1.5 sm:w-auto"
+      {/* Cabecera: contexto, acciones y la acción primaria a la derecha */}
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <p className="font-mono text-[11px] uppercase tracking-[0.1em] text-[#a9a8b4]">
+          Cursos · CR-{selectedCourse.id}
+        </p>
+        <div className="flex flex-wrap gap-2">
+          <HeaderAction onClick={() => navigate(`/courses/${selectedCourse.id}`)}>
+            <Eye className="h-4 w-4" strokeWidth={1.8} /> Ver como alumno
+          </HeaderAction>
+          <HeaderAction onClick={() => navigate(`/courses/${selectedCourse.id}/print`)}>
+            <Printer className="h-4 w-4" strokeWidth={1.8} /> Descargar PDF
+          </HeaderAction>
+          <HeaderAction onClick={handleBackup} disabled={downloading}>
+            <Download className="h-4 w-4" strokeWidth={1.8} />
+            {downloading ? 'Descargando…' : 'Descargar respaldo'}
+          </HeaderAction>
+          <button
+            form="course-detail-form"
+            type="submit"
+            disabled={courseHooks.isSubmitting}
+            className="inline-flex h-10 items-center gap-2 rounded-xl bg-[#16151b] px-5 text-[13px] font-semibold text-white transition-colors hover:bg-[#2b2b26] disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[#16151b]"
           >
-            <Upload className="w-4 h-4" />
-            {importing ? 'Importando…' : 'Importar respaldo'}
-          </Button>
-          <Button onClick={() => setIsCourseModalOpen(true)} className="w-full justify-center gap-1.5 sm:w-auto">
-            <Plus className="w-4 h-4" />
-            Crear Curso
-          </Button>
+            <Check className="h-4 w-4" strokeWidth={2.4} />
+            {courseHooks.isSubmitting ? 'Guardando…' : 'Guardar cambios'}
+          </button>
         </div>
       </div>
 
-      {selectedCourse && (
-        <div className="flex flex-wrap items-center gap-2 rounded-xl border border-gray-200 bg-white p-3">
-          <span className="mr-auto px-1 text-sm text-gray-500">
-            <span className="font-medium text-gray-700">“{selectedCourse.title}”</span>
-          </span>
-          <Button size="sm" className="gap-1.5 bg-blue-600 hover:bg-blue-700" onClick={() => setEditOpen(true)}>
-            <Pencil className="h-4 w-4" /> Editar curso
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            className="gap-1.5"
-            onClick={() => navigate(`/courses/${selectedCourse.id}/print`)}
-          >
-            <Printer className="h-4 w-4" /> Descargar PDF
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            className="gap-1.5"
-            onClick={handleBackup}
-            disabled={downloading}
-          >
-            <Download className="h-4 w-4" />
-            {downloading ? 'Descargando…' : 'Descargar respaldo'}
-          </Button>
+      <div className="flex flex-wrap items-center gap-3">
+        <h2 className="text-[28px] font-bold leading-tight tracking-[-0.015em] text-[#16151b]">
+          {selectedCourse.title}
+        </h2>
+        <span
+          className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11.5px] font-semibold ${
+            selectedCourse.is_published
+              ? 'bg-emerald-50 text-emerald-700'
+              : 'bg-[#f4f3f8] text-[#8b8a95]'
+          }`}
+        >
+          <span className={`h-1.5 w-1.5 rounded-full ${selectedCourse.is_published ? 'bg-emerald-500' : 'bg-[#b3b2be]'}`} />
+          {selectedCourse.is_published ? 'Publicado' : 'Despublicado'}
+        </span>
+      </div>
+
+      <div className="inline-flex items-center gap-[3px] rounded-[10px] bg-[#f4f3f8] p-[3px]">
+        {tabButton('detalle', 'Detalle')}
+        {tabButton('metricas', 'Métricas')}
+        {tabButton('feedback', 'Feedback')}
+      </div>
+
+      {tab === 'detalle' && (
+        <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_340px]">
+          <div className="rounded-2xl border border-[#e9e9ee] bg-white p-5 sm:p-6">
+            <CourseForm
+              bare
+              formId="course-detail-form"
+              hideSubmit
+              hidePrereqs
+              mode="edit"
+              courseForm={courseHooks.courseForm}
+              setCourseForm={courseHooks.setCourseForm}
+              prereqIds={courseHooks.prereqIds}
+              setPrereqIds={courseHooks.setPrereqIds}
+              isSubmitting={courseHooks.isSubmitting}
+              onSubmit={(e) => courseHooks.handleCourseUpdate(e, selectedCourse)}
+              selectedCourse={selectedCourse}
+              allCourses={courses}
+            />
+          </div>
+
+          <div className="space-y-5">
+            <div className="rounded-2xl border border-[#e9e9ee] bg-white p-5">
+              <p className="font-mono text-[10px] font-semibold uppercase tracking-[0.14em] text-[#a9a8b4]">
+                Prerequisitos
+              </p>
+              <p className="mt-2.5 text-[12.5px] leading-relaxed text-[#8b8a95]">
+                El alumno debe completar estos cursos antes de entrar. Se guardan junto con el curso.
+              </p>
+              <div className="mt-4 space-y-2">
+                {courses.filter(c => c.id !== selectedCourse.id).length === 0 ? (
+                  <p className="text-[13px] text-[#a9a8b4]">No hay otros cursos todavía.</p>
+                ) : (
+                  courses.filter(c => c.id !== selectedCourse.id).map((c) => {
+                    const checked = courseHooks.prereqIds.includes(c.id)
+                    return (
+                      <label
+                        key={c.id}
+                        className={`flex cursor-pointer items-center gap-3 rounded-xl border px-3 py-2.5 transition-colors ${
+                          checked ? 'border-[#4b46d6]/30 bg-[#4b46d6]/[0.07]' : 'border-[#ececf1] hover:bg-[#fafafa]'
+                        }`}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={checked}
+                          onChange={() => courseHooks.setPrereqIds(
+                            checked
+                              ? courseHooks.prereqIds.filter(id => id !== c.id)
+                              : [...courseHooks.prereqIds, c.id]
+                          )}
+                          className="h-4 w-4 flex-shrink-0 accent-[#4b46d6]"
+                        />
+                        <span className="min-w-0 flex-1">
+                          <span className="block truncate text-[13.5px] font-semibold text-[#16151b]">{c.title}</span>
+                          <span className="block font-mono text-[10.5px] text-[#a9a8b4]">#{c.id}</span>
+                        </span>
+                        {checked && (
+                          <span className="flex-shrink-0 font-mono text-[9.5px] font-bold tracking-wider text-[#4b46d6]">
+                            REQUERIDO
+                          </span>
+                        )}
+                      </label>
+                    )
+                  })
+                )}
+              </div>
+            </div>
+
+            {/* Zona sensible: separada de la edición a propósito. */}
+            <div className="rounded-2xl border border-[#b4425a]/25 bg-[#b4425a]/[0.03] p-5">
+              <p className="font-mono text-[10px] font-semibold uppercase tracking-[0.14em] text-[#b4425a]">
+                Zona sensible
+              </p>
+              <p className="mt-2.5 text-[12.5px] leading-relaxed text-[#55545f]">
+                Eliminar el curso borra sus módulos, unidades, contenidos y evaluaciones.
+                Descarga un respaldo antes.
+              </p>
+              <button
+                onClick={handleDelete}
+                className="mt-4 inline-flex h-9 items-center gap-2 rounded-xl border border-[#b4425a]/30 px-3.5 text-[13px] font-semibold text-[#b4425a] transition-colors hover:bg-[#b4425a]/[0.07] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#b4425a]"
+              >
+                <Trash2 className="h-4 w-4" /> Eliminar curso
+              </button>
+            </div>
+          </div>
         </div>
       )}
 
-      {selectedCourse && (
-        <CourseTimeMetrics courseId={selectedCourse.id} />
-      )}
-
-      {selectedCourse && (
-        <CourseFeedbackSummary courseId={selectedCourse.id} />
-      )}
-
-      {/* Create / edit course — slide-over drawer */}
-      <Drawer
-        open={drawerOpen}
-        onClose={closeDrawer}
-        title={drawerMode === 'create' ? 'Crear nuevo curso' : `Editar curso`}
-      >
-        <CourseForm
-          bare
-          mode={drawerMode}
-          courseForm={courseHooks.courseForm}
-          setCourseForm={courseHooks.setCourseForm}
-          prereqIds={courseHooks.prereqIds}
-          setPrereqIds={courseHooks.setPrereqIds}
-          isSubmitting={courseHooks.isSubmitting}
-          onSubmit={drawerMode === 'create'
-            ? handleCourseCreate
-            : (e) => courseHooks.handleCourseUpdate(e, selectedCourse)}
-          onDelete={() => handleCourseDelete(selectedCourse)}
-          selectedCourse={selectedCourse}
-          allCourses={courses}
-        />
-      </Drawer>
+      {tab === 'metricas' && <CourseTimeMetrics courseId={selectedCourse.id} />}
+      {tab === 'feedback' && <CourseFeedbackSummary courseId={selectedCourse.id} />}
     </div>
   )
 }

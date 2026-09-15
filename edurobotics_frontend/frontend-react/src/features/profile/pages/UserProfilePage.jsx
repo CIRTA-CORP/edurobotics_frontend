@@ -17,8 +17,7 @@ import { LogoutModal } from '@/shared/components/LogoutModal'
 import { ProfileSettings } from '@/features/profile/components/ProfileSettings'
 import { CourseGrid } from '@/features/student/components/CourseGrid'
 import {
-    BookOpen, CheckCircle, Clock,
-    GraduationCap, Zap, Trophy, Shield, Mail, Calendar,
+    BookOpen, GraduationCap, Zap, Trophy, Shield, Mail, Calendar,
     Loader2, LayoutGrid, Settings
 } from 'lucide-react'
 
@@ -54,7 +53,7 @@ function UserProfilePage() {
     if (loading) {
         return (
             <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-                <Loader2 className="w-8 h-8 animate-spin text-blue-500" />
+                <Loader2 className="w-8 h-8 animate-spin text-[#16151b]" />
             </div>
         )
     }
@@ -95,8 +94,8 @@ function UserProfilePage() {
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                     {/* Left Column – Profile Card */}
                     <div className="lg:col-span-1 space-y-4">
-                        <div className="bg-white rounded-2xl border border-gray-200 p-6 text-center">
-                            <div className="w-20 h-20 rounded-full bg-gradient-to-br from-slate-700 to-slate-900 flex items-center justify-center text-white text-2xl font-bold mx-auto mb-4">
+                        <div className="bg-white rounded-2xl border border-[#e9e9ee] p-6 text-center">
+                            <div className="w-20 h-20 rounded-full bg-[#16151b] flex items-center justify-center text-white text-2xl font-bold mx-auto mb-4">
                                 {initials}
                             </div>
                             <h2 className="text-lg font-bold text-gray-900">
@@ -105,7 +104,7 @@ function UserProfilePage() {
                             <p className="text-sm text-gray-500">@{profile?.username}</p>
 
                             {profile?.role === 'admin' && (
-                                <span className="inline-flex items-center gap-1 mt-2 text-xs font-semibold px-2.5 py-1 rounded-full bg-slate-800 text-white">
+                                <span className="inline-flex items-center gap-1 mt-2 text-xs font-semibold px-2.5 py-1 rounded-full bg-[#16151b] text-white">
                                     <Shield className="w-3 h-3" />
                                     Administrador
                                 </span>
@@ -131,24 +130,25 @@ function UserProfilePage() {
                             </div>
                         </div>
 
-                        {/* Stats Card */}
-                        <div className="bg-white rounded-2xl border border-gray-200 p-5">
-                            <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-4">
-                                Resumen Académico
+                        {/* Stats card. Counts are set in mono so they read as
+                            figures, not as prose. */}
+                        <div className="bg-white rounded-2xl border border-[#e9e9ee] p-5">
+                            <h3 className="font-mono text-[10px] font-semibold uppercase tracking-[0.14em] text-gray-400 mb-4">
+                                Resumen académico
                             </h3>
                             <div className="grid grid-cols-3 gap-3 text-center">
-                                <div>
-                                    <div className="text-2xl font-bold text-blue-600">{stats.total_enrolled || 0}</div>
-                                    <div className="text-[10px] text-gray-400 mt-0.5">Inscritos</div>
-                                </div>
-                                <div>
-                                    <div className="text-2xl font-bold text-emerald-600">{stats.completed || 0}</div>
-                                    <div className="text-[10px] text-gray-400 mt-0.5">Completados</div>
-                                </div>
-                                <div>
-                                    <div className="text-2xl font-bold text-amber-600">{stats.in_progress || 0}</div>
-                                    <div className="text-[10px] text-gray-400 mt-0.5">En Progreso</div>
-                                </div>
+                                {[
+                                    { value: stats.total_enrolled || 0, label: 'Inscritos' },
+                                    { value: stats.completed || 0, label: 'Completados' },
+                                    { value: stats.in_progress || 0, label: 'En progreso' },
+                                ].map(({ value, label }) => (
+                                    <div key={label}>
+                                        <div className="font-mono text-2xl font-semibold tabular-nums text-[#16151b]">
+                                            {value}
+                                        </div>
+                                        <div className="text-[10px] text-gray-400 mt-0.5">{label}</div>
+                                    </div>
+                                ))}
                             </div>
                         </div>
                     </div>
@@ -158,12 +158,9 @@ function UserProfilePage() {
                         {/* In Progress */}
                         {inProgressCourses.length > 0 && (
                             <div>
-                                <div className="flex items-center gap-2 mb-3">
-                                    <Clock className="w-4 h-4 text-amber-500" />
-                                    <h3 className="text-sm font-semibold text-gray-700">
-                                        Cursos en Progreso ({inProgressCourses.length})
-                                    </h3>
-                                </div>
+                                <h3 className="mb-3 font-mono text-[10px] font-semibold uppercase tracking-[0.14em] text-gray-400">
+                                    En progreso · {inProgressCourses.length}
+                                </h3>
                                 <CourseGrid courses={inProgressCourses} onCourseClick={(id) => navigate(`/courses/${id}`)} />
                             </div>
                         )}
@@ -171,19 +168,16 @@ function UserProfilePage() {
                         {/* Completed */}
                         {completedCourses.length > 0 && (
                             <div>
-                                <div className="flex items-center gap-2 mb-3">
-                                    <CheckCircle className="w-4 h-4 text-emerald-500" />
-                                    <h3 className="text-sm font-semibold text-gray-700">
-                                        Cursos Completados ({completedCourses.length})
-                                    </h3>
-                                </div>
+                                <h3 className="mb-3 font-mono text-[10px] font-semibold uppercase tracking-[0.14em] text-gray-400">
+                                    Completados · {completedCourses.length}
+                                </h3>
                                 <CourseGrid courses={completedCourses} onCourseClick={(id) => navigate(`/courses/${id}`)} />
                             </div>
                         )}
 
                         {/* Empty state */}
                         {courses.length === 0 && (
-                            <div className="bg-white rounded-2xl border border-gray-200 p-12 text-center">
+                            <div className="bg-white rounded-2xl border border-[#e9e9ee] p-12 text-center">
                                 <BookOpen className="w-12 h-12 text-gray-200 mx-auto mb-4" />
                                 <h3 className="text-lg font-semibold text-gray-700 mb-2">Sin cursos aún</h3>
                                 <p className="text-sm text-gray-500 mb-4">

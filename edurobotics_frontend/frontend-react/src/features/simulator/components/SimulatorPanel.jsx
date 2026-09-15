@@ -1,8 +1,14 @@
-import { useState, useEffect, useCallback, useRef } from "react";
-import { Loader2, Play, Square, SlidersHorizontal, Home, AlertCircle } from "lucide-react";
-import { getSimulatorStatus, startSimulator, stopSimulator } from '@/features/simulator/services/simulator';
-import BabylonViewer from '@/features/simulator/viewer/BabylonViewer';
+import { useState, useEffect, useCallback, useRef, lazy, Suspense } from "react";
+import { Loader2, Play, SlidersHorizontal, Home, AlertCircle, Globe, ArrowDown, Focus, MoveRight, Users } from "lucide-react";
+import { getSimulatorStatus, startSimulator } from '@/features/simulator/services/simulator';
 import JointSliders from "./JointSliders";
+
+// Visor basado en URDF: lee la descripción del robot desde el mismo `robot_description`
+// que usa PyBullet, en vez de llevar sus medidas transcritas en el código. Es el visor por
+// defecto desde el change `simulator-urdf-viewer`.
+//
+// Va en `lazy` porque arrastra three.js: así solo lo descarga quien abre el simulador.
+const UrdfViewer = lazy(() => import('@/features/simulator/viewer/UrdfViewer'));
 
 const DEFAULT_ANGLES = {
   shoulder_pan_joint: 0, shoulder_lift_joint: 0, elbow_joint: 0,
@@ -14,14 +20,79 @@ const HOME_ANGLES = {
   wrist_1_joint: 0,      wrist_2_joint: 0,       wrist_3_joint: 0,
 };
 
+// Cámaras con iconos SVG (canvas Simulador §sobre el visor).
 const CAMERA_VIEWS = [
-  { id: "free",  label: "Libre",   icon: "⟳" },
-  { id: "top",   label: "Top",     icon: "↓" },
-  { id: "front", label: "Frente",  icon: "◉" },
-  { id: "side",  label: "Lado",    icon: "▷" },
+  { id: "free",  label: "Libre",    Icon: Globe },
+  { id: "top",   label: "Superior", Icon: ArrowDown },
+  { id: "front", label: "Frente",   Icon: Focus },
+  { id: "side",  label: "Lado",     Icon: MoveRight },
 ];
 
-export default function SimulatorPanel({ jointAngles }) {
+
+/** Ilustración del brazo (canvas SimuladorInicio): la usa la pantalla de inicio. */
+function RobotIllustration() {
+  return (
+    <svg viewBox="0 0 260 170" className="mx-auto block h-[170px] w-[260px]">
+      <ellipse cx="118" cy="138" rx="52" ry="8" fill="rgba(0,0,0,0.55)" />
+      <path d="M100 137h36l-5-19h-26z" fill="rgba(255,255,255,0.12)" stroke="#5a5a66" strokeWidth="1.8" strokeLinejoin="round" />
+      <g stroke="#dcdbe4" fill="none" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M118 118V72" strokeWidth="12" />
+        <path d="M118 72l46-24" strokeWidth="10" />
+        <path d="M164 48l30 20" strokeWidth="8" />
+      </g>
+      <g stroke="#a5a1ee" strokeWidth="2.4" fill="none" strokeLinecap="round">
+        <path d="M194 68l11 7 M194 68l2-12" />
+      </g>
+      <circle cx="118" cy="118" r="9.5" fill="#0a0a0c" stroke="#dcdbe4" strokeWidth="2.4" />
+      <circle cx="118" cy="72" r="8.5" fill="#0a0a0c" stroke="#dcdbe4" strokeWidth="2.4" />
+      <circle cx="164" cy="48" r="7.5" fill="#0a0a0c" stroke="#dcdbe4" strokeWidth="2.4" />
+      <circle cx="194" cy="68" r="6.5" fill="#0a0a0c" stroke="#a5a1ee" strokeWidth="2.4" />
+    </svg>
+  );
+}
+
+/**
+ * Aviso de turno, encima del visor.
+ *
+ * Va aquí y no solo en la terminal porque es donde el alumno está mirando
+ * mientras espera a que su programa corra, y porque una espera de varios
+ * segundos contada en una línea de texto pequeña se pierde.
+ */
+function QueueOverlay({ position }) {
+  return (
+    <div className="absolute inset-0 z-30 grid place-items-center bg-[#0a0a0c]/85 backdrop-blur-sm">
+      <div className="w-[360px] text-center">
+        <div className="mx-auto grid h-[58px] w-[58px] place-items-center rounded-[18px] border border-[#7d79e3]/30 bg-[#7d79e3]/[0.12]">
+          <Users className="h-6 w-6 text-[#a5a1ee]" strokeWidth={1.7} />
+        </div>
+        <h3 className="mt-5 text-[22px] font-bold leading-[1.2] tracking-[-0.014em] text-[#f4f4f6]">
+          Esperando tu turno
+        </h3>
+        <div className="mt-4 inline-flex h-9 items-center gap-2.5 rounded-full border border-[#2c2c34] bg-[#101014]/80 px-4">
+          <span className="h-[7px] w-[7px] animate-pulse rounded-full bg-[#a5a1ee]" />
+          <span className="text-[13px] font-semibold text-[#a5a1ee]">
+            {position === 1 ? "Eres el siguiente" : `Puesto ${position} en la fila`}
+          </span>
+        </div>
+        <p className="mx-auto mt-4 max-w-[300px] text-[13.5px] leading-[1.6] text-[#a1a0ab]">
+          Hay un solo robot, así que se ejecuta de a uno. Tu programa arrancará
+          solo cuando te toque — no hace falta que pulses nada.
+        </p>
+        <p className="mt-4 font-mono text-[11px] text-[#55555f]">
+          Puedes seguir editando tu código mientras esperas
+        </p>
+      </div>
+    </div>
+  );
+}
+
+const START_STEPS = [
+  { text: "Reservando un contenedor", time: "3 s", state: "done" },
+  { text: "Levantando ROS 2 y el modelo del UR5e", time: "38 s", state: "busy" },
+  { text: "Conectando el visor 3D", time: "", state: "wait" },
+];
+
+export default function SimulatorPanel({ jointAngles, queue, onCopyToEditor }) {
   const [serverRunning, setServerRunning] = useState(false);
   const [showSliders, setShowSliders] = useState(false);
   const [manualAngles, setManualAngles] = useState(DEFAULT_ANGLES);
@@ -91,13 +162,6 @@ export default function SimulatorPanel({ jointAngles }) {
     }
   };
 
-  const handleStop = async () => {
-    try {
-      await stopSimulator();
-      setServerRunning(false);
-    } catch { /* ignore */ }
-  };
-
   // Track whether server frames are actively arriving
   const [isAnimating, setIsAnimating] = useState(false);
   const animTimeoutRef = useRef(null);
@@ -106,7 +170,6 @@ export default function SimulatorPanel({ jointAngles }) {
     if (!jointAngles) return;
     setIsAnimating(true);
     clearTimeout(animTimeoutRef.current);
-    // 600ms after last frame → animation done, sync sliders to robot position
     animTimeoutRef.current = setTimeout(() => {
       setIsAnimating(false);
       setManualAngles(jointAngles);
@@ -118,199 +181,191 @@ export default function SimulatorPanel({ jointAngles }) {
     setHomeActive(true);
   };
 
-// When server animation starts, clear home override
   useEffect(() => {
     if (isAnimating) setHomeActive(false);
   }, [isAnimating]);
 
   const showStartScreen = !serverRunning && !loadingStatus && !startingServer;
-  // Priority: server animation > home override > sliders > last server frame
   const effectiveAngles = isAnimating         ? jointAngles
                         : homeActive          ? manualAngles
                         : showSliders         ? manualAngles
                         : jointAngles;
   const handleSliderChange = (angles) => { setManualAngles(angles); setHomeActive(false); };
+  const handleCopyToEditor = (code) => onCopyToEditor?.(code);
 
   return (
-    <div id="right-panel" className="w-full h-full pointer-events-auto relative bg-slate-950 flex flex-row">
+    <div id="right-panel" className="pointer-events-auto relative flex h-full w-full flex-row bg-[#0a0a0c]">
+      {/* Por encima de cualquier estado del panel: esperando turno, lo que
+          importa es la espera, no si el servidor está levantando o en línea. */}
+      {queue && <QueueOverlay position={queue.position} />}
       {serverRunning && (
         <>
           {/* 3D viewer — takes remaining width */}
-          <div className="relative flex-1 min-w-0">
-            <BabylonViewer jointAngles={effectiveAngles} cameraView={cameraView} />
+          <div className="relative min-w-0 flex-1">
+            <Suspense fallback={<div className="grid h-full w-full place-items-center bg-[#0a0a0c] text-xs text-[#6e6d78]">Cargando visor 3D…</div>}>
+              <UrdfViewer jointAngles={effectiveAngles} cameraView={cameraView} />
+            </Suspense>
 
-            {/* Live status badge — top-left */}
-            <div className="absolute top-3 left-3 z-20 flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-900/70 backdrop-blur-md border border-emerald-500/30 shadow-lg">
-              <span className="relative flex h-2 w-2">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
-                <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
-              </span>
-              <span className="text-[11px] font-semibold text-emerald-300 uppercase tracking-wider">En línea</span>
+            {/* Estado del programa — top-left (canvas §estado del programa) */}
+            <div
+              className={`absolute left-3.5 top-3.5 z-20 inline-flex h-8 items-center gap-2 rounded-full border px-3.5 text-xs font-semibold backdrop-blur-md ${
+                isAnimating
+                  ? "border-[#7d79e3]/30 bg-[#7d79e3]/[0.14] text-[#a5a1ee]"
+                  : "border-[#2c2c34] bg-[#101014]/80 text-[#a1a0ab]"
+              }`}
+            >
+              <span
+                className={`h-[7px] w-[7px] rounded-full ${isAnimating ? "animate-pulse bg-[#a5a1ee]" : "bg-[#6e6d78]"}`}
+              />
+              {isAnimating ? "Moviendo" : "En reposo"}
             </div>
 
-            {/* top-right control bar */}
-            <div className="absolute top-3 right-3 z-20 flex gap-2 items-center">
-
-              {/* Camera selector */}
-              <div className="flex gap-0.5 bg-slate-900/70 backdrop-blur-md rounded-lg p-1 border border-slate-700/50 shadow-lg">
-                {CAMERA_VIEWS.map(({ id, label, icon }) => (
+            {/* Controles del visor — top-right */}
+            <div className="absolute right-3.5 top-3.5 z-20 flex items-center gap-2">
+              <div className="flex items-center gap-[2px] rounded-[10px] border border-[#2c2c34] bg-[#101014]/80 p-[3px] backdrop-blur-md">
+                {CAMERA_VIEWS.map(({ id, label, Icon }) => (
                   <button
                     key={id}
                     onClick={() => setCameraView(id)}
                     title={label}
-                    className={`px-2.5 py-1.5 rounded-md text-xs font-semibold transition-all ${
+                    className={`grid h-[30px] w-8 place-items-center rounded-[7px] transition-colors ${
                       cameraView === id
-                        ? "bg-gradient-to-br from-blue-500 to-indigo-600 text-white shadow-md shadow-blue-500/30"
-                        : "text-slate-400 hover:text-white hover:bg-slate-800"
+                        ? "bg-[#7d79e3]/[0.14] text-[#a5a1ee]"
+                        : "text-[#6e6d78] hover:text-[#f4f4f6]"
                     }`}
                   >
-                    <span className="mr-1">{icon}</span>{label}
+                    <Icon className="h-4 w-4" strokeWidth={1.8} />
                   </button>
                 ))}
               </div>
 
-              {/* Home button */}
               <button
                 onClick={handleHome}
-                className="p-2 rounded-lg bg-slate-900/70 backdrop-blur-md border border-slate-700/50 hover:border-emerald-500/50 hover:bg-emerald-600/20 text-slate-300 hover:text-emerald-300 transition-all shadow-lg"
-                title="Posición home del robot"
+                className="grid h-[34px] w-[34px] place-items-center rounded-[10px] border border-[#2c2c34] bg-[#101014]/80 text-[#a1a0ab] backdrop-blur-md transition-colors hover:text-[#f4f4f6]"
+                title="Posición de inicio"
               >
-                <Home className="w-4 h-4" />
+                <Home className="h-4 w-4" strokeWidth={1.8} />
               </button>
 
-              {/* Sliders toggle */}
               <button
                 onClick={() => setShowSliders(s => !s)}
-                className={`p-2 rounded-lg backdrop-blur-md border transition-all shadow-lg ${
+                className={`grid h-[34px] w-[34px] place-items-center rounded-[10px] border backdrop-blur-md transition-colors ${
                   showSliders
-                    ? "bg-gradient-to-br from-blue-500 to-indigo-600 border-blue-400/50 text-white shadow-blue-500/30"
-                    : "bg-slate-900/70 border-slate-700/50 hover:border-blue-500/50 hover:bg-blue-600/20 text-slate-300 hover:text-blue-300"
+                    ? "border-[#7d79e3]/40 bg-[#7d79e3]/[0.14] text-[#a5a1ee]"
+                    : "border-[#2c2c34] bg-[#101014]/80 text-[#a1a0ab] hover:text-[#f4f4f6]"
                 }`}
-                title="Control manual de joints"
+                title="Control manual de juntas"
               >
-                <SlidersHorizontal className="w-4 h-4" />
-              </button>
-
-              {/* Stop button */}
-              <button
-                onClick={handleStop}
-                className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-red-600/90 hover:bg-red-500 text-white text-xs font-semibold backdrop-blur-md border border-red-500/50 transition-all shadow-lg shadow-red-500/20"
-                title="Detener simulador"
-              >
-                <Square className="w-3.5 h-3.5 fill-current" />
-                Detener
+                <SlidersHorizontal className="h-4 w-4" strokeWidth={1.8} />
               </button>
             </div>
           </div>
 
           {/* Slider panel — visible only when toggled */}
           {showSliders && (
-            <JointSliders angles={manualAngles} onChange={handleSliderChange} />
+            <JointSliders angles={manualAngles} onChange={handleSliderChange} onCopyToEditor={handleCopyToEditor} />
           )}
         </>
       )}
 
       {(!serverRunning || loadingStatus || startingServer) && (
-        <div className="absolute inset-0 z-10 flex justify-center items-center overflow-hidden">
-          {/* Animated gradient background */}
-          <div className="absolute inset-0 bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950" />
-          <div className="absolute inset-0 opacity-30">
-            <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-blue-500/20 rounded-full blur-3xl animate-pulse" />
-            <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-indigo-500/20 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1s' }} />
-          </div>
-          {/* Grid pattern overlay */}
+        <div className="absolute inset-0 z-10 flex items-center justify-center overflow-hidden">
+          {/* Fondo de banda de marca: puntos con máscara + resplandor inferior
+              (canvas SimuladorInicio; reemplaza los blobs azules animados). */}
           <div
-            className="absolute inset-0 opacity-[0.04]"
+            aria-hidden="true"
+            className="pointer-events-none absolute inset-0"
             style={{
-              backgroundImage: 'linear-gradient(rgba(255,255,255,1) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,1) 1px, transparent 1px)',
-              backgroundSize: '32px 32px',
+              backgroundImage: "radial-gradient(circle, rgba(255,255,255,0.42) 1px, transparent 1px)",
+              backgroundSize: "26px 26px",
+              WebkitMaskImage: "radial-gradient(58% 70% at 50% 76%, #000 5%, transparent 68%)",
+              maskImage: "radial-gradient(58% 70% at 50% 76%, #000 5%, transparent 68%)",
             }}
           />
+          <div className="pointer-events-none absolute bottom-0 left-1/2 h-[190px] w-[40%] -translate-x-1/2 translate-y-1/2 rounded-full bg-white/[0.32] blur-[90px]" />
 
           {startingServer ? (
-            /* ── Starting state ─────────────────────────── */
-            <div className="relative z-10 flex flex-col items-center gap-6 max-w-md text-center px-8">
-              <div className="relative">
-                <div className="absolute inset-0 bg-blue-500/30 rounded-full blur-2xl animate-pulse" />
-                <div className="relative w-20 h-20 rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shadow-2xl shadow-blue-500/40">
-                  <Loader2 className="w-10 h-10 text-white animate-spin" />
-                </div>
+            /* ── Levantando el entorno ─────────────────────── */
+            <div className="relative z-10 w-[460px] px-8 text-center">
+              <p className="font-mono text-[10px] font-semibold uppercase tracking-[0.16em] text-[#6e6d78]">Simulador ROS 2 · UR5e</p>
+              <h2 className="mt-4 text-[34px] font-bold leading-[1.14] tracking-[-0.016em] text-[#f4f4f6]">
+                Levantando el entorno
+              </h2>
+
+              <div className="relative mx-auto mt-7 h-[3px] w-[260px] overflow-hidden rounded-full bg-[#23232a]">
+                <span className="sim-start-slide absolute top-0 h-full w-[40%] rounded-full bg-[#7d79e3]" />
               </div>
-              <div className="space-y-2">
-                <h2 className="text-2xl font-bold text-white">Iniciando simulador</h2>
-                <p className="text-sm text-slate-400">Levantando el contenedor ROS2 en la nube</p>
-                <p className="text-xs text-slate-500 mt-3">Esto puede tomar hasta 90 segundos</p>
+
+              <div className="mt-9 flex flex-col gap-[3px]">
+                {START_STEPS.map((s) => (
+                  <div
+                    key={s.text}
+                    className={`flex items-center gap-3.5 rounded-[11px] px-4 py-3 ${
+                      s.state === "busy" ? "bg-[#7d79e3]/[0.07]" : ""
+                    }`}
+                  >
+                    <span
+                      className={`grid h-[22px] w-[22px] flex-shrink-0 place-items-center rounded-full ${
+                        s.state === "done"
+                          ? "bg-[#34d399]"
+                          : s.state === "busy"
+                            ? ""
+                            : "border-[1.6px] border-[#2c2c34]"
+                      }`}
+                    >
+                      {s.state === "done" && (
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#04231a" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12.5l4.5 4.5L19 7" /></svg>
+                      )}
+                      {s.state === "busy" && (
+                        <svg className="animate-spin" width="14" height="14" viewBox="0 0 24 24" fill="none" strokeWidth="2.6" strokeLinecap="round"><path d="M12 3a9 9 0 019 9" stroke="#a5a1ee" /><circle cx="12" cy="12" r="9" stroke="rgba(165,161,238,0.3)" /></svg>
+                      )}
+                    </span>
+                    <span className={`flex-1 text-left text-[13.5px] ${s.state === "wait" ? "text-[#55555f]" : "text-[#d6d5de]"}`}>
+                      {s.text}
+                    </span>
+                    <span className="flex-shrink-0 font-mono text-[11px] text-[#4a4a54]">{s.time}</span>
+                  </div>
+                ))}
               </div>
-              {/* Animated progress bar */}
-              <div className="w-64 h-1 bg-slate-800 rounded-full overflow-hidden">
-                <div className="h-full bg-gradient-to-r from-blue-500 to-indigo-500 rounded-full animate-pulse" style={{ width: '60%' }} />
-              </div>
+
+              <p className="mt-6 font-mono text-[11px] text-[#55555f]">Puedes dejar la pestaña abierta; te avisamos al terminar</p>
             </div>
           ) : showStartScreen ? (
-            /* ── Idle / Start screen ────────────────────── */
-            <div className="relative z-10 max-w-md w-full mx-8">
-              <div className="relative bg-slate-900/80 backdrop-blur-xl rounded-2xl border border-slate-700/50 shadow-2xl overflow-hidden">
-                <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-blue-500/70 to-transparent" />
+            /* ── Listo para programar ─────────────────────── */
+            <div className="relative z-10 w-[520px] px-8 text-center">
+              <RobotIllustration />
 
-                <div className="p-10">
-                  {/* Brand mark */}
-                  <div className="flex justify-center mb-6">
-                    <div className="relative">
-                      <div className="absolute inset-0 bg-blue-500/40 rounded-2xl blur-3xl" />
-                      <div className="relative h-24 w-24 rounded-2xl bg-slate-950 ring-1 ring-blue-400/40 flex items-center justify-center shadow-2xl shadow-blue-500/30">
-                        <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-blue-500/15 to-transparent" />
-                        <img
-                          src="/logonitido.svg"
-                          alt="CIRTA"
-                          className="relative h-20 w-20 object-contain"
-                          style={{ filter: 'brightness(0) invert(1) drop-shadow(0 0 8px rgba(96, 165, 250, 0.6))' }}
-                        />
-                      </div>
-                    </div>
-                  </div>
+              <p className="mt-6 font-mono text-[10px] font-semibold uppercase tracking-[0.16em] text-[#6e6d78]">Simulador ROS 2 · UR5e</p>
+              <h2 className="mt-4 text-[38px] font-bold leading-[1.12] tracking-[-0.018em] text-[#f4f4f6]">
+                Listo para programar
+              </h2>
+              <p className="mx-auto mt-3.5 max-w-[400px] text-[15.5px] leading-[1.66] text-[#a1a0ab]">
+                Enciende el entorno para ejecutar tu código y ver el brazo moverse en 3D, en el momento.
+              </p>
 
-                  {/* Headline */}
-                  <div className="text-center mb-8">
-                    <p className="text-[11px] font-semibold text-blue-400 uppercase tracking-[0.2em] mb-3">
-                      Simulador ROS2 · UR5
-                    </p>
-                    <h2 className="text-2xl font-bold text-white mb-2">
-                      Listo para programar
-                    </h2>
-                    <p className="text-sm text-slate-400 max-w-sm mx-auto leading-relaxed">
-                      Inicia el entorno virtual para ejecutar tu código y ver el robot moverse en 3D en tiempo real.
-                    </p>
-                  </div>
-
-                  {/* Error message */}
-                  {startError && (
-                    <div className="mb-5 flex items-start gap-2.5 p-3 rounded-lg bg-red-500/10 border border-red-500/30">
-                      <AlertCircle className="w-4 h-4 text-red-400 shrink-0 mt-0.5" />
-                      <p className="text-xs text-red-300 leading-relaxed">{startError}</p>
-                    </div>
-                  )}
-
-                  {/* CTA */}
-                  <button
-                    onClick={handleStart}
-                    className="group relative w-full flex items-center justify-center gap-2.5 py-3.5 px-6 rounded-xl bg-gradient-to-br from-emerald-500 to-emerald-600 hover:from-emerald-400 hover:to-emerald-500 text-white font-semibold text-sm shadow-xl shadow-emerald-500/30 hover:shadow-emerald-500/50 transition-all duration-200"
-                  >
-                    <span className="absolute inset-0 rounded-xl bg-gradient-to-br from-white/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-                    <Play className="w-4 h-4 fill-current" />
-                    Iniciar simulador
-                  </button>
-
-                  <p className="text-[11px] text-slate-500 text-center mt-4">
-                    El simulador se detendrá automáticamente cuando termines
-                  </p>
+              {startError && (
+                <div className="mx-auto mt-5 flex max-w-[400px] items-start gap-2.5 rounded-[11px] border border-[#f08099]/30 bg-[#f08099]/[0.1] p-3 text-left">
+                  <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-[#f08099]" />
+                  <p className="text-xs leading-relaxed text-[#f08099]">{startError}</p>
                 </div>
+              )}
+
+              <div className="mt-8 flex items-center justify-center gap-3">
+                <button
+                  onClick={handleStart}
+                  className="inline-flex h-12 items-center justify-center gap-2.5 rounded-xl bg-[#f4f4f6] px-6 text-[14.5px] font-semibold text-[#16151b] transition-colors hover:bg-white"
+                >
+                  <Play className="h-4 w-4 fill-current" />
+                  Iniciar simulador
+                </button>
               </div>
+              <p className="mt-4.5 font-mono text-[11px] text-[#55555f]">Se apaga solo cuando sales · tarda entre 40 y 90 s en levantar</p>
             </div>
           ) : (
-            /* ── Initial loading ────────────────────────── */
+            /* ── Initial loading ──────────────────────────── */
             <div className="relative z-10 flex flex-col items-center gap-4">
-              <Loader2 className="w-10 h-10 text-blue-400 animate-spin" />
-              <p className="text-sm text-slate-400">Conectando con el simulador...</p>
+              <Loader2 className="h-10 w-10 animate-spin text-[#a5a1ee]" />
+              <p className="text-sm text-[#6e6d78]">Conectando con el simulador...</p>
             </div>
           )}
         </div>

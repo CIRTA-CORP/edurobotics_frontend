@@ -1,0 +1,643 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./vendor/react.js"></script>
+<script src="./vendor/react-dom.js"></script>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <style>
+    body { margin: 0; font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Helvetica, Arial, sans-serif; -webkit-font-smoothing: antialiased; }
+    a { color: #4b46d6; text-decoration: none; }
+    a:hover { color: #3a35b0; }
+    button { font: inherit; border: 0; background: none; cursor: pointer; color: inherit; }
+    input, textarea { font: inherit; }
+    ::-webkit-scrollbar { width: 8px; height: 8px; }
+    ::-webkit-scrollbar-thumb { background: #dcdbe4; border-radius: 8px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    .mono { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+    .lbl { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 9.5px; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; color: #a9a8b4; }
+    .fl { display: block; font-size: 11.5px; font-weight: 600; color: #55545f; margin-bottom: 7px; }
+    .fi { width: 100%; box-sizing: border-box; height: 40px; padding: 0 12px; border-radius: 10px; border: 1px solid #e3e2ea; font-size: 13.5px; color: #16151b; background: #ffffff; }
+  </style>
+</helmet>
+
+<div style="height: 900px; display: flex; flex-direction: column; background: #ffffff; color: #16151b; overflow: hidden;">
+
+  <!-- ══ Barra del panel ══ -->
+  <header style="height: 56px; flex-shrink: 0; display: flex; align-items: center; justify-content: space-between; padding: 0 18px; border-bottom: 1px solid #ececf1;">
+    <div style="display: flex; align-items: center; gap: 14px;">
+      <div style="display: flex; align-items: center; gap: 10px;">
+        <div style="width: 28px; height: 28px; border-radius: 8px; background: #16151b; display: grid; place-items: center;">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M6 19h5 M8.5 19v-4.5 M8.5 14.5L13 10 M13 10h4.5 M17.5 10V6"></path></svg>
+        </div>
+        <span style="font-size: 14.5px; font-weight: 600; letter-spacing: -0.01em;">EduRobotics</span>
+      </div>
+      <span style="padding: 3px 9px; border-radius: 99px; background: #16151b; color: #ffffff; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 9.5px; font-weight: 700; letter-spacing: 0.08em;">ADMIN</span>
+    </div>
+
+    <div style="display: flex; align-items: center; gap: 12px;">
+      <div style="display: flex; align-items: center; gap: 3px; padding: 3px; border-radius: 10px; background: #f4f3f8;">
+        <span style="height: 30px; padding: 0 13px; display: grid; place-items: center; border-radius: 8px; background: #ffffff; color: #16151b; font-size: 12.5px; font-weight: 600; box-shadow: 0 1px 3px rgba(22,21,27,0.09);">Vista admin</span>
+        <span style="height: 30px; padding: 0 13px; display: grid; place-items: center; border-radius: 8px; color: #8b8a95; font-size: 12.5px; font-weight: 600;">Vista estudiante</span>
+      </div>
+      <div style="width: 1px; height: 20px; background: #ececf1;"></div>
+      <button title="Simulador" style="width: 32px; height: 32px; border-radius: 8px; display: grid; place-items: center; color: #8b8a95;">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M6 6h12v12H6z M10 10h4v4h-4z M9 3v3 M15 3v3 M9 18v3 M15 18v3 M3 9h3 M3 15h3 M18 9h3 M18 15h3"></path></svg>
+      </button>
+      <button title="Ir a la página principal" style="width: 32px; height: 32px; border-radius: 8px; display: grid; place-items: center; color: #8b8a95;">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 11l8-7 8 7 M6 10v10h12V10"></path></svg>
+      </button>
+      <div style="width: 28px; height: 28px; border-radius: 99px; background: #16151b; color: #ffffff; display: grid; place-items: center; font-size: 10.5px; font-weight: 700;">MO</div>
+      <button title="Cerrar sesión" style="width: 32px; height: 32px; border-radius: 8px; display: grid; place-items: center; color: #b3b2be;">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M15 17l5-5-5-5 M20 12H9 M12 3H6a1 1 0 00-1 1v16a1 1 0 001 1h6"></path></svg>
+      </button>
+    </div>
+  </header>
+
+  <div style="flex: 1; display: flex; min-height: 0;">
+
+    <!-- ══ Rail de secciones ══ -->
+    <nav style="width: 236px; flex-shrink: 0; border-right: 1px solid #ececf1; background: #fafafa; padding: 16px 12px; overflow-y: auto;">
+      <div class="lbl" style="padding: 0 10px 10px;">Panel</div>
+      <div style="display: flex; flex-direction: column; gap: 2px;">
+        <sc-for list="{{navPanel}}" as="n" hint-placeholder-count="4">
+          <div style="{{n.style}}">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0;"><path d="{{n.icon}}"></path></svg>
+            {{n.label}}
+          </div>
+        </sc-for>
+      </div>
+
+      <div class="lbl" style="padding: 20px 10px 10px;">Contenido</div>
+      <div style="display: flex; flex-direction: column; gap: 2px;">
+        <div style="{{navCursos}}">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0;"><path d="M4 4h7a2 2 0 012 2v14a2 2 0 00-2-2H4z M20 4h-7a2 2 0 00-2 2v14a2 2 0 012-2h7z"></path></svg>
+          Cursos
+          <span class="mono" style="margin-left: auto; font-size: 10px; padding: 1px 6px; border-radius: 99px; background: rgba(255,255,255,0.22);">4</span>
+        </div>
+        <div style="{{navEsp}}">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0;"><path d="M4 8l8-4 8 4-8 4z M4 8v5c0 2.2 3.6 4 8 4s8-1.8 8-4V8"></path></svg>
+          Especializaciones
+        </div>
+      </div>
+
+      <div class="lbl" style="padding: 20px 10px 10px;">Sitio</div>
+      <div style="{{navLanding}}">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0;"><path d="M12 3a9 9 0 100 18 9 9 0 000-18 M3 12h18 M12 3c2.5 2.5 3.8 5.6 3.8 9s-1.3 6.5-3.8 9c-2.5-2.5-3.8-5.6-3.8-9s1.3-6.5 3.8-9z"></path></svg>
+        Landing
+      </div>
+
+      <p style="margin: 26px 10px 0; font-size: 11px; line-height: 1.6; color: #b3b2be;">Un profesor solo ve Progreso, Analítica y los cursos que tiene asignados.</p>
+    </nav>
+
+    <!-- ══ Árbol del curso ══ -->
+    <aside style="width: 320px; flex-shrink: 0; border-right: 1px solid #ececf1; display: flex; flex-direction: column; min-height: 0;">
+      <div style="flex-shrink: 0; padding: 14px 14px 12px; border-bottom: 1px solid #f2f1f6;">
+        <button style="width: 100%; display: flex; align-items: center; gap: 10px; padding: 9px 11px; border-radius: 10px; border: 1px solid #e3e2ea; text-align: left;">
+          <span style="width: 8px; height: 8px; border-radius: 99px; background: #d97706; flex-shrink: 0;"></span>
+          <span style="flex: 1; min-width: 0; font-size: 13.5px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">Robots colaborativos UR5</span>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#a9a8b4" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0;"><path d="M6 9l6 6 6-6"></path></svg>
+        </button>
+        <div style="margin-top: 10px; display: flex; align-items: center; gap: 8px;">
+          <button onClick="{{pickCourse}}" style="{{courseBtnStyle}}">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 15a3 3 0 100-6 3 3 0 000 6 M19.4 15a1.7 1.7 0 00.3 1.9 2 2 0 11-2.8 2.8 1.7 1.7 0 00-2.9 1.2 2 2 0 11-4 0 1.7 1.7 0 00-2.9-1.2 2 2 0 11-2.8-2.8 1.7 1.7 0 00-1.2-2.9 2 2 0 110-4 1.7 1.7 0 001.2-2.9 2 2 0 112.8-2.8 1.7 1.7 0 002.9-1.2 2 2 0 114 0 1.7 1.7 0 002.9 1.2 2 2 0 112.8 2.8 1.7 1.7 0 001.2 2.9 2 2 0 110 4 1.7 1.7 0 00-1.5 1.1z"></path></svg>
+            Detalle del curso
+          </button>
+          <span class="mono" style="margin-left: auto; font-size: 10px; color: #c4c3cd;">CR-2</span>
+        </div>
+      </div>
+
+      <div style="flex: 1; min-height: 0; overflow-y: auto; padding: 14px 12px 16px;">
+        <div style="display: flex; flex-direction: column; gap: 18px;">
+          <sc-for list="{{modules}}" as="m" hint-placeholder-count="3">
+            <div style="position: relative; padding-left: 34px;">
+              <sc-if value="{{m.hasLine}}" hint-placeholder-val="{{ true }}">
+                <div style="position: absolute; left: 11px; top: 30px; bottom: -20px; width: 2px; background: #eceaf2;"></div>
+              </sc-if>
+              <span style="{{m.nodeStyle}}">{{m.n}}</span>
+
+              <div style="display: flex; align-items: center; gap: 6px; min-height: 24px;">
+                <button onClick="{{m.pick}}" style="{{m.titleStyle}}">{{m.title}}</button>
+                <span class="mono" style="font-size: 10px; color: #bfbec9; flex-shrink: 0;">{{m.count}}</span>
+                <button onClick="{{m.toggle}}" style="width: 20px; height: 20px; display: grid; place-items: center; flex-shrink: 0;">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#c4c3cd" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="{{m.chevStyle}}"><path d="M6 9l6 6 6-6"></path></svg>
+                </button>
+              </div>
+
+              <sc-if value="{{m.open}}" hint-placeholder-val="{{ true }}">
+                <div style="margin-top: 7px; display: flex; flex-direction: column; gap: 1px;">
+                  <sc-for list="{{m.units}}" as="u" hint-placeholder-count="3">
+                    <button onClick="{{u.pick}}" style="{{u.rowStyle}}">
+                      <span class="mono" style="font-size: 10px; flex-shrink: 0; opacity: 0.65;">{{u.id}}</span>
+                      <span style="flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{u.title}}</span>
+                      <span style="display: flex; align-items: center; gap: 4px; flex-shrink: 0;">
+                        <sc-for list="{{u.marks}}" as="k" hint-placeholder-count="2">
+                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="{{k.color}}" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="{{k.path}}"></path></svg>
+                        </sc-for>
+                      </span>
+                    </button>
+                  </sc-for>
+                  <button style="display: flex; align-items: center; gap: 8px; padding: 7px 10px; border-radius: 8px; font-size: 12.5px; color: #a9a8b4;">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14 M5 12h14"></path></svg>
+                    Unidad
+                  </button>
+                </div>
+              </sc-if>
+            </div>
+          </sc-for>
+        </div>
+
+        <button style="margin-top: 22px; width: 100%; display: flex; align-items: center; justify-content: center; gap: 8px; height: 40px; border-radius: 10px; border: 1px dashed #dcdbe4; font-size: 13px; font-weight: 600; color: #7b7a86;">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14 M5 12h14"></path></svg>
+          Crear módulo
+        </button>
+      </div>
+    </aside>
+
+    <!-- ══ Editor ══ -->
+    <div style="flex: 1; min-width: 0; overflow-y: auto;">
+      <div style="padding: 22px 28px 56px;">
+
+        <div style="display: flex; align-items: center; justify-content: space-between; gap: 20px;">
+          <div style="display: flex; align-items: center; gap: 7px; min-width: 0;" class="mono">
+            <span style="font-size: 10.5px; letter-spacing: 0.1em; text-transform: uppercase; color: #a9a8b4;">{{crumb}}</span>
+          </div>
+          <div style="display: flex; align-items: center; gap: 9px; flex-shrink: 0;">
+            <button style="display: inline-flex; align-items: center; gap: 7px; height: 36px; padding: 0 14px; border-radius: 10px; border: 1px solid #e3e2ea; font-size: 12.5px; font-weight: 600; color: #55545f;">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z M12 15a3 3 0 100-6 3 3 0 000 6"></path></svg>
+              Ver como alumno
+            </button>
+            <button style="{{saveStyle}}">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="{{saveIcon}}"></path></svg>
+              {{saveLabel}}
+            </button>
+          </div>
+        </div>
+
+        <h1 style="font-family: 'Iowan Old Style', 'Palatino Linotype', Palatino, Georgia, serif; font-size: 28px; line-height: 1.16; font-weight: 700; letter-spacing: -0.014em; margin: 14px 0 0;">{{title}}</h1>
+
+        <div style="margin-top: 18px; display: inline-flex; align-items: center; gap: 3px; padding: 3px; border-radius: 10px; background: #f4f3f8;">
+          <sc-for list="{{tabs}}" as="t" hint-placeholder-count="3">
+            <button onClick="{{t.go}}" style="{{t.style}}">
+              {{t.label}}
+              <sc-if value="{{t.hasCount}}" hint-placeholder-val="{{ true }}">
+                <span class="mono" style="{{t.countStyle}}">{{t.count}}</span>
+              </sc-if>
+            </button>
+          </sc-for>
+        </div>
+
+        <!-- ── Contenido ── -->
+        <sc-if value="{{isContenido}}" hint-placeholder-val="{{ true }}">
+          <div style="margin-top: 22px;">
+            <div style="border: 1px solid #e9e9ee; border-radius: 14px; overflow: hidden;">
+              <div style="display: flex; align-items: center; gap: 3px; flex-wrap: wrap; padding: 8px 10px; border-bottom: 1px solid #f2f1f6; background: #fcfcfd;">
+                <sc-for list="{{toolbar}}" as="b" hint-placeholder-count="20">
+                  <div style="display: contents">
+                    <sc-if value="{{b.isDivider}}" hint-placeholder-val="{{ true }}">
+                      <span style="width: 1px; height: 18px; background: #e7e6ee; margin: 0 5px;"></span>
+                    </sc-if>
+                    <sc-if value="{{b.isText}}" hint-placeholder-val="{{ true }}">
+                      <button title="{{b.title}}" style="height: 28px; min-width: 28px; padding: 0 7px; border-radius: 7px; font-size: 11.5px; font-weight: 700; color: #55545f;">{{b.label}}</button>
+                    </sc-if>
+                    <sc-if value="{{b.isIcon}}" hint-placeholder-val="{{ true }}">
+                      <button title="{{b.title}}" style="width: 28px; height: 28px; border-radius: 7px; display: grid; place-items: center; color: #55545f;">
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="{{b.path}}"></path></svg>
+                      </button>
+                    </sc-if>
+                  </div>
+                </sc-for>
+              </div>
+
+              <div style="padding: 26px 30px 30px; max-width: 704px;">
+                <h2 style="font-family: 'Iowan Old Style', 'Palatino Linotype', Palatino, Georgia, serif; font-size: 24px; line-height: 1.24; font-weight: 600; margin: 0 0 13px;">Base, herramienta y pieza</h2>
+                <p style="font-size: 16.5px; line-height: 1.74; color: #33323b; margin: 0 0 16px;">El UR5 trabaja con tres marcos de referencia que conviven al mismo tiempo. Confundirlos es la causa más común de que un programa correcto se mueva a un lugar equivocado.</p>
+                <ul style="margin: 0 0 18px; padding-left: 22px; color: #33323b;">
+                  <li style="font-size: 16.5px; line-height: 1.7; margin: 7px 0;">Base: fijo en el pedestal del robot.</li>
+                  <li style="font-size: 16.5px; line-height: 1.7; margin: 7px 0;">Herramienta (TCP): viaja con la brida.</li>
+                </ul>
+                <div style="height: 158px; border-radius: 12px; border: 1px solid #eceaf2; background: #f6f6f9; display: grid; place-items: center;">
+                  <div style="display: flex; flex-direction: column; align-items: center; gap: 9px; color: #b3b2be;">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5h16v14H4z M8.5 10.5a1.5 1.5 0 100-3 1.5 1.5 0 000 3 M4 16l5-5 4 4 3-3 4 4"></path></svg>
+                    <span style="font-size: 12px;">tcp-marcos.png · arrastra los bordes para redimensionar</span>
+                  </div>
+                </div>
+              </div>
+
+              <div style="display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 11px 14px; border-top: 1px solid #f2f1f6; background: #fcfcfd;">
+                <span class="mono" style="font-size: 10.5px; color: #a9a8b4;">Último guardado hace 2 min</span>
+                <span style="font-size: 12px; color: #a9a8b4;">Los cambios no se publican hasta que guardas.</span>
+              </div>
+            </div>
+
+            <!-- Simulador -->
+            <div style="position: relative; margin-top: 18px; border-radius: 14px; overflow: hidden; background: #0a0a0c; color: #ffffff;">
+              <div style="position: absolute; inset: 0; background-image: radial-gradient(circle, rgba(255,255,255,0.5) 1px, transparent 1px); background-size: 22px 22px; -webkit-mask-image: radial-gradient(62% 82% at 50% 84%, #000 5%, transparent 68%); mask-image: radial-gradient(62% 82% at 50% 84%, #000 5%, transparent 68%);"></div>
+              <div style="position: relative; padding: 20px 22px;">
+                <div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 20px;">
+                  <div style="display: flex; align-items: flex-start; gap: 13px; min-width: 0;">
+                    <div style="width: 38px; height: 38px; border-radius: 11px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); display: grid; place-items: center; flex-shrink: 0;">
+                      <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6 6h12v12H6z M10 10h4v4h-4z M9 3v3 M15 3v3 M9 18v3 M15 18v3 M3 9h3 M3 15h3 M18 9h3 M18 15h3"></path></svg>
+                    </div>
+                    <div style="min-width: 0;">
+                      <div style="font-size: 14.5px; font-weight: 600;">Simulador 3D</div>
+                      <div style="font-size: 12.5px; color: rgba(255,255,255,0.6); margin-top: 3px;">Esta unidad incluye un acceso al simulador.</div>
+                    </div>
+                  </div>
+                  <button style="flex-shrink: 0; height: 34px; padding: 0 14px; border-radius: 9px; border: 1px solid rgba(255,255,255,0.24); color: rgba(255,255,255,0.85); font-size: 12.5px; font-weight: 600;">Quitar</button>
+                </div>
+                <div style="margin-top: 16px;">
+                  <span class="lbl" style="color: rgba(255,255,255,0.4);">Instrucciones para el alumno</span>
+                  <div style="margin-top: 8px; padding: 11px 13px; border-radius: 10px; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.12); font-size: 13px; color: rgba(255,255,255,0.82);">Comprueba el TCP girando la herramienta 360° sobre su propio eje.</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Heredado -->
+            <div style="margin-top: 18px; border: 1px solid #f0e6c8; border-radius: 14px; background: #fffdf6; padding: 18px;">
+              <div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 20px;">
+                <div style="min-width: 0;">
+                  <div style="display: flex; align-items: center; gap: 8px;">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#b45309" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0;"><path d="M12 3l9 17H3z M12 10v4 M12 17v.5"></path></svg>
+                    <span style="font-size: 13.5px; font-weight: 600; color: #92400e;">Contenido heredado · 2 bloques</span>
+                  </div>
+                  <p style="margin: 7px 0 0; font-size: 12.5px; line-height: 1.6; color: #a16207;">Vienen del sistema antiguo de bloques. Puedes moverlos al editor de arriba o borrarlos uno a uno.</p>
+                </div>
+                <button style="flex-shrink: 0; display: inline-flex; align-items: center; gap: 7px; height: 36px; padding: 0 14px; border-radius: 10px; background: #16151b; color: #ffffff; font-size: 12.5px; font-weight: 600;">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 3v4 M3 5h4 M17 15v4 M15 17h4 M12 4l2.4 5.6L20 12l-5.6 2.4L12 20l-2.4-5.6L4 12l5.6-2.4z"></path></svg>
+                  Migrar al editor
+                </button>
+              </div>
+              <div style="margin-top: 14px; display: flex; flex-direction: column; gap: 8px;">
+                <sc-for list="{{legacy}}" as="l" hint-placeholder-count="2">
+                  <div style="display: flex; align-items: center; gap: 12px; padding: 10px 12px; border-radius: 10px; background: #ffffff; border: 1px solid #f0e6c8;">
+                    <span style="{{l.pillStyle}}">{{l.kind}}</span>
+                    <span style="flex: 1; min-width: 0; font-size: 13px; color: #55545f; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{l.text}}</span>
+                    <button title="Eliminar bloque" style="width: 30px; height: 30px; border-radius: 8px; display: grid; place-items: center; color: #c4c3cd; flex-shrink: 0;">
+                      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16 M9 7V5h6v2 M6 7l1 13h10l1-13 M10 11v6 M14 11v6"></path></svg>
+                    </button>
+                  </div>
+                </sc-for>
+              </div>
+            </div>
+          </div>
+        </sc-if>
+
+        <!-- ── Evaluación ── -->
+        <sc-if value="{{isEval}}" hint-placeholder-val="{{ true }}">
+          <div style="margin-top: 22px; max-width: 760px;">
+            <div style="border: 1px solid #e9e9ee; border-radius: 14px; padding: 20px;">
+              <div style="display: flex; align-items: flex-end; gap: 16px;">
+                <div style="flex: 1; min-width: 0;">
+                  <label class="fl">Título de la evaluación</label>
+                  <input class="fi" value="Evaluación final — Unidad 1.2">
+                </div>
+                <button style="flex-shrink: 0; height: 40px; padding: 0 14px; border-radius: 10px; border: 1px solid #e3e2ea; font-size: 12.5px; font-weight: 600; color: #b4425a;">Eliminar</button>
+              </div>
+
+              <div style="margin-top: 18px; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px;">
+                <div>
+                  <label class="fl">Tipo de aprobación</label>
+                  <div style="display: flex; align-items: center; gap: 3px; padding: 3px; border-radius: 10px; background: #f4f3f8;">
+                    <span style="flex: 1; height: 32px; display: grid; place-items: center; border-radius: 8px; background: #ffffff; color: #16151b; font-size: 12.5px; font-weight: 600; box-shadow: 0 1px 3px rgba(22,21,27,0.09);">Puntaje mínimo</span>
+                    <span style="flex: 1; height: 32px; display: grid; place-items: center; border-radius: 8px; color: #8b8a95; font-size: 12.5px; font-weight: 600;">Todas correctas</span>
+                  </div>
+                </div>
+                <div>
+                  <label class="fl">Puntaje mínimo · <span class="mono" style="color: {{accent}};">70%</span></label>
+                  <div style="height: 32px; display: flex; align-items: center;">
+                    <div style="position: relative; width: 100%; height: 5px; border-radius: 99px; background: #eceaf2;">
+                      <div style="height: 100%; width: 70%; border-radius: 99px; background: {{accent}};"></div>
+                      <span style="position: absolute; left: 70%; top: 50%; transform: translate(-50%, -50%); width: 17px; height: 17px; border-radius: 99px; background: #ffffff; border: 2px solid {{accent}}; box-shadow: 0 1px 3px rgba(22,21,27,0.16);"></span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div style="margin-top: 16px; display: flex; flex-direction: column; gap: 12px;">
+              <sc-for list="{{questions}}" as="q" hint-placeholder-count="2">
+                <div style="border: 1px solid #e9e9ee; border-radius: 14px; padding: 18px;">
+                  <div style="display: flex; align-items: center; gap: 12px;">
+                    <span style="width: 26px; height: 26px; border-radius: 99px; background: #eceaf2; color: #55545f; display: grid; place-items: center; flex-shrink: 0;" class="mono"><span style="font-size: 11.5px; font-weight: 700;">{{q.n}}</span></span>
+                    <span style="{{q.pillStyle}}">{{q.kind}}</span>
+                    <span style="margin-left: auto; display: flex; align-items: center; gap: 4px; flex-shrink: 0;">
+                      <button title="Duplicar" style="width: 30px; height: 30px; border-radius: 8px; display: grid; place-items: center; color: #b3b2be;">
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 9h11v11H9z M5 15H4V4h11v1"></path></svg>
+                      </button>
+                      <button title="Eliminar pregunta" style="width: 30px; height: 30px; border-radius: 8px; display: grid; place-items: center; color: #b3b2be;">
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16 M9 7V5h6v2 M6 7l1 13h10l1-13 M10 11v6 M14 11v6"></path></svg>
+                      </button>
+                    </span>
+                  </div>
+
+                  <input class="fi" style="margin-top: 13px;" value="{{q.text}}">
+
+                  <div style="margin-top: 12px; display: flex; flex-direction: column; gap: 7px;">
+                    <sc-for list="{{q.options}}" as="o" hint-placeholder-count="3">
+                      <div style="{{o.rowStyle}}">
+                        <span style="{{o.dotStyle}}">
+                          <sc-if value="{{o.correct}}" hint-placeholder-val="{{ true }}">
+                            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7"></path></svg>
+                          </sc-if>
+                        </span>
+                        <span style="flex: 1; min-width: 0; font-size: 13.5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{o.text}}</span>
+                        <sc-if value="{{o.correct}}" hint-placeholder-val="{{ true }}">
+                          <span class="mono" style="font-size: 9.5px; font-weight: 700; letter-spacing: 0.1em; color: #047857; flex-shrink: 0;">CORRECTA</span>
+                        </sc-if>
+                        <button title="Quitar opción" style="width: 26px; height: 26px; border-radius: 7px; display: grid; place-items: center; color: #c4c3cd; flex-shrink: 0;">
+                          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 6l12 12 M18 6L6 18"></path></svg>
+                        </button>
+                      </div>
+                    </sc-for>
+                    <sc-if value="{{q.canAddOption}}" hint-placeholder-val="{{ true }}">
+                      <button style="display: inline-flex; align-items: center; gap: 7px; align-self: flex-start; height: 32px; padding: 0 12px; border-radius: 9px; font-size: 12.5px; font-weight: 600; color: #7b7a86;">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14 M5 12h14"></path></svg>
+                        Añadir opción
+                      </button>
+                    </sc-if>
+                  </div>
+                </div>
+              </sc-for>
+            </div>
+
+            <div style="margin-top: 16px; display: flex; align-items: center; gap: 10px;">
+              <button style="display: inline-flex; align-items: center; gap: 8px; height: 42px; padding: 0 18px; border-radius: 11px; border: 1px dashed #dcdbe4; font-size: 13px; font-weight: 600; color: #55545f;">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14 M5 12h14"></path></svg>
+                Opción múltiple
+              </button>
+              <button style="display: inline-flex; align-items: center; gap: 8px; height: 42px; padding: 0 18px; border-radius: 11px; border: 1px dashed #dcdbe4; font-size: 13px; font-weight: 600; color: #55545f;">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14 M5 12h14"></path></svg>
+                Verdadero o falso
+              </button>
+              <span class="mono" style="margin-left: auto; font-size: 10.5px; color: #a9a8b4;">Se guarda solo · sincronizado</span>
+            </div>
+          </div>
+        </sc-if>
+
+        <!-- ── Ajustes ── -->
+        <sc-if value="{{isAjustes}}" hint-placeholder-val="{{ true }}">
+          <div style="margin-top: 22px; max-width: 560px; display: flex; flex-direction: column; gap: 16px;">
+            <div style="border: 1px solid #e9e9ee; border-radius: 14px; padding: 22px;">
+              <div style="display: flex; flex-direction: column; gap: 16px;">
+                <div>
+                  <label class="fl">Título de la unidad *</label>
+                  <input class="fi" value="Sistemas de coordenadas y TCP">
+                </div>
+                <div>
+                  <label class="fl">Descripción (opcional)</label>
+                  <textarea style="width: 100%; box-sizing: border-box; min-height: 78px; padding: 11px 12px; border-radius: 10px; border: 1px solid #e3e2ea; font-size: 13.5px; line-height: 1.6; color: #16151b; resize: none;">Base, herramienta y pieza: los tres marcos con los que trabaja el UR5.</textarea>
+                </div>
+                <div>
+                  <label class="fl">Orden dentro del módulo *</label>
+                  <input class="fi mono" style="width: 88px;" value="2">
+                  <p style="margin: 8px 0 0; font-size: 11.5px; color: #a9a8b4;">Posición en la que el alumno verá esta unidad.</p>
+                </div>
+              </div>
+              <div style="margin-top: 20px; display: flex; align-items: center; gap: 10px;">
+                <button style="height: 42px; padding: 0 20px; border-radius: 11px; background: #16151b; color: #ffffff; font-size: 13.5px; font-weight: 600;">Guardar cambios</button>
+                <button style="margin-left: auto; display: inline-flex; align-items: center; gap: 7px; height: 42px; padding: 0 16px; border-radius: 11px; border: 1px solid #f0d5d5; font-size: 13px; font-weight: 600; color: #b4425a;">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16 M9 7V5h6v2 M6 7l1 13h10l1-13 M10 11v6 M14 11v6"></path></svg>
+                  Eliminar unidad
+                </button>
+              </div>
+            </div>
+          </div>
+        </sc-if>
+
+      </div>
+    </div>
+
+  </div>
+</div>
+</x-dc>
+
+<script data-dc-script data-props='{"accent":{"editor":"color","default":"#4b46d6","options":["#4b46d6","#2563eb","#0f766e","#16151b"],"section":"Tema"},"$preview":{"width":1440,"height":900}}'>
+class Component extends DCLogic {
+
+  defaults() { return { unit: '2.1', tab: 'contenido', open: { m1: true, m2: true, m3: false } }; }
+  st() { return (this.state && this.state.unit) ? this.state : this.defaults(); }
+  patch(next) { this.setState(Object.assign({}, this.st(), next)); }
+
+  renderVals() {
+    var self = this;
+    var accent = this.props.accent || '#4b46d6';
+    var tint = this.tint(accent, 0.08);
+    var st = this.st();
+
+    var DATA = this.data();
+    var flat = [];
+    DATA.forEach(function (m) { m.units.forEach(function (u) { flat.push({ m: m, u: u }); }); });
+    var cur = flat.find(function (x) { return x.u.id === st.unit; }) || flat[0];
+
+    var navItem = function (on) {
+      return 'display: flex; align-items: center; gap: 10px; height: 36px; padding: 0 11px; border-radius: 9px; font-size: 13px; font-weight: '
+        + (on ? '600' : '500') + '; ' + (on ? ('background: #16151b; color: #ffffff;') : 'color: #7b7a86;');
+    };
+
+    var navPanel = [
+      { label: 'Dashboard', icon: 'M4 13h6V4H4z M14 20h6v-9h-6z M4 20h6v-4H4z M14 8h6V4h-6z' },
+      { label: 'Usuarios', icon: 'M16 20v-1.5a4 4 0 00-4-4H6a4 4 0 00-4 4V20 M9 11a3.5 3.5 0 100-7 3.5 3.5 0 000 7 M22 20v-1.5a4 4 0 00-3-3.9 M16.5 4.1a4 4 0 010 7.8' },
+      { label: 'Progreso', icon: 'M4 8l8-4 8 4-8 4z M4 8v5c0 2.2 3.6 4 8 4s8-1.8 8-4V8' },
+      { label: 'Analítica', icon: 'M4 20V10 M10 20V4 M16 20v-7 M22 20H2' }
+    ].map(function (n) { return { label: n.label, icon: n.icon, style: navItem(false) }; });
+
+    var modules = DATA.map(function (m, mi) {
+      var open = !!st.open[m.id];
+      var isCur = m === cur.m;
+      return {
+        n: m.n,
+        title: m.title,
+        count: m.units.length,
+        open: open,
+        hasLine: mi < DATA.length - 1,
+        pick: function () { },
+        toggle: function () { var o = Object.assign({}, st.open); o[m.id] = !open; self.patch({ open: o }); },
+        nodeStyle: 'position: absolute; left: 0; top: 0; width: 24px; height: 24px; border-radius: 99px; display: grid; place-items: center; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 11px; font-weight: 700; '
+          + (isCur ? ('background: ' + accent + '; color: #ffffff;') : 'background: #eceaf2; color: #8b8a95;'),
+        titleStyle: 'flex: 1; min-width: 0; text-align: left; font-size: 13px; font-weight: 600; color: '
+          + (isCur ? '#16151b' : '#7b7a86') + '; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;',
+        chevStyle: 'transition: transform 200ms ease; transform: rotate(' + (open ? '180' : '0') + 'deg);',
+        units: m.units.map(function (u) {
+          var sel = u.id === cur.u.id;
+          return {
+            id: u.id,
+            title: u.title,
+            pick: function () { self.patch({ unit: u.id }); },
+            rowStyle: 'width: 100%; text-align: left; display: flex; align-items: center; gap: 9px; padding: 8px 10px; border-radius: 8px; font-size: 13px; min-height: 36px; '
+              + (sel ? ('background: ' + tint + '; color: ' + accent + '; font-weight: 600; box-shadow: inset 2.5px 0 0 0 ' + accent + ';') : 'color: #7b7a86;'),
+            marks: u.marks.map(function (k) {
+              return { path: self.mark(k), color: sel ? accent : '#c4c3cd' };
+            })
+          };
+        })
+      };
+    });
+
+    var tabDef = [
+      { id: 'contenido', label: 'Contenido' },
+      { id: 'evaluacion', label: 'Evaluación', count: 2 },
+      { id: 'ajustes', label: 'Ajustes' }
+    ];
+    var tabs = tabDef.map(function (t) {
+      var on = st.tab === t.id;
+      return {
+        label: t.label,
+        go: function () { self.patch({ tab: t.id }); },
+        hasCount: t.count !== undefined,
+        count: t.count,
+        countStyle: 'margin-left: 7px; font-size: 9.5px; font-weight: 700; padding: 1px 5px; border-radius: 99px; '
+          + (on ? ('background: ' + tint + '; color: ' + accent + ';') : 'background: #e7e6ee; color: #8b8a95;'),
+        style: 'display: inline-flex; align-items: center; height: 34px; padding: 0 15px; border-radius: 8px; font-size: 13px; font-weight: 600; '
+          + (on ? 'background: #ffffff; color: #16151b; box-shadow: 0 1px 3px rgba(22,21,27,0.09);' : 'color: #8b8a95;')
+      };
+    });
+
+    var LEGACY = { texto: ['Texto', '#eef2ff', '#4338ca'], video: ['Video', '#f5edfb', '#7e22ce'], recurso: ['Recurso', '#fdf0d9', '#b45309'], imagen: ['Imagen', '#e7f8f1', '#047857'], archivo: ['Archivo', '#fdeef1', '#b4425a'] };
+    var legacy = [
+      { kind: 'video', text: 'https://youtube.com/watch?v=… — Los tres marcos en el simulador' },
+      { kind: 'archivo', text: 'tcp-hoja-de-referencia.pdf' }
+    ].map(function (l) {
+      var c = LEGACY[l.kind];
+      return {
+        kind: c[0], text: l.text,
+        pillStyle: 'flex-shrink: 0; padding: 3px 9px; border-radius: 99px; font-size: 10.5px; font-weight: 600; background: ' + c[1] + '; color: ' + c[2] + ';'
+      };
+    });
+
+    var questions = [
+      { n: 1, kind: 'Opción múltiple', text: '¿Respecto a qué marco interpola el robot una trayectoria lineal?',
+        options: [
+          { text: 'Al marco de la base', correct: false },
+          { text: 'Al TCP declarado en la herramienta', correct: true },
+          { text: 'Al centro de la brida', correct: false }
+        ], canAddOption: true },
+      { n: 2, kind: 'Verdadero / Falso', text: 'Cambiar la pinza obliga a redefinir el TCP.',
+        options: [
+          { text: 'Verdadero', correct: true },
+          { text: 'Falso', correct: false }
+        ], canAddOption: false }
+    ].map(function (q) {
+      return {
+        n: q.n, kind: q.kind, text: q.text, canAddOption: q.canAddOption,
+        pillStyle: 'flex-shrink: 0; padding: 3px 10px; border-radius: 99px; font-size: 10.5px; font-weight: 600; background: ' + tint + '; color: ' + accent + ';',
+        options: q.options.map(function (o) {
+          return {
+            text: o.text, correct: o.correct,
+            rowStyle: 'display: flex; align-items: center; gap: 11px; padding: 9px 12px; border-radius: 10px; border: 1px solid '
+              + (o.correct ? '#cdeee0' : '#eceaf2') + '; background: ' + (o.correct ? '#f7fdfa' : '#ffffff') + '; color: '
+              + (o.correct ? '#16151b' : '#55545f') + ';',
+            dotStyle: 'width: 18px; height: 18px; border-radius: 99px; flex-shrink: 0; display: grid; place-items: center; '
+              + (o.correct ? 'background: #10b981;' : 'border: 1.6px solid #dcdbe4;')
+          };
+        })
+      };
+    });
+
+    var titles = { contenido: cur.u.title, evaluacion: cur.u.title, ajustes: cur.u.title };
+
+    return {
+      accent: accent,
+      navPanel: navPanel,
+      navCursos: navItem(true),
+      navEsp: navItem(false),
+      navLanding: navItem(false),
+      courseBtnStyle: 'display: inline-flex; align-items: center; gap: 7px; height: 30px; padding: 0 11px; border-radius: 8px; font-size: 12px; font-weight: 600; color: #7b7a86;',
+      pickCourse: function () { },
+
+      modules: modules,
+      crumb: 'Robots colaborativos UR5 · Módulo ' + cur.m.n + ' · Unidad ' + cur.u.id,
+      title: titles[st.tab],
+      tabs: tabs,
+      isContenido: st.tab === 'contenido',
+      isEval: st.tab === 'evaluacion',
+      isAjustes: st.tab === 'ajustes',
+
+      saveStyle: 'display: inline-flex; align-items: center; gap: 8px; height: 36px; padding: 0 16px; border-radius: 10px; background: #16151b; color: #ffffff; font-size: 12.5px; font-weight: 600;',
+      saveIcon: 'M5 12.5l4.5 4.5L19 7',
+      saveLabel: 'Guardar',
+
+      toolbar: this.toolbar(),
+      legacy: legacy,
+      questions: questions
+    };
+  }
+
+  toolbar() {
+    var ICON = function (t, p) { return { isIcon: true, isText: false, isDivider: false, title: t, path: p, label: '' }; };
+    var TEXT = function (t, l) { return { isIcon: false, isText: true, isDivider: false, title: t, label: l, path: '' }; };
+    var DIV = { isIcon: false, isText: false, isDivider: true, title: '', label: '', path: '' };
+    return [
+      ICON('Deshacer', 'M9 14l-5-5 5-5 M4 9h9a6 6 0 010 12h-3'),
+      ICON('Rehacer', 'M15 14l5-5-5-5 M20 9h-9a6 6 0 000 12h3'),
+      DIV,
+      TEXT('Título 1 (H1)', 'H1'), TEXT('Título 2 (H2)', 'H2'), TEXT('Título 3 (H3)', 'H3'),
+      DIV,
+      ICON('Negrita', 'M7 5h6a3.5 3.5 0 010 7H7z M7 12h7a3.5 3.5 0 010 7H7z'),
+      ICON('Cursiva', 'M15 5h-5 M14 19H9 M14.5 5l-4 14'),
+      ICON('Subrayado', 'M7 4v6a5 5 0 0010 0V4 M5 20h14'),
+      ICON('Tachado', 'M5 12h14 M8.5 8a3.5 3 0 017 0 M15.5 16a3.5 3 0 01-7 0'),
+      ICON('Código en línea', 'M9 8l-4 4 4 4 M15 8l4 4-4 4'),
+      DIV,
+      ICON('Lista', 'M9 6h11 M9 12h11 M9 18h11 M4.6 6h.01 M4.6 12h.01 M4.6 18h.01'),
+      ICON('Lista numerada', 'M10 6h10 M10 12h10 M10 18h10 M4 5h1.4v4 M4 13h2.4l-2.4 3h2.4'),
+      ICON('Cita', 'M9 7v5a4 4 0 01-4 4 M9 7H5v5h4z M20 7v5a4 4 0 01-4 4 M20 7h-4v5h4z'),
+      ICON('Bloque de código', 'M8 6l-5 6 5 6 M16 6l5 6-5 6 M13.5 4l-3 16'),
+      DIV,
+      ICON('Enlace', 'M10.5 13.5a5 5 0 007 0l2-2a5 5 0 00-7-7l-1 1 M13.5 10.5a5 5 0 00-7 0l-2 2a5 5 0 007 7l1-1'),
+      ICON('Insertar imagen', 'M4 5h16v14H4z M8.5 10.5a1.5 1.5 0 100-3 1.5 1.5 0 000 3 M4 16l5-5 4 4 3-3 4 4'),
+      ICON('Video de YouTube', 'M3 6h13v12H3z M16 10l5-3v10l-5-3z'),
+      ICON('Adjuntar archivo', 'M20.5 11.5L12 20a5 5 0 01-7-7l8-8a3.5 3.5 0 015 5l-8 8a2 2 0 01-3-3l7.5-7.5'),
+      ICON('Separador', 'M4 12h16'),
+      DIV,
+      ICON('Alinear izquierda', 'M4 6h16 M4 12h10 M4 18h13'),
+      ICON('Centrar', 'M4 6h16 M7 12h10 M5.5 18h13'),
+      ICON('Alinear derecha', 'M4 6h16 M10 12h10 M7 18h13')
+    ];
+  }
+
+  mark(k) {
+    var m = {
+      texto: 'M6 3h7l5 5v13H6z M13 3v5h5 M9 13h6 M9 17h4',
+      video: 'M12 3a9 9 0 100 18 9 9 0 000-18 M10.4 8.6l5.2 3.4-5.2 3.4z',
+      pdf: 'M6 3h7l5 5v13H6z M13 3v5h5 M12 11v5.5 M9.5 14l2.5 2.5 2.5-2.5',
+      sim: 'M6 6h12v12H6z M10 10h4v4h-4z M9 3v3 M15 3v3 M9 18v3 M15 18v3 M3 9h3 M3 15h3 M18 9h3 M18 15h3',
+      quiz: 'M9 4h6v3H9z M15 5h2a1 1 0 011 1v14a1 1 0 01-1 1H7a1 1 0 01-1-1V6a1 1 0 011-1h2 M9.5 13l2 2 3.5-4'
+    };
+    return m[k] || m.texto;
+  }
+
+  tint(hex, a) {
+    var h = hex.replace('#', '');
+    if (h.length === 3) h = h[0] + h[0] + h[1] + h[1] + h[2] + h[2];
+    var n = parseInt(h, 16);
+    return 'rgba(' + ((n >> 16) & 255) + ',' + ((n >> 8) & 255) + ',' + (n & 255) + ',' + a + ')';
+  }
+
+  data() {
+    return [
+      { id: 'm1', n: 1, title: 'Fundamentos', units: [
+        { id: '1.1', title: '¿Qué es un robot colaborativo?', marks: ['texto'] },
+        { id: '1.2', title: 'Sistemas de coordenadas y TCP', marks: ['texto', 'video'] },
+        { id: '1.3', title: 'Espacio de trabajo del UR5', marks: ['texto', 'pdf'] }
+      ] },
+      { id: 'm2', n: 2, title: 'Programación por bloques', units: [
+        { id: '2.1', title: 'Tu primer programa en Blockly', marks: ['texto', 'sim', 'quiz'] },
+        { id: '2.2', title: 'Movimientos MoveJ y MoveL', marks: ['texto', 'video'] },
+        { id: '2.3', title: 'Pinzas y señales digitales', marks: ['texto'] },
+        { id: '2.4', title: 'Control de movimiento', marks: ['quiz'] }
+      ] },
+      { id: 'm3', n: 3, title: 'Celda y seguridad', units: [
+        { id: '3.1', title: 'Zonas de seguridad', marks: ['texto', 'pdf'] },
+        { id: '3.2', title: 'Paro de emergencia', marks: ['texto', 'quiz'] }
+      ] }
+    ];
+  }
+}
+</script>
+</body>
+</html>

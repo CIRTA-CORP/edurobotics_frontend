@@ -1,57 +1,75 @@
 import React, { useEffect, useState, useRef, useCallback } from "react";
 import CodeButtons from '@/features/simulator/components/CodeButtons';
 import Panel from '@/features/simulator/components/Panel';
-import BlocklyPanel from '@/features/simulator/editors/BlocklyPanel';
 import EditorPanel from '@/features/simulator/editors/EditorPanel';
 import DocumentationPanel from '@/features/simulator/components/DocumentationPanel';
 import Terminal from '@/features/simulator/components/Terminal';
-import { Puzzle, Code2, BookOpen } from "lucide-react";
+import { Code2, BookOpen } from "lucide-react";
 import { getToken } from '@/features/auth/services/auth';
 
 const BLOCKLY = "blockly";
 const EDITOR = "editor";
 const DOCUMENTATION = "docs";
 
-/* ── Bottom tab button ──────────────────────────── */
+/* ── Top bar tab button (canvas: pestañas en la cabecera del panel) ──────────── */
 function TabButton({ label, icon, active, onClick }) {
   return (
     <button
       onClick={onClick}
       className={`
-        relative flex-1 flex items-center justify-center gap-1.5 h-11
-        text-xs font-semibold tracking-wide transition-all focus:outline-none
+        inline-flex h-8 flex-shrink-0 items-center gap-2 rounded-lg px-3.5
+        text-[12.5px] font-semibold transition-colors focus-visible:outline-none
+        focus-visible:ring-2 focus-visible:ring-[#a5a1ee]
         ${active
-          ? 'text-white bg-slate-900/50'
-          : 'text-slate-500 hover:text-slate-200 hover:bg-slate-800/40'}
+          ? 'bg-[#7d79e3]/[0.14] text-[#a5a1ee]'
+          : 'text-[#6e6d78] hover:text-[#f4f4f6]'}
       `}
     >
       {icon}
       {label}
-      {active && (
-        <span className="absolute top-0 left-3 right-3 h-0.5 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-b" />
-      )}
     </button>
   );
 }
 
-const ARDUINO_TEMPLATE_CODE = `
-// En este editor debes escribir tu código
+// Plantilla inicial del editor. El entorno es Python (`python_env`), así que el comentario
+// va con `#`: la plantilla anterior empezaba con `//`, que es C++, y un estudiante que
+// pulsara Ejecutar sin escribir nada recibía un SyntaxError como primera experiencia.
+//
+// Además arranca con un programa que funciona: mover el robot a su posición de reposo.
+// Ver algo moverse antes de escribir nada es mejor introducción que un archivo vacío.
+const STARTER_CODE = `# Escribe aquí tu programa.
+# Pulsa Ejecutar para ver el robot moverse en la vista 3D.
 
+from robot_api import Robot
+
+robot = Robot()
+
+# Posición de reposo: el UR5e queda extendido en horizontal.
+robot.move_joints({
+    "shoulder_pan_joint": 0.000,
+    "shoulder_lift_joint": 0.000,
+    "elbow_joint": 0.000,
+    "wrist_1_joint": 0.000,
+    "wrist_2_joint": 0.000,
+    "wrist_3_joint": 0.000,
+}, duration=2.0)
 `;
 
-export default function LeftPanel({ setAlertType, handleHide, onJointAngles }) {
+export default function LeftPanel({ setAlertType, handleHide, onJointAngles, onQueueChange, editorApiRef }) {
   const [enviromentConfig, setEnviromentConfig] = useState({
     language: "python",
     editor: "python",
-    "blockly?": true,
   });
   const runningEnviroment = "python_env";
 
   const [runLoading, setRunLoading] = useState(false);
   const [terminalOutput, setTerminalOutput] = useState("");
-  const [panelSelected, setPanelSelected] = useState(
-    localStorage.getItem("panelSelected") || EDITOR
-  );
+  const [panelSelected, setPanelSelected] = useState(() => {
+    const stored = localStorage.getItem("panelSelected") || EDITOR;
+    // Blockly se retiró, pero queda gente con esa pestaña guardada de antes:
+    // sin esta guarda, abrirían el simulador en un panel que ya no existe.
+    return stored === BLOCKLY ? EDITOR : stored;
+  });
 
   const monacoRef       = useRef(null);
   const decorationsRef  = useRef([]);
@@ -89,15 +107,8 @@ export default function LeftPanel({ setAlertType, handleHide, onJointAngles }) {
     editor.revealLineInCenter(userLine);
   }, []);
 
-  // HANDLING BLOCKLY
-  const blocklyCodeRef = useRef("");
   const panelSelectedRef = useRef(panelSelected);
   useEffect(() => { panelSelectedRef.current = panelSelected; }, [panelSelected]);
-
-  // Blockly just keeps its own ref — never touches the editor.
-  const handleBlocklyChange = useCallback((code) => {
-    blocklyCodeRef.current = code;
-  }, []);
 
   // HANDLING EDITOR
   const editorRef = useRef();
@@ -111,9 +122,24 @@ export default function LeftPanel({ setAlertType, handleHide, onJointAngles }) {
     document.head.appendChild(style);
     const savedCode = localStorage.getItem(`code_${runningEnviroment}`) || null;
     editorRef.current.setValue(
-      savedCode !== null && savedCode !== undefined ? savedCode : ARDUINO_TEMPLATE_CODE
+      savedCode !== null && savedCode !== undefined ? savedCode : STARTER_CODE
     );
-  }, [runningEnviroment]);
+
+    // El botón «Copiar al editor» de las juntas vive en el panel del simulador, al otro
+    // lado del divisor. Se expone aquí la única operación que necesita, para no sacar el
+    // editor entero de este componente.
+    if (editorApiRef) {
+      editorApiRef.current = {
+        replaceCode: (code) => {
+          editorRef.current?.setValue(code);
+          localStorage.setItem(`code_${runningEnviroment}`, code);
+          // Si el estudiante está en la Guía, el código aparecería fuera de su vista.
+          setPanelSelected(EDITOR);
+          editorRef.current?.focus();
+        },
+      };
+    }
+  }, [runningEnviroment, editorApiRef]);
 
   const handleEditorChange = useCallback((value) => {
     localStorage.setItem(`code_${runningEnviroment}`, value);
@@ -140,9 +166,7 @@ export default function LeftPanel({ setAlertType, handleHide, onJointAngles }) {
   const wsRef = useRef(null);
 
   const handleRun = useCallback(() => {
-    const code = panelSelectedRef.current === BLOCKLY
-      ? blocklyCodeRef.current?.trim()
-      : editorRef.current?.getValue()?.trim();
+    const code = editorRef.current?.getValue()?.trim();
     if (!code) {
       appendLine("Error: no hay código para ejecutar.");
       return;
@@ -182,6 +206,30 @@ export default function LeftPanel({ setAlertType, handleHide, onJointAngles }) {
           return;
         }
 
+        // Hay una sola máquina con un solo robot, así que ejecuta uno cada vez.
+        // Cuando está ocupada no se rechaza al alumno: espera turno y el servidor
+        // le va diciendo su puesto. No tiene que pulsar nada — cuando le toca, su
+        // programa arranca solo. El indicador de "ejecutando" se mantiene, porque
+        // desde su punto de vista sigue esperando a que su código corra.
+        if (data.type === "queued") {
+          onQueueChange?.({ position: data.position });
+          appendLine(`En cola — tu turno: ${data.position}. Esperando a que se libere el simulador…`);
+          return;
+        }
+
+        if (data.type === "queue_ready") {
+          onQueueChange?.(null);
+          appendLine("Es tu turno. Ejecutando…");
+          return;
+        }
+
+        if (data.type === "queue_timeout") {
+          onQueueChange?.(null);
+          appendLine(data.msg);
+          setRunLoading(false);
+          return;
+        }
+
         if (data.type === "log" || data.type === "success" || data.type === "error" || data.type === "done") {
           appendLine(data.msg);
           // Detect Python traceback and highlight the offending line in the editor
@@ -212,14 +260,16 @@ export default function LeftPanel({ setAlertType, handleHide, onJointAngles }) {
     };
 
     ws.onerror = () => {
+      onQueueChange?.(null);
       appendLine("Error: no se pudo conectar. ¿Está el backend corriendo?");
       setRunLoading(false);
     };
 
     ws.onclose = () => {
+      onQueueChange?.(null);
       setRunLoading(false);
     };
-  }, [appendLine, onJointAngles, clearDecorations, highlightErrorLine]);
+  }, [appendLine, onJointAngles, onQueueChange, clearDecorations, highlightErrorLine]);
 
   const handleStop = useCallback(() => {
     if (wsRef.current) {
@@ -246,39 +296,46 @@ export default function LeftPanel({ setAlertType, handleHide, onJointAngles }) {
   }, []);
 
   return (
-    <div className="flex flex-col h-full w-full bg-[#1e1e1e] text-white">
-      <CodeButtons
-        runLoading={runLoading}
-        stopDisabled={false}
-        handleRun={handleRun}
-        handleStop={handleStop}
-        handleDownload={() => {}}
-        handleUpload={handleUpload}
-        handleHide={handleHide}
-      />
+    <div className="flex h-full w-full flex-col bg-[#131316] text-[#f4f4f6]">
+      {/* Barra superior: pestañas a la izquierda, acciones a la derecha
+          (canvas Simulador: las pestañas suben del pie a la cabecera del panel). */}
+      <div className="flex h-[46px] shrink-0 items-center justify-between gap-4 border-b border-[#23232a] bg-[#1a1a1f] px-3">
+        <div className="flex min-w-0 items-center gap-[2px]">
+          <TabButton
+            label="Editor"
+            icon={<Code2 className="w-3.5 h-3.5" strokeWidth={1.8} />}
+            active={panelSelected === EDITOR}
+            onClick={() => setPanelSelected(EDITOR)}
+          />
+          <TabButton
+            label="Guía"
+            icon={<BookOpen className="w-3.5 h-3.5" strokeWidth={1.8} />}
+            active={panelSelected === DOCUMENTATION}
+            onClick={() => setPanelSelected(DOCUMENTATION)}
+          />
+        </div>
+        <CodeButtons
+          runLoading={runLoading}
+          stopDisabled={false}
+          handleRun={handleRun}
+          handleStop={handleStop}
+          handleDownload={() => {}}
+          handleUpload={handleUpload}
+          handleHide={handleHide}
+        />
+      </div>
 
       <div className="flex-grow flex flex-col w-full overflow-hidden relative">
-        {enviromentConfig && enviromentConfig["blockly?"] && (
-          <div className={`absolute inset-0 ${panelSelected === BLOCKLY ? 'block' : 'hidden'}`}>
-            <Panel selected={panelSelected === BLOCKLY}>
-              {panelSelected === BLOCKLY && (
-                <BlocklyPanel blocklyCodeRef={blocklyCodeRef} onCodeChange={handleBlocklyChange} />
-              )}
-            </Panel>
-          </div>
-        )}
-
         <div className={`absolute inset-0 ${panelSelected === EDITOR ? 'flex flex-col' : 'hidden'}`}>
           <Panel selected={panelSelected === EDITOR}>
             <div className="flex-grow h-[70%]">
               <EditorPanel
-                language={enviromentConfig?.editor}
                 handleEditorDidMount={handleEditorDidMount}
                 handleEditorChange={handleEditorChange}
               />
             </div>
-            <div id="terminal-container" className="h-[30%] max-h-[250px] overflow-y-auto border-t border-gray-700 bg-black">
-              <Terminal output={terminalOutput} onHide={handleHideTerminal} onClear={clearTerminal} />
+            <div id="terminal-container" className="h-[30%] max-h-[250px] overflow-y-auto border-t border-[#23232a] bg-[#0d0d10]">
+              <Terminal output={terminalOutput} running={runLoading} onHide={handleHideTerminal} onClear={clearTerminal} />
             </div>
           </Panel>
         </div>
@@ -288,30 +345,6 @@ export default function LeftPanel({ setAlertType, handleHide, onJointAngles }) {
              <DocumentationPanel url_doc={enviromentConfig?.doc_url} />
           </Panel>
         </div>
-      </div>
-
-      {/* TABS */}
-      <div className="w-full flex border-t border-slate-800 bg-gradient-to-b from-[#1f1f1f] to-[#181818] shrink-0">
-        {enviromentConfig && enviromentConfig["blockly?"] && (
-          <TabButton
-            label="Bloques"
-            icon={<Puzzle className="w-3.5 h-3.5" />}
-            active={panelSelected === BLOCKLY}
-            onClick={() => setPanelSelected(BLOCKLY)}
-          />
-        )}
-        <TabButton
-          label="Editor"
-          icon={<Code2 className="w-3.5 h-3.5" />}
-          active={panelSelected === EDITOR}
-          onClick={() => setPanelSelected(EDITOR)}
-        />
-        <TabButton
-          label="Guía"
-          icon={<BookOpen className="w-3.5 h-3.5" />}
-          active={panelSelected === DOCUMENTATION}
-          onClick={() => setPanelSelected(DOCUMENTATION)}
-        />
       </div>
     </div>
   );

@@ -13,7 +13,15 @@ const JOINTS = [
 const DEFAULT_ANGLES = Object.fromEntries(JOINTS.map(j => [j.name, 0]));
 const toDeg = r => Math.round(r * (180 / Math.PI));
 
-export default function JointSliders({ angles, onChange }) {
+/** Código `robot.move_joints({…})` con los ángulos actuales. */
+export function buildMoveJointsCode(angles) {
+  const lines = JOINTS.map(j =>
+    `    "${j.name}": ${(angles[j.name] ?? 0).toFixed(3)},`
+  ).join("\n");
+  return `robot.move_joints({\n${lines}\n}, duration=2.0)`;
+}
+
+export default function JointSliders({ angles, onChange, onCopyToEditor }) {
   const [copied, setCopied] = useState(false);
 
   const handleSlider = (name, value) => {
@@ -22,62 +30,88 @@ export default function JointSliders({ angles, onChange }) {
 
   const handleReset = () => onChange(DEFAULT_ANGLES);
 
+  const code = buildMoveJointsCode(angles);
+
   const handleCopy = () => {
-    const lines = JOINTS.map(j =>
-      `    "${j.name}": ${angles[j.name].toFixed(3)},`
-    ).join("\n");
-    const code = `robot.move_joints({\n${lines}\n}, duration=2.0)`;
-    navigator.clipboard.writeText(code);
+    if (onCopyToEditor) {
+      onCopyToEditor(code);
+    } else {
+      // Respaldo por si el panel se monta suelto: al menos el código queda a mano.
+      navigator.clipboard.writeText(code);
+    }
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
 
   return (
-    <div className="flex flex-col h-full bg-gray-900 border-l border-gray-700 w-52 shrink-0 overflow-y-auto">
-      <div className="px-3 py-2 border-b border-gray-700 flex items-center justify-between">
-        <span className="text-xs font-semibold text-gray-300 uppercase tracking-wider">Joints</span>
+    <div className="flex h-full w-[236px] shrink-0 flex-col border-l border-[#23232a] bg-[#131316]">
+      <div className="flex h-10 shrink-0 items-center justify-between border-b border-[#23232a] px-3.5">
+        <span className="font-mono text-[9.5px] font-semibold uppercase tracking-[0.14em] text-[#6e6d78]">Juntas</span>
         <button
           onClick={handleReset}
-          title="Resetear a cero"
-          className="text-gray-400 hover:text-white transition-colors"
+          title="Volver a cero"
+          className="grid h-[26px] w-[26px] place-items-center rounded-md text-[#6e6d78] transition-colors hover:text-[#f4f4f6]"
         >
-          <RotateCcw className="w-3.5 h-3.5" />
+          <RotateCcw className="h-3.5 w-3.5" strokeWidth={1.8} />
         </button>
       </div>
 
-      <div className="flex flex-col gap-3 p-3 flex-1">
-        {JOINTS.map(({ name, label, min, max }) => (
-          <div key={name} className="flex flex-col gap-1">
-            <div className="flex justify-between items-center">
-              <span className="text-xs text-gray-400">{label}</span>
-              <span className="text-xs font-mono text-blue-400">
-                {toDeg(angles[name])}°
-              </span>
+      <div className="flex flex-1 flex-col gap-4 overflow-y-auto px-3.5 py-4">
+        {JOINTS.map(({ name, label, min, max }) => {
+          const rad = angles[name];
+          const deg = toDeg(rad);
+          const pct = ((rad - min) / (max - min)) * 100;
+          return (
+            <div key={name}>
+              <div className="flex items-baseline justify-between gap-2.5">
+                <span className="text-xs text-[#a1a0ab]">{label}</span>
+                <span className="font-mono text-xs font-semibold text-[#f4f4f6]">{deg}°</span>
+              </div>
+              <div className="relative mt-2 h-1 rounded-full bg-[#26262d]">
+                <span
+                  className="absolute left-0 top-0 h-1 rounded-full bg-[#7d79e3]"
+                  style={{ width: `${pct.toFixed(1)}%` }}
+                />
+                <input
+                  type="range"
+                  min={min}
+                  max={max}
+                  step={0.01}
+                  value={rad}
+                  onChange={e => handleSlider(name, e.target.value)}
+                  className="absolute inset-0 h-4 w-full -translate-y-1/2 cursor-pointer appearance-none bg-transparent [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:h-[13px] [&::-webkit-slider-thumb]:w-[13px] [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-[#f4f4f6]"
+                  aria-label={label}
+                />
+              </div>
+              <div className="mt-1.5 flex items-center justify-between font-mono text-[9.5px] text-[#4a4a54]">
+                <span>-180°</span>
+                <span>{rad.toFixed(3)} rad</span>
+                <span>180°</span>
+              </div>
             </div>
-            <input
-              type="range"
-              min={min}
-              max={max}
-              step={0.01}
-              value={angles[name]}
-              onChange={e => handleSlider(name, e.target.value)}
-              className="w-full h-1.5 rounded-full appearance-none cursor-pointer accent-blue-500 bg-gray-700"
-            />
-          </div>
-        ))}
+          );
+        })}
       </div>
 
-      <div className="p-3 border-t border-gray-700">
+      <div className="shrink-0 border-t border-[#23232a] p-3.5">
+        <div className="rounded-[9px] border border-[#23232a] bg-[#0d0d10] p-2.5 font-mono text-[10.5px] leading-[17px] text-[#6e6d78]">
+          <div className="text-[#a5a1ee]">robot.move_joints({'{'}</div>
+          <div className="pl-2.5">
+            <span className="text-[#7fd1a8]">"elbow_joint"</span>
+            <span>: </span>
+            <span className="text-[#f0c987]">{(angles.elbow_joint ?? 0).toFixed(3)}</span>
+            <span>,</span>
+          </div>
+          <div className="pl-2.5 text-[#4a4a54]">… 5 más</div>
+          <div>{'}'}, duration=<span className="text-[#f0c987]">2.0</span>)</div>
+        </div>
         <button
           onClick={handleCopy}
-          className="w-full flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold py-2 px-3 rounded-lg transition-colors"
+          className="mt-2.5 inline-flex h-[38px] w-full items-center justify-center gap-2 rounded-[10px] bg-[#f4f4f6] text-[12.5px] font-semibold text-[#16151b] transition-colors hover:bg-white"
         >
-          {copied ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
-          {copied ? "Copiado!" : "Copiar código"}
+          {copied ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" strokeWidth={1.9} />}
+          {copied ? "Copiado!" : "Copiar al editor"}
         </button>
-        <p className="text-gray-500 text-[10px] text-center mt-1.5">
-          Pega en el editor y ejecuta
-        </p>
       </div>
     </div>
   );

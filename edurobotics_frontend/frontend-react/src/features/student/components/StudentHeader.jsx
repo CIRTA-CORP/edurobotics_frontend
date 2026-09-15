@@ -30,7 +30,7 @@ function UserAvatar({ user, compact = false }) {
 
   return (
     <div className="flex items-center gap-2.5">
-      <div className="w-8 h-8 rounded-full bg-gradient-to-br from-slate-700 to-slate-900 flex items-center justify-center text-white text-xs font-bold shadow-sm ring-2 ring-white">
+      <div className="w-8 h-8 rounded-full bg-[#16151b] flex items-center justify-center text-white text-xs font-bold shadow-sm ring-2 ring-white">
         {initials || '?'}
       </div>
       {!compact && (
@@ -53,14 +53,14 @@ function NavLink({ label, isActive, onClick }) {
       className={`
         relative px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200
         ${isActive
-          ? 'text-blue-600 bg-blue-50/80'
+          ? 'text-[#4b46d6] bg-[#4b46d6]/[0.07]'
           : 'text-gray-500 hover:text-gray-900 hover:bg-gray-50'
         }
       `}
     >
       {label}
       {isActive && (
-        <span className="absolute bottom-0 left-3 right-3 h-0.5 bg-blue-600 rounded-full" />
+        <span className="absolute bottom-0 left-3 right-3 h-0.5 bg-[#4b46d6] rounded-full" />
       )}
     </button>
   )
@@ -74,7 +74,7 @@ function MobileNavLink({ label, isActive, onClick }) {
       className={`
         w-full flex items-center px-4 py-3 text-sm font-medium transition-colors
         ${isActive
-          ? 'text-blue-600 bg-blue-50 border-l-2 border-blue-600'
+          ? 'text-[#4b46d6] bg-[#4b46d6]/[0.07] border-l-2 border-[#4b46d6]'
           : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50 border-l-2 border-transparent'
         }
       `}

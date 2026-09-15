@@ -7,8 +7,9 @@ import { RegisterForm } from '@/features/auth/components/RegisterForm'
  * AuthModal — modal de autenticación para la landing.
  *
  * Reutiliza exactamente los mismos LoginForm / RegisterForm que las páginas
- * /login y /register, así que no hay lógica de auth duplicada. Permite alternar
- * entre iniciar sesión y registrarse sin recargar ni salir de la landing.
+ * /login y /register, así que no hay lógica de auth duplicada. Las dos vistas
+ * son un segmentado, no un enlace escondido al pie: entrar y registrarse pesan
+ * lo mismo, y se alterna sin salir de la landing.
  *
  * @param {boolean} isOpen
  * @param {Function} onClose
@@ -24,18 +25,38 @@ export function AuthModal({ isOpen, onClose, initialView = 'login' }) {
 
   const isLogin = view === 'login'
 
+  const tab = (id, label) => (
+    <button
+      type="button"
+      onClick={() => setView(id)}
+      aria-pressed={view === id}
+      className={`h-9 flex-1 rounded-lg text-[13.5px] font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4b46d6] ${
+        view === id ? 'bg-white text-[#16151b] shadow-sm' : 'text-[#8b8a95] hover:text-[#16151b]'
+      }`}
+    >
+      {label}
+    </button>
+  )
+
   return (
     <Modal isOpen={isOpen} onClose={onClose} title="" size="sm">
-      <div className="text-center mb-6 -mt-2">
-        <img src="/cirtanitido.svg" alt="CIRTA" className="mx-auto h-8" />
-        <h2 className="mt-4 text-2xl font-bold tracking-tight">
-          {isLogin ? 'Iniciar sesión' : 'Crear cuenta gratis'}
+      <div className="-mt-2 mb-5 text-center">
+        <span className="flex items-center justify-center gap-3">
+          <img src="/cirtanitido.svg" alt="CIRTA" className="h-8" />
+          <span className="h-6 w-px bg-[#ececf1]" aria-hidden="true" />
+          <span className="text-[15px] font-bold tracking-[-0.015em] text-[#16151b]">EduRobotics</span>
+        </span>
+        <h2 className="mt-4 text-[22px] font-bold tracking-[-0.012em] text-[#16151b]">
+          {isLogin ? 'Entra a la plataforma' : 'Crea tu cuenta'}
         </h2>
-        <p className="mt-1 text-sm text-muted-foreground">
-          {isLogin
-            ? 'Accede a la plataforma de robótica'
-            : 'Regístrate gratis y entra al simulador'}
+        <p className="mt-1.5 text-[13.5px] text-[#55545f]">
+          {isLogin ? 'Sigue tus cursos y abre el simulador.' : 'Gratis, sin tarjeta.'}
         </p>
+      </div>
+
+      <div className="mb-5 flex items-center gap-[3px] rounded-[10px] bg-[#f4f3f8] p-[3px]">
+        {tab('login', 'Iniciar sesión')}
+        {tab('register', 'Crear cuenta')}
       </div>
 
       {isLogin ? (

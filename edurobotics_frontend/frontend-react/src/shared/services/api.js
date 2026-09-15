@@ -9,7 +9,7 @@
  * any cached read.
  */
 import { API_BASE } from '@/config'
-import { getToken } from '@/features/auth/services/auth'
+import { getStoredUser, getToken } from '@/features/auth/services/auth'
 
 const DEFAULT_CACHE_TTL = 30_000
 const responseCache = new Map()
@@ -17,7 +17,18 @@ const inflightRequests = new Map()
 
 function buildCacheKey(endpoint, token, cacheKey) {
     if (cacheKey) return cacheKey
-    const authScope = token ? `auth:${token.slice(0, 12)}` : 'public'
+    // El scope se deriva del user_id, NO de un prefijo del token: los primeros
+    // caracteres de un JWT son su header en base64 (`eyJhbGciOiJI…`), idéntico
+    // para todo el mundo. Con `token.slice(0, 12)` todos los usuarios compartían
+    // la misma clave, así que cambiar de cuenta sin recargar servía datos del
+    // usuario anterior.
+    let authScope = 'public'
+    if (token) {
+        const userId = getStoredUser()?.id
+        // Si hay token pero no se puede leer el id, NO se cae a 'public': eso
+        // mezclaría una respuesta autenticada con la caché anónima.
+        authScope = userId ? `user:${userId}` : 'auth:unknown'
+    }
     return `${authScope}:${endpoint}`
 }
 
@@ -29,6 +40,13 @@ function getCachedResponse(key, ttl) {
         return null
     }
     return entry.data
+}
+
+// Al cerrar sesión se vacía todo: las entradas del usuario que se va no deben
+// sobrevivir en memoria. `clearStoredUser` emite este evento en lugar de importar
+// esta función, para no cerrar un ciclo de imports con auth.js.
+if (typeof window !== 'undefined') {
+    window.addEventListener('auth:signed-out', () => invalidateApiCache())
 }
 
 export function invalidateApiCache(prefix = '') {
@@ -133,15 +151,28 @@ export const apiGetCached = async (
 }
 
 /**
+ * Invalidación tras una escritura.
+ *
+ * Por defecto se vacía TODO, y es deliberado: el árbol de contenidos está muy
+ * entrelazado —crear un contenido dentro de una unidad cambia también el detalle
+ * del curso, la malla y el progreso— así que acotar por prefijo dejaría lecturas
+ * obsoletas en pantalla. Invalidar de más cuesta un refetch de una caché de 30
+ * segundos; invalidar de menos cuesta enseñar datos viejos.
+ *
+ * Quien conozca el alcance real de su escritura puede acotarlo pasando
+ * `invalidate`, como ya hacen los servicios de cursos, landing y especializaciones.
+ */
+const invalidateAfterWrite = (prefix) => invalidateApiCache(prefix || '')
+
+/**
  * POST request
  */
-export const apiPost = (endpoint, data) => {
+export const apiPost = (endpoint, data, { invalidate } = {}) => {
     return apiRequest(endpoint, {
         method: 'POST',
         body: JSON.stringify(data),
     }).then((result) => {
-        // Writes can stale any cached read endpoint.
-        invalidateApiCache()
+        invalidateAfterWrite(invalidate)
         return result
     })
 }
@@ -149,12 +180,12 @@ export const apiPost = (endpoint, data) => {
 /**
  * PUT request
  */
-export const apiPut = (endpoint, data) => {
+export const apiPut = (endpoint, data, { invalidate } = {}) => {
     return apiRequest(endpoint, {
         method: 'PUT',
         body: JSON.stringify(data),
     }).then((result) => {
-        invalidateApiCache()
+        invalidateAfterWrite(invalidate)
         return result
     })
 }
@@ -162,9 +193,9 @@ export const apiPut = (endpoint, data) => {
 /**
  * DELETE request
  */
-export const apiDelete = (endpoint) => {
+export const apiDelete = (endpoint, { invalidate } = {}) => {
     return apiRequest(endpoint, { method: 'DELETE' }).then((result) => {
-        invalidateApiCache()
+        invalidateAfterWrite(invalidate)
         return result
     })
 }

@@ -5,6 +5,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { registerUser } from '@/features/auth/services/auth'
 import { Button } from '@/shared/components/button'
 import { Input } from '@/shared/components/input'
+import { PasswordInput } from '@/shared/components/PasswordInput'
 import { AlertCircle, CheckCircle2 } from 'lucide-react'
 
 /**
@@ -24,24 +25,27 @@ export function RegisterForm({ onSwitchToLogin }) {
     last_name: '',
     password: '',
     password_confirm: '',
+    // Consentimiento (Ley 21.719): el backend rechaza el registro si no llegan
+    // en true, así que viajan en el mismo payload que el resto del formulario.
+    accept_terms: false,
+    accept_privacy: false,
   })
-  const [message, setMessage] = useState(null)
-  const [messageType, setMessageType] = useState('success')
+  const [error, setError] = useState(null)
+  const [created, setCreated] = useState(null)   // username, once the account exists
   const [loading, setLoading] = useState(false)
   const navigate = useNavigate()
 
   const handleChange = (event) => {
-    const { name, value } = event.target
-    setForm((prev) => ({ ...prev, [name]: value }))
+    const { name, value, type, checked } = event.target
+    setForm((prev) => ({ ...prev, [name]: type === 'checkbox' ? checked : value }))
   }
 
   const handleSubmit = async (event) => {
     event.preventDefault()
-    setMessage(null)
+    setError(null)
 
     if (form.password !== form.password_confirm) {
-      setMessageType('error')
-      setMessage('Las contraseñas no coinciden')
+      setError('Las contraseñas no coinciden')
       return
     }
 
@@ -49,41 +53,49 @@ export function RegisterForm({ onSwitchToLogin }) {
 
     try {
       await registerUser(form)
-      setMessageType('success')
-      setMessage('¡Cuenta creada exitosamente!')
+      // Hand over naming the username they just chose — it is what they will
+      // type next, and a green strip would not have told them.
+      setCreated(form.username)
       // En el modal, volver a la vista de login; en la página, navegar a /login.
       setTimeout(() => {
         if (onSwitchToLogin) onSwitchToLogin()
         else navigate('/login')
-      }, 1200)
-    } catch (error) {
-      setMessageType('error')
-      setMessage(error.message)
-    } finally {
+      }, 1600)
+    } catch (err) {
+      setError(err.message)
       setLoading(false)
     }
   }
 
+  if (created) {
+    return (
+      <div className="py-2 text-center" role="status" aria-live="polite">
+        <div className="mx-auto grid h-12 w-12 place-items-center rounded-2xl bg-emerald-50">
+          <CheckCircle2 className="h-5 w-5 text-emerald-600" strokeWidth={2.2} />
+        </div>
+        <p className="mt-4 text-[19px] font-bold tracking-[-0.01em] text-[#16151b]">Cuenta creada</p>
+        <p className="mt-1.5 text-[14px] leading-relaxed text-[#55545f]">
+          Te llevamos a iniciar sesión con tu usuario{' '}
+          <strong className="font-mono font-semibold text-[#16151b]">{created}</strong>.
+        </p>
+        <div className="mx-auto mt-5 h-[3px] w-40 overflow-hidden rounded-full bg-[#efeef3]">
+          <div className="h-full w-full origin-left animate-[loginHandoff_1.6s_ease-out_forwards] rounded-full bg-[#16151b]" />
+        </div>
+      </div>
+    )
+  }
+
   return (
     <>
-      {message && (
-        <div
-          className={`mb-4 p-3 rounded-lg flex items-start gap-2 text-sm ${messageType === 'success'
-            ? 'bg-green-50 text-green-900 border border-green-200'
-            : 'bg-red-50 text-red-900 border border-red-200'
-            }`}
-        >
-          {messageType === 'success' ? (
-            <CheckCircle2 className="w-4 h-4 mt-0.5 flex-shrink-0" />
-          ) : (
-            <AlertCircle className="w-4 h-4 mt-0.5 flex-shrink-0" />
-          )}
-          <span>{message}</span>
+      {error && (
+        <div className="mb-4 flex items-start gap-2.5 rounded-[10px] border border-[#b4425a]/25 bg-[#b4425a]/[0.05] p-3.5">
+          <AlertCircle className="mt-0.5 h-4 w-4 flex-shrink-0 text-[#b4425a]" />
+          <p className="text-[13.5px] text-[#16151b]">{error}</p>
         </div>
       )}
 
       <form onSubmit={handleSubmit} className="space-y-4">
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div className="space-y-2">
             <label htmlFor="first_name" className="text-sm font-medium leading-none">
               Nombre
@@ -151,8 +163,7 @@ export function RegisterForm({ onSwitchToLogin }) {
           <label htmlFor="password" className="text-sm font-medium leading-none">
             Contraseña
           </label>
-          <Input
-            type="password"
+          <PasswordInput
             id="password"
             name="password"
             placeholder="••••••••"
@@ -167,8 +178,7 @@ export function RegisterForm({ onSwitchToLogin }) {
           <label htmlFor="password_confirm" className="text-sm font-medium leading-none">
             Confirmar contraseña
           </label>
-          <Input
-            type="password"
+          <PasswordInput
             id="password_confirm"
             name="password_confirm"
             placeholder="••••••••"
@@ -177,6 +187,56 @@ export function RegisterForm({ onSwitchToLogin }) {
             required
             autoComplete="new-password"
           />
+        </div>
+
+        {/* Los enlaces abren en pestaña nueva a propósito: en el modal de la
+            landing, navegar a los textos legales descartaría lo ya escrito. */}
+        <div className="space-y-2.5 pt-1">
+          <label htmlFor="accept_terms" className="flex cursor-pointer items-start gap-2.5">
+            <input
+              type="checkbox"
+              id="accept_terms"
+              name="accept_terms"
+              checked={form.accept_terms}
+              onChange={handleChange}
+              required
+              className="mt-0.5 h-4 w-4 flex-shrink-0 cursor-pointer rounded border-input accent-primary"
+            />
+            <span className="text-[13px] leading-snug text-muted-foreground">
+              Acepto los{' '}
+              <Link
+                to="/legal"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="font-medium text-primary hover:underline"
+              >
+                Términos y Condiciones
+              </Link>
+            </span>
+          </label>
+
+          <label htmlFor="accept_privacy" className="flex cursor-pointer items-start gap-2.5">
+            <input
+              type="checkbox"
+              id="accept_privacy"
+              name="accept_privacy"
+              checked={form.accept_privacy}
+              onChange={handleChange}
+              required
+              className="mt-0.5 h-4 w-4 flex-shrink-0 cursor-pointer rounded border-input accent-primary"
+            />
+            <span className="text-[13px] leading-snug text-muted-foreground">
+              He leído la{' '}
+              <Link
+                to="/privacidad"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="font-medium text-primary hover:underline"
+              >
+                Política de Privacidad
+              </Link>
+            </span>
+          </label>
         </div>
 
         <Button type="submit" className="w-full" disabled={loading}>

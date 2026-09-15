@@ -95,6 +95,19 @@ function StudentDashboardPage({ userOverride = null, hideLogout = false, hideHea
 
   const lockedCount = courses.filter(c => c.locked).length
   const availableCount = courses.length - lockedCount
+
+  // Welcome-band summary: units done out of the units of the courses actually
+  // under way. Courses not started yet would drown the number in units the
+  // student never intended to take.
+  const unitsSummary = (() => {
+    const active = (roadmapResp?.roadmap || []).filter(c => c.state === 'in_progress')
+    const units = active.flatMap(c => (c.modules || []).flatMap(m => m.units || []))
+    return {
+      activeCourses: active.length,
+      total: units.length,
+      done: units.filter(u => u.state === 'completed').length,
+    }
+  })()
   const [showOnlyAvailable, setShowOnlyAvailable] = useState(false)
   const visibleCourses = showOnlyAvailable ? courses.filter(c => !c.locked) : courses
 
@@ -134,7 +147,13 @@ function StudentDashboardPage({ userOverride = null, hideLogout = false, hideHea
             adminView={adminView}
             setAdminView={setAdminView}
           />
-          <HeroSection user={user} courses={courses} />
+          <HeroSection
+            user={user}
+            unitsDone={unitsSummary.done}
+            unitsTotal={unitsSummary.total}
+            activeCourses={unitsSummary.activeCourses}
+            roadmap={roadmapResp?.roadmap || []}
+          />
         </>
       )}
 
@@ -145,7 +164,7 @@ function StudentDashboardPage({ userOverride = null, hideLogout = false, hideHea
 
         <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
           <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-slate-900 text-white">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#16151b] text-white">
               <BookOpen className="w-5 h-5" />
             </div>
             <div>
@@ -164,7 +183,7 @@ function StudentDashboardPage({ userOverride = null, hideLogout = false, hideHea
               onClick={() => setShowOnlyAvailable(v => !v)}
               className={`inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-sm font-medium transition-colors ${
                 showOnlyAvailable
-                  ? 'bg-slate-900 text-white'
+                  ? 'bg-[#16151b] text-white'
                   : 'bg-white text-gray-600 border border-gray-200 hover:border-gray-300'
               }`}
             >

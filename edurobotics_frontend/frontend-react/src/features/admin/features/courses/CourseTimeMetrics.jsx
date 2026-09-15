@@ -33,9 +33,18 @@ function fmt(minutes) {
  *  A value of 0 means no heartbeats accrued → treated as insufficient data. */
 function headline(data) {
   if (!data || (data.learners ?? 0) === 0) return null
-  if (data.sample > 0 && data.median_minutes) {
-    return { value: data.median_minutes, label: 'tiempo activo típico', inProgress: false }
+  // If anyone completed the scope, the figure is completion time — never "en
+  // progreso". When their typical time wasn't measured (median 0, e.g. old
+  // completions with no heartbeat history), show insufficient data instead of
+  // falling back to the in-progress average.
+  if ((data.completed ?? 0) > 0) {
+    if (data.median_minutes) {
+      return { value: data.median_minutes, label: 'tiempo activo típico', inProgress: false }
+    }
+    return null
   }
+  // Nobody has finished yet → in-progress invested time (only here does "en
+  // progreso" make sense).
   if (data.invested_avg_minutes) {
     return { value: data.invested_avg_minutes, label: 'invertido hasta ahora', inProgress: true }
   }

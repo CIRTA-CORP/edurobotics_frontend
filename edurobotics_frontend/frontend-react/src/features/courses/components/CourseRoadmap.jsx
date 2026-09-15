@@ -13,7 +13,7 @@ import { getRoadmap } from '@/features/progress/services/progress'
 
 const STATE_CONFIG = {
   completed: { label: 'Completado', icon: CheckCircle, color: 'bg-emerald-100 text-emerald-700', barColor: 'bg-emerald-500' },
-  in_progress: { label: 'En progreso', icon: Clock, color: 'bg-blue-100 text-blue-700', barColor: 'bg-blue-500' },
+  in_progress: { label: 'En progreso', icon: Clock, color: 'bg-[#4b46d6]/[0.09] text-[#4b46d6]', barColor: 'bg-[#10b981]' },
   not_started: { label: 'No iniciado', icon: Circle, color: 'bg-gray-100 text-gray-600', barColor: 'bg-gray-300' },
 }
 
@@ -76,7 +76,7 @@ export default function CourseRoadmap({ userId, courseId, onNavigateUnit }) {
       {state !== 'completed' && (
         <button
           onClick={goToNextPending}
-          className="w-full flex items-center justify-between text-xs text-blue-600 hover:text-blue-700 bg-blue-50 hover:bg-blue-100 rounded-lg px-3 py-2 transition-colors"
+          className="w-full flex items-center justify-between text-xs text-[#4b46d6] hover:text-[#3f3ac0] bg-[#4b46d6]/[0.07] hover:bg-[#4b46d6]/[0.12] rounded-lg px-3 py-2 transition-colors"
         >
           <span className="font-medium">Ir a la siguiente unidad pendiente</span>
           <ChevronRight className="w-3.5 h-3.5 flex-shrink-0" />
