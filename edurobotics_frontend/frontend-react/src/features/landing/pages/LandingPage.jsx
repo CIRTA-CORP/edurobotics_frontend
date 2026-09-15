@@ -5,7 +5,7 @@ import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import {
-  Bot, Blocks, Code2, Play, ArrowRight, GraduationCap,
+  Bot, Ruler, Code2, Play, ArrowRight, GraduationCap,
   Building2, BookOpen, Cpu, CheckCircle2,
 } from 'lucide-react'
 import { Button } from '@/shared/components/button'
@@ -114,17 +114,15 @@ function Hero({ onAuth, user, data, loading }) {
  *
  * The chrome earns its place: "sin instalar nada" is the promise, and the URL
  * is what proves it. The window dots stay neutral instead of the toy-coloured
- * traffic lights. Below it, the two real modes, switchable.
+ * traffic lights.
+ *
+ * Las dos pestañas son los dos momentos reales del ciclo de trabajo —escribes
+ * Python, lo ejecutas, lees la salida— y no dos formas alternativas de hacer lo
+ * mismo. El código que se muestra es el API de verdad (`robot_api.py`): enseñar
+ * una API inventada se desmontaría en cuanto alguien entra al simulador.
  */
 function SimulatorMockup({ imageUrl, loading }) {
-  const [mode, setMode] = useState('blocks')
-
-  const blocks = [
-    { label: 'mover articulación 1 a 90°', indent: false },
-    { label: 'esperar 1 s', indent: true },
-    { label: 'cerrar gripper', indent: false },
-    { label: 'repetir x3', indent: true },
-  ]
+  const [mode, setMode] = useState('code')
 
   const tab = (active) =>
     `h-7 rounded-lg px-3 text-[12px] font-semibold transition-colors ${
@@ -150,11 +148,11 @@ function SimulatorMockup({ imageUrl, loading }) {
       {/* Toolbar: the two modes, the robot, and the run affordance */}
       <div className="flex h-[46px] items-center justify-between border-b border-white/[0.09] px-3.5">
         <div className="flex items-center gap-0.5 rounded-[9px] bg-white/[0.07] p-[3px]">
-          <button onClick={() => setMode('blocks')} className={tab(mode === 'blocks')}>Bloques</button>
           <button onClick={() => setMode('code')} className={tab(mode === 'code')}>Código</button>
+          <button onClick={() => setMode('output')} className={tab(mode === 'output')}>Salida</button>
         </div>
         <div className="flex items-center gap-2.5">
-          <span className="font-mono text-[10.5px] text-white/40">UR5</span>
+          <span className="font-mono text-[10.5px] text-white/40">UR5e</span>
           <span className="inline-flex h-7 items-center gap-1.5 rounded-lg bg-emerald-400/[0.16] px-3 text-[11.5px] font-semibold text-emerald-300">
             <Play className="h-2.5 w-2.5 fill-current" />
             Ejecutar
@@ -162,26 +160,32 @@ function SimulatorMockup({ imageUrl, loading }) {
         </div>
       </div>
 
-      <div className="grid min-h-[296px] grid-cols-[170px_minmax(0,1fr)] sm:grid-cols-[200px_minmax(0,1fr)]">
-        <div className="border-r border-white/[0.09] p-3.5">
-          {mode === 'blocks' ? (
-            <div className="flex flex-col gap-2">
-              {blocks.map((b, i) => (
-                <div
-                  key={b.label}
-                  className={`flex h-8 items-center rounded-lg px-3 text-[12px] font-semibold text-white ${b.indent ? 'ml-4' : ''}`}
-                  style={{ background: ['#4b46d6', '#6b66e0', '#8e8ae8', '#a5a1ee'][i] }}
-                >
-                  {b.label}
-                </div>
-              ))}
+      <div className="grid min-h-[296px] grid-cols-[minmax(0,1fr)] sm:grid-cols-[244px_minmax(0,1fr)]">
+        <div className="border-b border-white/[0.09] p-3.5 sm:border-b-0 sm:border-r">
+          {mode === 'code' ? (
+            <div className="font-mono text-[10.5px] leading-[1.85] text-white/75">
+              <div><span className="text-[#a5a1ee]">from</span> robot_api <span className="text-[#a5a1ee]">import</span> Robot</div>
+              <div className="h-[0.9em]" />
+              <div>robot = <span className="text-[#a5a1ee]">Robot</span>()</div>
+              <div className="h-[0.9em]" />
+              <div className="text-white/40"># girar la base</div>
+              <div>robot.<span className="text-[#a5a1ee]">move_joints</span>(</div>
+              <div className="pl-3">{'{'}<span className="text-emerald-300">&quot;shoulder_pan_joint&quot;</span>: <span className="text-emerald-300">1.57</span>{'}'},</div>
+              <div className="pl-3">duration=<span className="text-emerald-300">2.0</span>,</div>
+              <div>)</div>
             </div>
           ) : (
-            <div className="font-mono text-[11px] leading-[1.95] text-white/75">
-              <div><span className="text-[#a5a1ee]">robot</span>.move_j(<span className="text-emerald-300">90</span>, <span className="text-emerald-300">-45</span>)</div>
-              <div><span className="text-[#a5a1ee]">wait</span>(<span className="text-emerald-300">1.0</span>)</div>
-              <div><span className="text-[#a5a1ee]">gripper</span>.close()</div>
-              <div className="text-white/40"># repetir x3</div>
+            <div className="font-mono text-[10.5px] leading-[1.85] text-white/60">
+              <div className="text-white/40">[sim] Simulación lista.</div>
+              <div>[robot_api] CMD written:</div>
+              <div className="pl-3 text-white/45">dur=2.0s</div>
+              <div>[robot_api] Waiting 2.4s</div>
+              <div className="pl-3 text-white/45">for trajectory...</div>
+              <div>[robot_api] Trajectory</div>
+              <div className="pl-3 text-white/45">wait done.</div>
+              <div className="h-[0.9em]" />
+              <div className="text-emerald-300">Done.</div>
+              <div className="text-white/40">Animation: 24 frames</div>
             </div>
           )}
         </div>
@@ -241,10 +245,10 @@ function FactsTrack({ items, hidden }) {
  */
 function Stats() {
   const stats = [
-    { value: 'UR5', label: 'Robot industrial simulado' },
+    { value: 'UR5e', label: 'Robot industrial simulado' },
     { value: '3D', label: 'Visor en el navegador' },
     { value: '0', label: 'Instalaciones necesarias' },
-    { value: '2', label: 'Modos: bloques y código' },
+    { value: '1 mm', label: 'Precisión frente al robot real' },
   ]
   // Repetidos dentro del grupo: evita huecos cuando la pantalla es más ancha
   // que el contenido.
@@ -282,8 +286,8 @@ function SectionTitle({ children, className = '' }) {
 // ─────────────────────────────────────────────────────────────
 function SimulatorSection({ data }) {
   const features = [
-    { icon: Blocks, title: 'Programación por bloques', text: 'Arrastra bloques tipo Scratch para construir la lógica del robot. Ideal para empezar sin saber programar.' },
-    { icon: Code2, title: 'Editor de código', text: 'Pasa a código real cuando estés listo. Los bloques se sincronizan con el editor automáticamente.' },
+    { icon: Ruler, title: 'Simulación fiel', text: 'El visor carga la misma descripción del robot que usa la simulación física. La cinemática coincide con el robot real dentro de 1 mm.' },
+    { icon: Code2, title: 'Python real', text: 'Escribes con la misma librería que mueve el brazo físico. No es un lenguaje de práctica: es el código que se usa de verdad.' },
     { icon: Cpu, title: 'Ejecución en vivo', text: 'Tu programa corre y el robot 3D se mueve al instante. Ves el resultado de cada cambio en tiempo real.' },
   ]
   return (
@@ -304,25 +308,21 @@ function SimulatorSection({ data }) {
         ))}
       </div>
 
-      {/* Blocks become code: the one idea the product rests on, shown rather
-          than described. Stacks vertically on narrow screens. */}
+      {/* Código y movimiento: la idea sobre la que descansa el producto, mostrada
+          en vez de descrita. Antes este panel enseñaba bloques convirtiéndose en
+          código; ahora enseña el código real y lo que el robot hace con él, que
+          es el ciclo que el alumno vive de verdad. Se apila en pantallas
+          estrechas. */}
       <div className="mt-6 grid overflow-hidden rounded-[14px] border border-[#e9e9ee] md:grid-cols-[minmax(0,1fr)_64px_minmax(0,1fr)]">
         <div className="p-6">
-          <SectionLabel>Arrastras esto</SectionLabel>
-          <div className="mt-3.5 flex flex-col gap-[7px]">
-            {[
-              { label: 'mover articulación 1 a 90°', bg: '#4b46d6', indent: false },
-              { label: 'esperar 1 s', bg: '#6b66e0', indent: true },
-              { label: 'cerrar gripper', bg: '#8e8ae8', indent: false },
-            ].map((b) => (
-              <div
-                key={b.label}
-                className={`flex h-8 items-center rounded-lg px-3 text-[12px] font-semibold text-white ${b.indent ? 'ml-4' : ''}`}
-                style={{ background: b.bg }}
-              >
-                {b.label}
-              </div>
-            ))}
+          <SectionLabel>Escribes esto</SectionLabel>
+          <div className="mt-4 font-mono text-[12px] leading-[2.05] text-[#3a3944]">
+            <div><span className="text-[#4b46d6]">from</span> robot_api <span className="text-[#4b46d6]">import</span> Robot</div>
+            <div>robot = <span className="text-[#4b46d6]">Robot</span>()</div>
+            <div>robot.<span className="text-[#4b46d6]">move_joints</span>(</div>
+            <div className="pl-4">{'{'}<span className="text-emerald-700">&quot;shoulder_pan_joint&quot;</span>: <span className="text-emerald-700">1.57</span>{'}'},</div>
+            <div className="pl-4">duration=<span className="text-emerald-700">2.0</span>,</div>
+            <div>)</div>
           </div>
         </div>
 
@@ -332,12 +332,17 @@ function SimulatorSection({ data }) {
 
         <div className="bg-[#0a0a0c] p-6">
           <div className="font-mono text-[10px] font-semibold uppercase tracking-[0.14em] text-white/40">
-            Se escribe esto
+            El robot hace esto
           </div>
           <div className="mt-4 font-mono text-[12px] leading-[2.05] text-white/[0.78]">
-            <div><span className="text-[#a5a1ee]">robot</span>.move_j(base=<span className="text-emerald-300">90</span>)</div>
-            <div><span className="text-[#a5a1ee]">wait</span>(<span className="text-emerald-300">1.0</span>)</div>
-            <div><span className="text-[#a5a1ee]">gripper</span>.close()</div>
+            <div className="text-white/40">shoulder_pan_joint</div>
+            <div>
+              0.00 <span className="text-white/35">→</span> <span className="text-emerald-300">1.57 rad</span>
+            </div>
+            <div className="mt-3 text-white/40">Trayectoria</div>
+            <div>2.0 s · <span className="text-emerald-300">24 frames</span></div>
+            <div className="mt-3 text-white/40">Desviación vs. ROS</div>
+            <div className="text-emerald-300">&lt; 1 mm</div>
           </div>
         </div>
       </div>
@@ -432,7 +437,7 @@ function CoursesPreview({ data }) {
             ))
           ) : (
             // Placeholders cuando no hay backend / aún no hay cursos publicados
-            ['Fundamentos de Robótica', 'Programación con Bloques', 'Manipulación con UR5'].map((title, i) => (
+            ['Fundamentos de Robótica', 'Programación en Python', 'Manipulación con UR5e'].map((title, i) => (
               <CourseCard
                 key={i}
                 title={title}
@@ -466,7 +471,7 @@ function CoursesPreview({ data }) {
 function HowItWorks({ data }) {
   const steps = [
     { n: '1', title: 'Elige un curso', text: 'Selecciona un curso según tu nivel y avanza por módulos y unidades.' },
-    { n: '2', title: 'Programa el robot', text: 'Usa bloques visuales o escribe código para definir el comportamiento del robot.' },
+    { n: '2', title: 'Programa el robot', text: 'Escribe tu programa en Python y ejecútalo sobre el robot simulado.' },
     { n: '3', title: 'Ejecuta y aprende', text: 'Corre tu programa y observa al robot 3D moverse. Itera y mejora al instante.' },
   ]
   return (
@@ -501,7 +506,7 @@ function ForWho() {
     {
       icon: GraduationCap,
       title: 'Para estudiantes',
-      points: ['Aprende a tu ritmo', 'Sin hardware costoso', 'Del bloque al código real'],
+      points: ['Aprende a tu ritmo', 'Sin hardware costoso', 'Python real desde el primer curso'],
     },
     {
       icon: Building2,

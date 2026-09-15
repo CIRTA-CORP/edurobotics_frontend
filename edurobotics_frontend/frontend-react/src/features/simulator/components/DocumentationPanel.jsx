@@ -14,13 +14,13 @@ const STEPS = [
   },
   {
     n: 2,
-    title: 'Elige cómo programar',
-    desc: 'Tienes dos formas de escribir tu programa: la pestaña Bloques para programación visual con bloques que se arrastran, o la pestaña Editor para escribir código Python directamente. Los bloques se sincronizan automáticamente con el editor.',
+    title: 'Abre el editor',
+    desc: 'Escribes tu programa en Python en el editor de la izquierda. Debajo está la terminal, donde aparece todo lo que imprime tu código mientras se ejecuta.',
   },
   {
     n: 3,
     title: 'Escribe tu programa',
-    desc: 'Usa los bloques de Movimiento, Sensores y Pantalla LED de la columna izquierda, o escribe tu código Python a mano. La librería robot_interface ya está disponible para mover las articulaciones del UR5e.',
+    desc: 'La librería robot_interface ya está disponible para mover las articulaciones del UR5e. Empieza importando Robot, crea una instancia y llama a move_joints con las articulaciones que quieras mover y la duración del movimiento.',
   },
   {
     n: 4,

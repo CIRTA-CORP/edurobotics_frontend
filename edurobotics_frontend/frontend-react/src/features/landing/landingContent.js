@@ -11,7 +11,7 @@ export const LANDING_DEFAULTS = {
     badge: 'Simulador de robótica en tu navegador',
     title: 'Aprende *robótica* programando robots de verdad',
     subtitle:
-      'Cursos interactivos de robótica con un simulador 3D integrado. Programa con bloques o código y ve al robot ejecutar tus instrucciones al instante — sin instalar nada y sin costo.',
+      'Cursos interactivos de robótica con un simulador 3D integrado. Programa en Python y ve al robot ejecutar tus instrucciones al instante — sin instalar nada y sin costo.',
     imageUrl: '', // vacío = usar el mockup ilustrativo integrado
   },
   stats: {
@@ -21,7 +21,7 @@ export const LANDING_DEFAULTS = {
     visible: true,
     title: 'Un simulador de robótica, directo en el navegador',
     subtitle:
-      'Practica con un robot industrial UR5 sin hardware ni instalaciones. Programa, ejecuta y aprende viendo el robot moverse.',
+      'Practica con un robot industrial UR5e sin hardware ni instalaciones. Programa, ejecuta y aprende viendo el robot moverse.',
   },
   courses: {
     visible: true,
@@ -42,8 +42,8 @@ export const LANDING_DEFAULTS = {
     items: [
       { question: '¿Necesito instalar algo?', answer: 'No. Todo corre en el navegador: los cursos y el simulador 3D. Solo necesitas conexión a internet.' },
       { question: '¿Tiene algún costo?', answer: 'No. EduRobotics es 100% gratis. Te registras y empiezas a aprender al instante.' },
-      { question: '¿Necesito saber programar?', answer: 'No. Puedes empezar con bloques tipo Scratch y pasar a código real cuando te sientas listo.' },
-      { question: '¿Qué robot voy a usar?', answer: 'Programas un brazo robótico industrial UR5 en un simulador 3D, sin necesitar hardware físico.' },
+      { question: '¿Necesito saber programar?', answer: 'No. Los cursos empiezan desde cero y tu primer programa son tres líneas de Python. Escribes con la misma librería que se usa para mover el robot real.' },
+      { question: '¿Qué robot voy a usar?', answer: 'Programas un brazo robótico industrial UR5e en un simulador 3D, sin necesitar hardware físico.' },
       { question: '¿Para quién es la plataforma?', answer: 'Para estudiantes, docentes y universidades que quieran aprender o enseñar robótica de forma práctica.' },
     ],
   },

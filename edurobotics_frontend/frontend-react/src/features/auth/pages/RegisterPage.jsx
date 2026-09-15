@@ -7,8 +7,8 @@ import { AuthLayout, AuthHeading } from '@/features/auth/components/AuthLayout'
 import { RegisterForm } from '@/features/auth/components/RegisterForm'
 
 const CLAIMS = [
-  'Simulador 3D del UR5 en el navegador',
-  'De bloques a código real, a tu ritmo',
+  'Simulador 3D del UR5e en el navegador',
+  'Python real, guiado paso a paso',
   'Gratis, sin tarjeta y sin instalar nada',
 ]
 
