@@ -312,7 +312,6 @@ export default function LeftPanel({ setAlertType, handleHide, onJointAngles, edi
           <Panel selected={panelSelected === EDITOR}>
             <div className="flex-grow h-[70%]">
               <EditorPanel
-                language={enviromentConfig?.editor}
                 handleEditorDidMount={handleEditorDidMount}
                 handleEditorChange={handleEditorChange}
               />
