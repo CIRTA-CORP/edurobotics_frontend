@@ -1,8 +1,9 @@
 import { lazy, Suspense, useEffect } from 'react'
-import { Routes, Route, Navigate } from 'react-router-dom'
+import { Routes, Route, Navigate, useLocation } from 'react-router-dom'
 import { Loader2 } from 'lucide-react'
 import { Toaster } from 'sonner'
 import ProtectedRoute from '@/features/auth/components/ProtectedRoute.jsx'
+import { ErrorBoundary } from '@/shared/components/ErrorBoundary'
 import { API_BASE } from '@/config'
 
 // ── Static imports (needed on first load) ──
@@ -38,6 +39,8 @@ const PageLoader = () => (
 )
 
 function App() {
+  const { pathname } = useLocation()
+
   // Warm-up ping: wake the Fly.io backend on app mount so it's ready
   // when the user actually needs data. Fire-and-forget, no await.
   // Hits the lightweight "/" health route (just returns {status:ok})
@@ -49,121 +52,132 @@ function App() {
   return (
     <>
       <Toaster position="top-right" richColors closeButton duration={3000} />
-      <Suspense fallback={<PageLoader />}>
-        <Routes>
-          <Route path="/" element={<LandingPage />} />
-          <Route path="/login" element={<LoginPage />} />
-          <Route path="/register" element={<RegisterPage />} />
-          <Route path="/forgot-password" element={<ForgotPasswordPage />} />
-          <Route path="/reset-password" element={<ResetPasswordPage />} />
-          <Route path="/legal" element={<LegalPage type="terminos" />} />
-          <Route path="/privacidad" element={<LegalPage type="privacidad" />} />
-          <Route path="/cookies" element={<LegalPage type="cookies" />} />
+      {/* La red cubre TODAS las rutas, no solo /admin: un error de render en el
+          simulador o en una lección dejaba la pantalla en blanco, que para el
+          alumno es indistinguible de que la plataforma se cayó.
 
-          {/* Rutas protegidas - requieren autenticación */}
-          <Route
-            path="/dashboard"
-            element={
-              <ProtectedRoute>
-                <DashboardPage />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/admin"
-            element={
-              <ProtectedRoute allowedRoles={['admin', 'teacher']}>
-                <AdminDashboardPage />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/student"
-            element={
-              <ProtectedRoute requiredRole="student">
-                <StudentDashboardPage />
-              </ProtectedRoute>
-            }
-          />
-          {/* Teacher: the shared management panel, landing on student progress */}
-          <Route
-            path="/teacher"
-            element={
-              <ProtectedRoute allowedRoles={['admin', 'teacher']}>
-                <Navigate to="/admin?tab=progreso" replace />
-              </ProtectedRoute>
-            }
-          />
+          La `key` con la ruta hace que la red se reponga al navegar. Sin ella,
+          quien tropieza con un error se queda en el fallback aunque cambie de
+          página, y solo el botón de reintentar lo saca. Las pantallas que
+          quieran su propio fallback siguen pudiendo anidar el suyo, como hace
+          el panel admin. */}
+      <ErrorBoundary key={pathname}>
+        <Suspense fallback={<PageLoader />}>
+          <Routes>
+            <Route path="/" element={<LandingPage />} />
+            <Route path="/login" element={<LoginPage />} />
+            <Route path="/register" element={<RegisterPage />} />
+            <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+            <Route path="/reset-password" element={<ResetPasswordPage />} />
+            <Route path="/legal" element={<LegalPage type="terminos" />} />
+            <Route path="/privacidad" element={<LegalPage type="privacidad" />} />
+            <Route path="/cookies" element={<LegalPage type="cookies" />} />
 
-          {/* Course preview / outline — PUBLIC (visitors can see the temario) */}
-          <Route path="/courses/:courseId" element={<CoursePreviewPage />} />
+            {/* Rutas protegidas - requieren autenticación */}
+            <Route
+              path="/dashboard"
+              element={
+                <ProtectedRoute>
+                  <DashboardPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin"
+              element={
+                <ProtectedRoute allowedRoles={['admin', 'teacher']}>
+                  <AdminDashboardPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/student"
+              element={
+                <ProtectedRoute requiredRole="student">
+                  <StudentDashboardPage />
+                </ProtectedRoute>
+              }
+            />
+            {/* Teacher: the shared management panel, landing on student progress */}
+            <Route
+              path="/teacher"
+              element={
+                <ProtectedRoute allowedRoles={['admin', 'teacher']}>
+                  <Navigate to="/admin?tab=progreso" replace />
+                </ProtectedRoute>
+              }
+            />
 
-          {/* Printable course export (admin → PDF) */}
-          <Route
-            path="/courses/:courseId/print"
-            element={
-              <ProtectedRoute requiredRole="admin">
-                <PrintCoursePage />
-              </ProtectedRoute>
-            }
-          />
+            {/* Course preview / outline — PUBLIC (visitors can see the temario) */}
+            <Route path="/courses/:courseId" element={<CoursePreviewPage />} />
 
-          {/* Course study mode (sidebar + content viewer) */}
-          <Route
-            path="/courses/:courseId/study"
-            element={
-              <ProtectedRoute>
-                <CoursePage />
-              </ProtectedRoute>
-            }
-          />
+            {/* Printable course export (admin → PDF) */}
+            <Route
+              path="/courses/:courseId/print"
+              element={
+                <ProtectedRoute requiredRole="admin">
+                  <PrintCoursePage />
+                </ProtectedRoute>
+              }
+            />
 
-          {/* Visual roadmap (dependency graph) — PUBLIC */}
-          <Route path="/roadmap" element={<RoadmapPage />} />
+            {/* Course study mode (sidebar + content viewer) */}
+            <Route
+              path="/courses/:courseId/study"
+              element={
+                <ProtectedRoute>
+                  <CoursePage />
+                </ProtectedRoute>
+              }
+            />
 
-          {/* Dedicated Quiz Page */}
-          <Route
-            path="/courses/:courseId/quiz/:quizId"
-            element={
-              <ProtectedRoute>
-                <QuizPage />
-              </ProtectedRoute>
-            }
-          />
+            {/* Visual roadmap (dependency graph) — PUBLIC */}
+            <Route path="/roadmap" element={<RoadmapPage />} />
 
-          {/* User Profile */}
-          <Route
-            path="/profile"
-            element={
-              <ProtectedRoute>
-                <UserProfilePage />
-              </ProtectedRoute>
-            }
-          />
+            {/* Dedicated Quiz Page */}
+            <Route
+              path="/courses/:courseId/quiz/:quizId"
+              element={
+                <ProtectedRoute>
+                  <QuizPage />
+                </ProtectedRoute>
+              }
+            />
 
-          {/* Specialization detail (learning path) */}
-          <Route
-            path="/specializations/:id"
-            element={
-              <ProtectedRoute>
-                <SpecializationDetailPage />
-              </ProtectedRoute>
-            }
-          />
+            {/* User Profile */}
+            <Route
+              path="/profile"
+              element={
+                <ProtectedRoute>
+                  <UserProfilePage />
+                </ProtectedRoute>
+              }
+            />
 
-          {/* Simulator */}
-          <Route
-            path="/simulator"
-            element={
-              <ProtectedRoute>
-                <SimulatorPage />
-              </ProtectedRoute>
-            }
-          />
+            {/* Specialization detail (learning path) */}
+            <Route
+              path="/specializations/:id"
+              element={
+                <ProtectedRoute>
+                  <SpecializationDetailPage />
+                </ProtectedRoute>
+              }
+            />
 
-          <Route path="*" element={<Navigate to="/login" replace />} />
-        </Routes>
-      </Suspense>
+            {/* Simulator */}
+            <Route
+              path="/simulator"
+              element={
+                <ProtectedRoute>
+                  <SimulatorPage />
+                </ProtectedRoute>
+              }
+            />
+
+              <Route path="*" element={<Navigate to="/login" replace />} />
+          </Routes>
+        </Suspense>
+      </ErrorBoundary>
     </>
   )
 }

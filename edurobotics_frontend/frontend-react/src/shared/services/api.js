@@ -151,15 +151,28 @@ export const apiGetCached = async (
 }
 
 /**
+ * Invalidación tras una escritura.
+ *
+ * Por defecto se vacía TODO, y es deliberado: el árbol de contenidos está muy
+ * entrelazado —crear un contenido dentro de una unidad cambia también el detalle
+ * del curso, la malla y el progreso— así que acotar por prefijo dejaría lecturas
+ * obsoletas en pantalla. Invalidar de más cuesta un refetch de una caché de 30
+ * segundos; invalidar de menos cuesta enseñar datos viejos.
+ *
+ * Quien conozca el alcance real de su escritura puede acotarlo pasando
+ * `invalidate`, como ya hacen los servicios de cursos, landing y especializaciones.
+ */
+const invalidateAfterWrite = (prefix) => invalidateApiCache(prefix || '')
+
+/**
  * POST request
  */
-export const apiPost = (endpoint, data) => {
+export const apiPost = (endpoint, data, { invalidate } = {}) => {
     return apiRequest(endpoint, {
         method: 'POST',
         body: JSON.stringify(data),
     }).then((result) => {
-        // Writes can stale any cached read endpoint.
-        invalidateApiCache()
+        invalidateAfterWrite(invalidate)
         return result
     })
 }
@@ -167,12 +180,12 @@ export const apiPost = (endpoint, data) => {
 /**
  * PUT request
  */
-export const apiPut = (endpoint, data) => {
+export const apiPut = (endpoint, data, { invalidate } = {}) => {
     return apiRequest(endpoint, {
         method: 'PUT',
         body: JSON.stringify(data),
     }).then((result) => {
-        invalidateApiCache()
+        invalidateAfterWrite(invalidate)
         return result
     })
 }
@@ -180,9 +193,9 @@ export const apiPut = (endpoint, data) => {
 /**
  * DELETE request
  */
-export const apiDelete = (endpoint) => {
+export const apiDelete = (endpoint, { invalidate } = {}) => {
     return apiRequest(endpoint, { method: 'DELETE' }).then((result) => {
-        invalidateApiCache()
+        invalidateAfterWrite(invalidate)
         return result
     })
 }
