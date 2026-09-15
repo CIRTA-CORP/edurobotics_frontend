@@ -228,15 +228,23 @@ export default function SimulatorPage() {
             <span className={`h-[7px] w-[7px] rounded-full ${statusMeta.dot}`} />
             {statusMeta.text}
           </div>
-          <button
-            onClick={handleStopServer}
-            disabled={stopping || serverStatus !== 'running'}
-            className="inline-flex h-8 items-center gap-1.5 rounded-[9px] border border-[#33333c] px-3.5 text-[12.5px] font-semibold text-[#a1a0ab] transition-colors hover:text-[#f4f4f6] disabled:cursor-not-allowed disabled:opacity-40"
-          >
-            <span className="block h-[9px] w-[9px] rounded-[2px] bg-current" />
-            {stopping ? 'Deteniendo…' : 'Detener servidor'}
-          </button>
-          <div className="h-5 w-px bg-[#26262d]" />
+          {/* Detener la máquina es de administrador: es compartida, así que
+              pararla echa a todos los que estén usándola, no solo a quien pulsa.
+              El backend lo rechaza con 403; aquí no se ofrece el botón para no
+              enseñar una acción que va a fallar. */}
+          {user?.role === 'admin' && (
+            <>
+              <button
+                onClick={handleStopServer}
+                disabled={stopping || serverStatus !== 'running'}
+                className="inline-flex h-8 items-center gap-1.5 rounded-[9px] border border-[#33333c] px-3.5 text-[12.5px] font-semibold text-[#a1a0ab] transition-colors hover:text-[#f4f4f6] disabled:cursor-not-allowed disabled:opacity-40"
+              >
+                <span className="block h-[9px] w-[9px] rounded-[2px] bg-current" />
+                {stopping ? 'Deteniendo…' : 'Detener servidor'}
+              </button>
+              <div className="h-5 w-px bg-[#26262d]" />
+            </>
+          )}
           <div className="grid h-7 w-7 place-items-center rounded-full bg-[#26262d] font-mono text-[10.5px] font-bold text-[#f4f4f6]">
             {initials}
           </div>
