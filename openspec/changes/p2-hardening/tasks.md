@@ -29,47 +29,59 @@ Siete bloques independientes, uno por commit. En orden de valor, no de esfuerzo.
 
 ## 3. Cabeceras de seguridad
 
-- [ ] 3.1 En `vercel.json`, añadir las que no pueden romper nada:
+- [x] 3.1 En `vercel.json`, añadir las que no pueden romper nada:
       `X-Content-Type-Options`, `Referrer-Policy`, `Permissions-Policy` y
       `frame-ancestors`.
-- [ ] 3.2 CSP: construirla y **verificarla contra `/simulator`** (Monaco levanta
+- [x] 3.2 CSP: construirla y **verificarla contra `/simulator`** (Monaco levanta
       workers) y contra una lección con contenido de Tiptap. Si no se puede
       validar en esta pasada, dejarla fuera y anotarlo.
-- [ ] 3.3 Backend: CORS deja de ser `*`, pasa a lista desde variable de entorno.
-- [ ] 3.4 Backend: `/docs` y `/openapi.json` solo fuera de producción.
-- [ ] 3.5 Test: el backend rechaza un origen no permitido.
+      **Hallazgo**: Monaco NO está empaquetado; `@monaco-editor/react` lo carga
+      entero desde `cdn.jsdelivr.net` en runtime. Hubo que permitir el CDN en
+      `script-src`, `style-src` y `font-src`. Es una dependencia de terceros en
+      tiempo de ejecución: si jsDelivr cae, el editor cae. Autoalojar Monaco
+      merece su propio change y devolvería la política a `'self'`.
+- [x] 3.3 Backend: CORS deja de ser `*`, pasa a lista desde variable de entorno.
+- [x] 3.4 Backend: `/docs` y `/openapi.json` solo fuera de producción.
+- [x] 3.5 Test: el backend rechaza un origen no permitido.
 
 ## 4. Uploads: comprobar el tamaño mientras se lee
 
-- [ ] 4.1 Leer por trozos y abortar al superar el límite, en vez de bufferizar
+- [x] 4.1 Leer por trozos y abortar al superar el límite, en vez de bufferizar
       entero y comparar después.
-- [ ] 4.2 Test: un archivo por encima del límite se rechaza.
+- [x] 4.2 Test: un archivo por encima del límite se rechaza.
 
 ## 5. Dockerfile
 
-- [ ] 5.1 Multi-stage de verdad, para que `gcc` no quede en la imagen final.
-- [ ] 5.2 Usuario sin privilegios (`USER`).
-- [ ] 5.3 `HEALTHCHECK` contra `/api/health`.
-- [ ] 5.4 Construir la imagen y arrancarla para comprobar que sirve.
+- [x] 5.1 Multi-stage de verdad, para que `gcc` no quede en la imagen final.
+- [x] 5.2 Usuario sin privilegios (`USER`).
+- [x] 5.3 `HEALTHCHECK` contra `/api/health`.
+- [~] 5.4 Construir la imagen y arrancarla para comprobar que sirve.
+      **NO verificado**: el daemon de Docker no corre en este entorno. El
+      Dockerfile está escrito pero no se ha construido.
 
 ## 6. Resiliencia del cliente
 
-- [ ] 6.1 `ErrorBoundary` envolviendo el árbol de rutas en `App.jsx`.
-- [ ] 6.2 Comprobar que un error en una ruta no deja pantalla en blanco.
-- [ ] 6.3 `invalidateApiCache` con prefijo en los tres puntos de escritura.
+- [x] 6.1 `ErrorBoundary` envolviendo el árbol de rutas en `App.jsx`.
+- [x] 6.2 Comprobar que un error en una ruta no deja pantalla en blanco.
+- [~] 6.3 `invalidateApiCache` con prefijo en los tres puntos de escritura.
+      **Revisado el diagnóstico**: el global es la opción correcta. El árbol de
+      contenidos está entrelazado, así que acotar por prefijo dejaría lecturas
+      obsoletas. Invalidar de más cuesta un refetch de 30 s; de menos, enseñar
+      datos viejos. Se añadió un parámetro opcional para quien conozca el
+      alcance, pero el defecto sigue siendo global a propósito.
 
 ## 7. `datetime.utcnow()`
 
-- [ ] 7.1 Sustituir en los 39 sitios por `datetime.now(timezone.utc)` sin zona
+- [x] 7.1 Sustituir en los 39 sitios por `datetime.now(timezone.utc)` sin zona
       al persistir (ver `design.md` §6).
-- [ ] 7.2 `pytest` en verde y sin warnings de deprecación por `utcnow`.
-- [ ] 7.3 Revisar que ninguna comparación mezcle naive y aware.
+- [x] 7.2 `pytest` en verde y sin warnings de deprecación por `utcnow`.
+- [x] 7.3 Revisar que ninguna comparación mezcle naive y aware.
 
 ## Verificación final
 
-- [ ] 8.1 Backend: `pytest -q` verde y `ruff` sin hallazgos nuevos.
-- [ ] 8.2 Backend: `python scripts/check_migrations.py` en verde.
-- [ ] 8.3 Frontend: `npm run lint` y `npm run build`.
-- [ ] 8.4 Recorrido a mano: login, una lección, el editor de la directora y
+- [x] 8.1 Backend: `pytest -q` verde y `ruff` sin hallazgos nuevos.
+- [x] 8.2 Backend: `python scripts/check_migrations.py` en verde.
+- [x] 8.3 Frontend: `npm run lint` y `npm run build`.
+- [x] 8.4 Recorrido a mano: login, una lección, el editor de la directora y
       `/simulator`.
-- [ ] 8.5 Incorporar los deltas a `specs/` y archivar el change.
+- [x] 8.5 Incorporar los deltas a `specs/` y archivar el change.
