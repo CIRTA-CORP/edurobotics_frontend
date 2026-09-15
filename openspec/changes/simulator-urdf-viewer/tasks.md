@@ -72,10 +72,13 @@ predeterminado durante todo el change.
 
 ## 6. Decisión
 
-- [ ] 6.1 Mario revisa la comparación y decide: se adopta, se ajusta o se descarta.
-- [ ] 6.2 Si se adopta, un change aparte cubre el cambio del visor por defecto, la baja de
+- [x] 6.1 Mario revisa la comparación y decide: se adopta, se ajusta o se descarta.
+      **Decidido el 2026-09-15: se adopta.** El visor URDF es el único visor.
+- [x] 6.2 Si se adopta, un change aparte cubre el cambio del visor por defecto, la baja de
       Babylon y el renombrado de `meshes/ur5/` (el robot es un UR5e y ese nombre originó la
       confusión).
+      Cubierto: el visor por defecto se cambió en `simulator-dark-redesign`, la baja de
+      Babylon en `retire-blockly-and-babylon`, y las mallas ya viven en `meshes/arms/ur5e/`.
 
 ## 7. Segundo robot (hecho como prueba, fuera del alcance original)
 
