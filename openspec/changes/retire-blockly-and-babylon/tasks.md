@@ -49,4 +49,4 @@ desmontaje (`design.md` §3).
 - [x] 5.3 Comprobar que `?viewer=babylon` ya no hace nada raro (cae al visor único).
 - [x] 5.4 Con `panelSelected` guardado como `blockly` en `localStorage`, la app
       abre en el editor y no en blanco.
-- [x] 5.5 Incorporar los deltas a `specs/` y archivar el change.
+- [ ] 5.5 Incorporar los deltas a `specs/` y archivar el change.

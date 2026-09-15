@@ -58,4 +58,4 @@ Que el editor aparezca no prueba nada: aparecería igual viniendo del CDN.
       **Pendiente**: la política nunca listó jsDelivr, así que no hay texto que
       corregir — pero conviene que Mario confirme que no queda ningún otro
       tercero en tiempo de ejecución sin declarar.
-- [x] 4.5 Incorporar los deltas a `specs/` y archivar el change.
+- [ ] 4.5 Incorporar los deltas a `specs/` y archivar el change.
