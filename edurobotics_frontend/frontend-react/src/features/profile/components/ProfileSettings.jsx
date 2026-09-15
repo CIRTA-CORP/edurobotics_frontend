@@ -10,17 +10,26 @@ import { toast } from 'sonner'
 import { Loader2, User, Lock, ShieldCheck, Download, Trash2 } from 'lucide-react'
 import { Button } from '@/shared/components/button'
 import { Modal } from '@/shared/components/Modal'
+import { PasswordInput } from '@/shared/components/PasswordInput'
 import { updateProfile, changePassword } from '@/features/profile/services/profile'
 import { clearStoredUser, deleteMyAccount, exportMyData } from '@/features/auth/services/auth'
 
+const FIELD_CLASSES =
+  "w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#4b46d6]/30 disabled:bg-gray-50"
+
 function Field({ label, ...props }) {
+  // Los campos de contraseña usan PasswordInput para que también tengan el
+  // control de mostrar/ocultar. Le pasamos las clases de este formulario:
+  // `Input` las compone con tailwind-merge, así que el aspecto no cambia.
+  const isPassword = props.type === 'password'
   return (
     <label className="block">
       <span className="mb-1 block text-xs font-medium text-gray-600">{label}</span>
-      <input
-        {...props}
-        className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#4b46d6]/30 disabled:bg-gray-50"
-      />
+      {isPassword ? (
+        <PasswordInput {...props} type={undefined} className={FIELD_CLASSES} />
+      ) : (
+        <input {...props} className={FIELD_CLASSES} />
+      )}
     </label>
   )
 }

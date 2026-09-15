@@ -4,6 +4,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { getStoredUser, loginUser } from '@/features/auth/services/auth'
 import { Button } from '@/shared/components/button'
 import { Input } from '@/shared/components/input'
+import { PasswordInput } from '@/shared/components/PasswordInput'
 import { AlertCircle } from 'lucide-react'
 
 /**
@@ -106,8 +107,7 @@ export function LoginForm({ onSwitchToRegister }) {
           <label htmlFor="password" className="text-sm font-medium leading-none">
             Contraseña
           </label>
-          <Input
-            type="password"
+          <PasswordInput
             id="password"
             name="password"
             placeholder="••••••••"

@@ -5,6 +5,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { registerUser } from '@/features/auth/services/auth'
 import { Button } from '@/shared/components/button'
 import { Input } from '@/shared/components/input'
+import { PasswordInput } from '@/shared/components/PasswordInput'
 import { AlertCircle, CheckCircle2 } from 'lucide-react'
 
 /**
@@ -162,8 +163,7 @@ export function RegisterForm({ onSwitchToLogin }) {
           <label htmlFor="password" className="text-sm font-medium leading-none">
             Contraseña
           </label>
-          <Input
-            type="password"
+          <PasswordInput
             id="password"
             name="password"
             placeholder="••••••••"
@@ -178,8 +178,7 @@ export function RegisterForm({ onSwitchToLogin }) {
           <label htmlFor="password_confirm" className="text-sm font-medium leading-none">
             Confirmar contraseña
           </label>
-          <Input
-            type="password"
+          <PasswordInput
             id="password_confirm"
             name="password_confirm"
             placeholder="••••••••"

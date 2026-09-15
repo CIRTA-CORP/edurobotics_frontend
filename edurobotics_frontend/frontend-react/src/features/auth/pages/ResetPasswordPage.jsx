@@ -5,7 +5,7 @@ import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { resetPassword } from '@/features/auth/services/auth'
 import { AuthLayout, AuthHeading } from '@/features/auth/components/AuthLayout'
 import { Button } from '@/shared/components/button'
-import { Input } from '@/shared/components/input'
+import { PasswordInput } from '@/shared/components/PasswordInput'
 import { AlertCircle, ArrowLeft, Check } from 'lucide-react'
 
 const CLAIMS = [
@@ -92,8 +92,7 @@ function ResetPasswordPage() {
           <label htmlFor="pw" className="text-[13.5px] font-medium text-[#16151b]">
             Nueva contraseña
           </label>
-          <Input
-            type="password"
+          <PasswordInput
             id="pw"
             value={pw}
             onChange={(e) => setPw(e.target.value)}
@@ -110,8 +109,7 @@ function ResetPasswordPage() {
           <label htmlFor="confirm" className="text-[13.5px] font-medium text-[#16151b]">
             Repetir contraseña
           </label>
-          <Input
-            type="password"
+          <PasswordInput
             id="confirm"
             value={confirm}
             onChange={(e) => setConfirm(e.target.value)}
