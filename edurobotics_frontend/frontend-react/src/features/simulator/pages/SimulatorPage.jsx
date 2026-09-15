@@ -1,6 +1,6 @@
 import { lazy, Suspense, useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Loader2, Monitor, RotateCw, Users } from 'lucide-react';
+import { ArrowLeft, Loader2, Monitor } from 'lucide-react';
 import { getStoredUser } from '@/features/auth/services/auth';
 import { getSimulatorCapacity, getSimulatorStatus, stopSimulator } from '@/features/simulator/services/simulator';
 
@@ -87,39 +87,6 @@ function DesktopOnlyNotice({ onBack }) {
   );
 }
 
-function BusyNotice({ onRetry, onBack }) {
-  return (
-    <BrandBand>
-      <div className="mx-auto w-[480px]">
-        <div className="mx-auto grid h-[62px] w-[62px] place-items-center rounded-[18px] border border-[#fbbf24]/25 bg-[#fbbf24]/[0.1]">
-          <Users className="h-7 w-7 text-[#fbbf24]" strokeWidth={1.7} />
-        </div>
-        <h2 className="mt-6 text-[34px] font-bold leading-[1.14] tracking-[-0.016em] text-[#f4f4f6]">
-          El simulador está lleno
-        </h2>
-        <p className="mx-auto mt-3.5 max-w-[400px] text-[15.5px] leading-[1.66] text-[#a1a0ab]">
-          Se alcanzó el máximo de sesiones al mismo tiempo. No hay lista de espera: vuelve a intentarlo en unos minutos.
-        </p>
-        <div className="mt-7 flex items-center justify-center gap-3">
-          <button
-            onClick={onRetry}
-            className="inline-flex h-12 items-center justify-center gap-2.5 rounded-xl bg-[#f4f4f6] px-6 text-[14.5px] font-semibold text-[#16151b] transition-colors hover:bg-white"
-          >
-            <RotateCw className="h-4 w-4" /> Reintentar
-          </button>
-          <button
-            onClick={onBack}
-            className="inline-flex h-12 items-center justify-center gap-2.5 rounded-xl border border-[#33333c] px-5.5 text-[14.5px] font-medium text-[#a1a0ab] transition-colors hover:text-[#f4f4f6]"
-          >
-            Volver al curso
-          </button>
-        </div>
-        <p className="mt-5 font-mono text-[11px] text-[#55555f]">Mientras tanto puedes seguir leyendo la unidad</p>
-      </div>
-    </BrandBand>
-  );
-}
-
 export default function SimulatorPage() {
   const navigate = useNavigate();
   const user = getStoredUser();
@@ -130,7 +97,6 @@ export default function SimulatorPage() {
   );
   const [capacity, setCapacity] = useState(null); // null = checking
   const [capacityError, setCapacityError] = useState(false);
-  const [retryKey, setRetryKey] = useState(0);
   const [serverStatus, setServerStatus] = useState('stopped');
   const [stopping, setStopping] = useState(false);
 
@@ -163,7 +129,7 @@ export default function SimulatorPage() {
       });
     return () => { cancelled = true; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [navigate, retryKey]);
+  }, [navigate]);
 
   // Pill de estado del servidor en la cabecera.
   useEffect(() => {
@@ -191,12 +157,11 @@ export default function SimulatorPage() {
   };
 
   const handleBack = () => navigate(-1);
-  const handleRetry = () => {
-    setCapacity(null);
-    setRetryKey((k) => k + 1);
-  };
 
-  const busy = capacity !== null && capacity.available === false;
+  // Ya no se bloquea la entrada por ocupación: escribir código no necesita la
+  // máquina, solo ejecutar. Antes, alguien que abría el simulador mientras otro
+  // corría un programa de tres segundos se encontraba la puerta cerrada. Ahora
+  // entra, escribe, y la cola se hace al pulsar Ejecutar.
   const statusMeta = SERVER_META[serverStatus] || SERVER_META.stopped;
 
   return (
@@ -254,8 +219,6 @@ export default function SimulatorPage() {
       <div className="relative min-h-0 flex-1">
         {!isDesktop ? (
           <DesktopOnlyNotice onBack={handleBack} />
-        ) : busy ? (
-          <BusyNotice onRetry={handleRetry} onBack={handleBack} />
         ) : capacity === null && !capacityError ? (
           <div className="grid h-full place-items-center">
             <Loader2 className="h-8 w-8 animate-spin text-[#a5a1ee]" />

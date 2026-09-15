@@ -206,9 +206,22 @@ export default function LeftPanel({ setAlertType, handleHide, onJointAngles, edi
           return;
         }
 
-        // Session limit (#43): the simulator is full — surface the message and
-        // stop the spinner (the server closes right after with 1013).
-        if (data.type === "busy") {
+        // Hay una sola máquina con un solo robot, así que ejecuta uno cada vez.
+        // Cuando está ocupada no se rechaza al alumno: espera turno y el servidor
+        // le va diciendo su puesto. No tiene que pulsar nada — cuando le toca, su
+        // programa arranca solo. El indicador de "ejecutando" se mantiene, porque
+        // desde su punto de vista sigue esperando a que su código corra.
+        if (data.type === "queued") {
+          appendLine(`En cola — tu turno: ${data.position}. Esperando a que se libere el simulador…`);
+          return;
+        }
+
+        if (data.type === "queue_ready") {
+          appendLine("Es tu turno. Ejecutando…");
+          return;
+        }
+
+        if (data.type === "queue_timeout") {
           appendLine(data.msg);
           setRunLoading(false);
           return;
