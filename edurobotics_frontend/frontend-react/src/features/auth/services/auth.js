@@ -185,4 +185,12 @@ export const getStoredUser = () => {
  */
 export const clearStoredUser = () => {
   localStorage.removeItem('token')
+  // Avisar para que la caché en memoria del cliente API se vacíe. Se hace por
+  // evento y no importando `invalidateApiCache` porque api.js ya importa de este
+  // módulo, y el import directo cerraría un ciclo.
+  try {
+    window.dispatchEvent(new Event('auth:signed-out'))
+  } catch {
+    // Sin window (SSR, tests): no hay caché en memoria que vaciar.
+  }
 }
