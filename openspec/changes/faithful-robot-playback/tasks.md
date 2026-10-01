@@ -48,14 +48,18 @@
 
 ## 7. Segundo escritor en stderr (hallazgo posterior — bloquea la subida)
 
-- [ ] 7.1 Proxy de `sys.stderr` en el wrapper: reescribir las líneas `JOINTS:` sin
-      `t` de `robot_api` al formato nuevo con el instante real
-- [ ] 7.2 El muestreador no emite la pose medida tras un fotograma de `robot_api`
-      hasta que cambie la fecha de `/tmp/robot_cmd.json`
-- [ ] 7.3 Test: flujo mezclado (muestreador + `robot_api`) produce marcas monótonas
-      y sin alternancia ordenada/medida
-- [ ] 7.4 Rehacer la simulación de «Medido» con los dos escritores
-- [ ] 7.5 **El resaltado de errores quedaría corrido.** El frontend resta
+- [x] 7.1 ~~Proxy de `sys.stderr`~~ — **innecesario: se arregló la causa.** `robot_api`
+      inventaba esos fotogramas para tapar que el brazo volvía solo a cero; con la pose
+      sostenida (`ur5e-motion-correctness`) ya no hay nada que tapar y dejan de existir
+- [x] 7.2 ~~Sostener la pose ordenada en el muestreador~~ — la sostiene ahora el nodo de
+      física, que es donde debía estar
+- [x] 7.3 Flujo mezclado: el backend descarta los fotogramas sin marca cuando conviven
+      con los nuevos (`test_legacy_frames_are_dropped_when_mixed`), para la ventana en
+      que el backend nuevo hable con la imagen vieja
+- [x] 7.4 ~~Rehacer la simulación con los dos escritores~~ — ya no hay dos escritores
+- [x] 7.5 **El resaltado de errores quedaría corrido.** Resuelto en
+      `ur5e-motion-correctness` (8.4): el backend traduce las líneas. Además resultó que el
+      resaltado nunca había funcionado: buscaba `"<string>"` y Python escribe `"<stdin>"`. El frontend resta
       `WRAPPER_OFFSET = 37` a la línea del traceback para marcarla en el editor,
       y 37 son las líneas que tiene el wrapper en `main` antes del código del
       alumno. El wrapper nuevo tiene **69**. Subido tal cual, cada error de
