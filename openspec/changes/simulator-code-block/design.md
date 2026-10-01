@@ -78,10 +78,19 @@ cualquiera podría fabricar un enlace que abra el simulador con código ajeno.
 El estado de React Router vive en `history.state`, que sobrevive a recargar la
 página.
 
-### 5. El guardado es por ejercicio: unidad + posición del bloque
+### 5. El guardado es por cuenta y por ejercicio: usuario + unidad + posición
 
-Clave: `code_python_env:unit:<id>:<n>`, donde `n` es la posición del bloque entre
-los bloques de simulador de esa unidad.
+Clave: `code_python_env:user:<usuario>:unit:<id>:<n>`, donde `n` es la posición
+del bloque entre los bloques de simulador de esa unidad.
+
+**El usuario va en la clave** porque esto vive en el navegador, no en la cuenta, y
+cerrar sesión solo borra el token. En una sala de computación, el alumno que se
+sienta después en el mismo equipo vería la versión del anterior. La primera
+versión de este diseño no lo tenía; se detectó al revisar el caso de varios
+alumnos.
+
+Por lo mismo, **al cerrar sesión se borra el permiso de entrar al simulador**
+(`sim_access`), que si no pasaría al siguiente en la misma pestaña.
 
 - **Primera vez:** el editor arranca con el código del profesor.
 - **Después:** con la versión del alumno.
@@ -95,8 +104,11 @@ cambiaría la clave, y el alumno perdería lo que llevaba hecho.
 de uno existente, la posición cambia y el alumno vería su versión de otro
 ejercicio. Es raro, y «Restablecer» lo arregla. Queda anotado.
 
-Entrar sin venir de una clase (un admin, directo) mantiene el comportamiento de
-hoy: `code_python_env` o la plantilla.
+Entrar sin venir de una clase usa `code_python_env:user:<usuario>` o la
+plantilla. Lo guardado antes en la clave antigua, sin usuario, **no se adopta**:
+no hay forma de saber de quién era, y en un equipo compartido adoptarlo sería
+justo el cruce que esto evita. Lo pierde de vista quien hubiera escrito algo ahí,
+que en producción solo pueden ser admins: los alumnos no tenían acceso.
 
 ### 6. El simulador dice de dónde viene el código
 

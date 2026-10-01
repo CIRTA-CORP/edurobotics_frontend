@@ -35,6 +35,10 @@ appears in another. The learner SHALL be able to restore the author's current co
 - **WHEN** a learner opens a different exercise
 - **THEN** the editor shows that exercise's code, not the previous one
 
+#### Scenario: Accounts sharing a computer
+- **WHEN** a learner modifies an exercise and signs out, and another learner signs in on the same browser and opens the same exercise
+- **THEN** the second learner sees the author's code, not the first learner's version
+
 #### Scenario: Restoring the lesson's code
 - **WHEN** the learner presses "Restablecer el código de la clase"
 - **THEN** the editor shows the author's current code for that exercise

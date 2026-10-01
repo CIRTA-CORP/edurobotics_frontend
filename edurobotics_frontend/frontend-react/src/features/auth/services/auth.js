@@ -185,6 +185,10 @@ export const getStoredUser = () => {
  */
 export const clearStoredUser = () => {
   localStorage.removeItem('token')
+  // El permiso de entrar al simulador se da por pestaña al venir desde una clase. Sin
+  // borrarlo, en un equipo compartido pasaría al siguiente que inicie sesión en la misma
+  // pestaña sin haber entrado desde ninguna clase.
+  sessionStorage.removeItem('sim_access')
   // Avisar para que la caché en memoria del cliente API se vacíe. Se hace por
   // evento y no importando `invalidateApiCache` porque api.js ya importa de este
   // módulo, y el import directo cerraría un ciclo.

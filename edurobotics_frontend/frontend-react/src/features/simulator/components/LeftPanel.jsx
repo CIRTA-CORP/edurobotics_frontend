@@ -6,7 +6,7 @@ import EditorPanel from '@/features/simulator/editors/EditorPanel';
 import DocumentationPanel from '@/features/simulator/components/DocumentationPanel';
 import Terminal from '@/features/simulator/components/Terminal';
 import { Code2, BookOpen, RotateCcw } from "lucide-react";
-import { getToken } from '@/features/auth/services/auth';
+import { getToken, getStoredUser } from '@/features/auth/services/auth';
 
 const BLOCKLY = "blockly";
 const EDITOR = "editor";
@@ -76,16 +76,27 @@ export default function LeftPanel({ setAlertType, handleHide, onJointAngles, onQ
     return lc;
   }, [location.state]);
 
-  // Una clave por ejercicio: unidad + posición del bloque entre los de simulador de esa
-  // unidad. Antes había una sola clave para todo, así que lo escrito en una clase aparecía
-  // en otra. Entrar sin venir de una clase mantiene la clave de siempre.
+  // Una clave por cuenta y por ejercicio: usuario + unidad + posición del bloque entre los
+  // de simulador de esa unidad.
   //
-  // No se usa un hash del código: corregir una errata en el bloque cambiaría la clave y el
-  // alumno perdería lo que llevaba. El coste es que reordenar bloques los cruza; para eso
-  // está «Restablecer».
+  // El usuario va en la clave porque esto vive en el navegador, no en la cuenta, y cerrar
+  // sesión no lo borra. En una sala de computación, el alumno que se sienta después en el
+  // mismo equipo vería la versión del anterior. Con el usuario en la clave, cada cuenta ve
+  // lo suyo aunque compartan navegador. Sin sesión (no debería pasar aquí) se usa `anon`,
+  // que tampoco se mezcla con nadie.
+  //
+  // La unidad y la posición, porque antes había una sola clave para todo y lo escrito en una
+  // clase aparecía en otra. No se usa un hash del código: corregir una errata en el bloque
+  // cambiaría la clave y el alumno perdería lo que llevaba. El coste es que reordenar
+  // bloques los cruza; para eso está «Restablecer».
+  //
+  // Entrar sin venir de una clase usa `code_python_env:user:<id>`. Lo guardado antes en la
+  // clave antigua, sin usuario, no se adopta a propósito: no hay forma de saber de quién
+  // era, y en un equipo compartido adoptarlo sería justo el cruce que esto evita.
+  const userKey = useMemo(() => getStoredUser()?.id ?? "anon", []);
   const storageKey = lessonCode
-    ? `code_${runningEnviroment}:unit:${lessonCode.unitId}:${lessonCode.index}`
-    : `code_${runningEnviroment}`;
+    ? `code_${runningEnviroment}:user:${userKey}:unit:${lessonCode.unitId}:${lessonCode.index}`
+    : `code_${runningEnviroment}:user:${userKey}`;
 
   // Si el código actual difiere del de la clase. Solo cambia cuando cruza esa frontera,
   // así que no vuelve a pintar el panel en cada tecla.

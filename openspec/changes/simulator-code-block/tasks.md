@@ -25,6 +25,8 @@
       directo mantiene el comportamiento de hoy
 - [x] 3.3 Franja «Código de la clase» con «Restablecer el código de la clase»
 - [x] 3.4 «Copiar al editor» escribe en la clave activa
+- [x] 3.5 La clave incluye el usuario, para que dos cuentas en el mismo navegador
+      no se crucen; al cerrar sesión se borra `sim_access`
 
 ## 4. Verificación
 
@@ -36,6 +38,9 @@
 - [x] 4.4 Build de producción y ESLint sin hallazgos nuevos
 - [ ] 4.5 **A mano, con sesión:** crear el bloque en una clase, abrirla como
       alumno, pulsar el botón, modificar, volver y restablecer — lo hace Mario
+- [ ] 4.6 **A mano, dos cuentas en el mismo navegador:** una modifica el ejercicio
+      y cierra sesión; la otra abre el mismo ejercicio y debe ver el código del
+      profesor, no el modificado — lo hace Mario
 
 ## 5. Cierre
 
