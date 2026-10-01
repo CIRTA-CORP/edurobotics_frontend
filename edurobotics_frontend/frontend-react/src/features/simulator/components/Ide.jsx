@@ -24,8 +24,8 @@ export function Ide() {
   // Puente hacia el editor de Monaco, que vive en LeftPanel: lo usa el botón «Copiar al
   // editor» de las juntas, que está en el panel del simulador.
   const editorApiRef = useRef(null);
-  const handleCopyToEditor = useCallback((code) => {
-    editorApiRef.current?.replaceCode(code);
+  const handleCopyToEditor = useCallback((angles) => {
+    editorApiRef.current?.insertMove(angles);
   }, []);
   const [isDragging, setIsDragging] = useState(false);
 

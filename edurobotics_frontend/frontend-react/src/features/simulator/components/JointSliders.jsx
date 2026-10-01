@@ -1,13 +1,14 @@
 import { useState } from "react";
 import { Copy, Check, RotateCcw } from "lucide-react";
+import { CODE_FONT_FAMILY } from "@/features/simulator/lib/codeFont";
 
 const JOINTS = [
-  { name: "shoulder_pan_joint",  label: "Shoulder Pan",  min: -3.14, max: 3.14 },
-  { name: "shoulder_lift_joint", label: "Shoulder Lift", min: -3.14, max: 3.14 },
-  { name: "elbow_joint",         label: "Elbow",         min: -3.14, max: 3.14 },
-  { name: "wrist_1_joint",       label: "Wrist 1",       min: -3.14, max: 3.14 },
-  { name: "wrist_2_joint",       label: "Wrist 2",       min: -3.14, max: 3.14 },
-  { name: "wrist_3_joint",       label: "Wrist 3",       min: -3.14, max: 3.14 },
+  { name: "shoulder_pan_joint",  label: "Base",          min: -3.14, max: 3.14 },
+  { name: "shoulder_lift_joint", label: "Hombro",        min: -3.14, max: 3.14 },
+  { name: "elbow_joint",         label: "Codo",          min: -3.14, max: 3.14 },
+  { name: "wrist_1_joint",       label: "Muñeca 1",      min: -3.14, max: 3.14 },
+  { name: "wrist_2_joint",       label: "Muñeca 2",      min: -3.14, max: 3.14 },
+  { name: "wrist_3_joint",       label: "Muñeca 3",      min: -3.14, max: 3.14 },
 ];
 
 const DEFAULT_ANGLES = Object.fromEntries(JOINTS.map(j => [j.name, 0]));
@@ -30,31 +31,35 @@ export default function JointSliders({ angles, onChange, onCopyToEditor }) {
 
   const handleReset = () => onChange(DEFAULT_ANGLES);
 
-  const code = buildMoveJointsCode(angles);
-
+  // Pasa los ÁNGULOS, no el código: quien recibe sabe qué hay ya en el programa y añade solo
+  // lo que falta (lib/editorCode.js). Antes se pasaba una línea suelta que reemplazaba todo.
   const handleCopy = () => {
     if (onCopyToEditor) {
-      onCopyToEditor(code);
+      onCopyToEditor(angles);
     } else {
       // Respaldo por si el panel se monta suelto: al menos el código queda a mano.
-      navigator.clipboard.writeText(code);
+      navigator.clipboard.writeText(buildMoveJointsCode(angles));
     }
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
 
   return (
-    <div className="flex h-full w-[236px] shrink-0 flex-col border-l border-[#23232a] bg-[#131316]">
+    <div className="sim-slide-in flex h-full w-[236px] shrink-0 flex-col border-l border-[#23232a] bg-[#131316]">
       <div className="flex h-10 shrink-0 items-center justify-between border-b border-[#23232a] px-3.5">
-        <span className="font-mono text-[9.5px] font-semibold uppercase tracking-[0.14em] text-[#6e6d78]">Juntas</span>
+        <span className="font-mono text-[9.5px] font-semibold uppercase tracking-[0.14em] text-[#6e6d78]">Vista previa</span>
         <button
           onClick={handleReset}
-          title="Volver a cero"
+          title="Poner los deslizadores a cero"
           className="grid h-[26px] w-[26px] place-items-center rounded-md text-[#6e6d78] transition-colors hover:text-[#f4f4f6]"
         >
           <RotateCcw className="h-3.5 w-3.5" strokeWidth={1.8} />
         </button>
       </div>
+
+      <p className="shrink-0 border-b border-[#23232a] px-3.5 py-2.5 text-[11.5px] leading-[1.5] text-[#8b8a95]">
+        Mueve la vista, no el robot. Cuando tengas la postura, añádela a tu programa y ejecútalo.
+      </p>
 
       <div className="flex flex-1 flex-col gap-4 overflow-y-auto px-3.5 py-4">
         {JOINTS.map(({ name, label, min, max }) => {
@@ -64,7 +69,11 @@ export default function JointSliders({ angles, onChange, onCopyToEditor }) {
           return (
             <div key={name}>
               <div className="flex items-baseline justify-between gap-2.5">
-                <span className="text-xs text-[#a1a0ab]">{label}</span>
+                <span className="min-w-0">
+                  <span className="block text-xs text-[#a1a0ab]">{label}</span>
+                  {/* El nombre que se escribe en el código, para que se aprenda al usar la vista previa. */}
+                  <span className="block truncate text-[10px] text-[#55545e]" style={{ fontFamily: CODE_FONT_FAMILY }}>{name}</span>
+                </span>
                 <span className="font-mono text-xs font-semibold text-[#f4f4f6]">{deg}°</span>
               </div>
               <div className="relative mt-2 h-1 rounded-full bg-[#26262d]">
@@ -80,7 +89,7 @@ export default function JointSliders({ angles, onChange, onCopyToEditor }) {
                   value={rad}
                   onChange={e => handleSlider(name, e.target.value)}
                   className="absolute inset-0 h-4 w-full -translate-y-1/2 cursor-pointer appearance-none bg-transparent [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:h-[13px] [&::-webkit-slider-thumb]:w-[13px] [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-[#f4f4f6]"
-                  aria-label={label}
+                  aria-label={`${label} (${name})`}
                 />
               </div>
               <div className="mt-1.5 flex items-center justify-between font-mono text-[9.5px] text-[#4a4a54]">
@@ -94,7 +103,7 @@ export default function JointSliders({ angles, onChange, onCopyToEditor }) {
       </div>
 
       <div className="shrink-0 border-t border-[#23232a] p-3.5">
-        <div className="rounded-[9px] border border-[#23232a] bg-[#0d0d10] p-2.5 font-mono text-[10.5px] leading-[17px] text-[#6e6d78]">
+        <div className="rounded-[9px] border border-[#23232a] bg-[#0d0d10] p-2.5 text-[10.5px] leading-[17px] text-[#6e6d78]" style={{ fontFamily: CODE_FONT_FAMILY }}>
           <div className="text-[#a5a1ee]">robot.move_joints({'{'}</div>
           <div className="pl-2.5">
             <span className="text-[#7fd1a8]">"elbow_joint"</span>
@@ -106,11 +115,12 @@ export default function JointSliders({ angles, onChange, onCopyToEditor }) {
           <div>{'}'}, duration=<span className="text-[#f0c987]">2.0</span>)</div>
         </div>
         <button
+          type="button"
           onClick={handleCopy}
           className="mt-2.5 inline-flex h-[38px] w-full items-center justify-center gap-2 rounded-[10px] bg-[#f4f4f6] text-[12.5px] font-semibold text-[#16151b] transition-colors hover:bg-white"
         >
           {copied ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" strokeWidth={1.9} />}
-          {copied ? "Copiado!" : "Copiar al editor"}
+          {copied ? "Añadida al programa" : "Añadir al editor"}
         </button>
       </div>
     </div>
