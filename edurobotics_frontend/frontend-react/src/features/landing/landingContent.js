@@ -110,7 +110,7 @@ Cancelación (supresión): en «Privacidad y datos» encontrarás «Eliminar mi 
 Oposición y cualquier otra solicitud: escríbenos a cirta.contacto@gmail.com. Responderemos dentro de los plazos que fija la ley.
 
 ## 5. Conservación
-Conservamos tus datos mientras tu cuenta esté activa. Si eliminas tu cuenta, borramos tu perfil, matrículas, progreso, intentos de evaluación, comentarios y registros de acceso. Podemos conservar datos por más tiempo solo cuando una obligación legal lo exija, y únicamente para ese fin.
+Conservamos tus datos mientras tu cuenta esté activa. Si eliminas tu cuenta, borramos tu perfil, matrículas, progreso, intentos de evaluación, comentarios y registros de acceso. Podemos conservar datos por más tiempo solo cuando una obligación legal lo exija, y únicamente para ese fin. Además, guardamos copias de seguridad de la base de datos para poder recuperarla ante una falla; cada copia se conserva un máximo de 8 semanas y luego se elimina, de modo que los datos de una cuenta eliminada desaparecen también de las copias en ese plazo.
 
 ## 6. Datos de niños, niñas y adolescentes
 EduRobotics se usa en contextos escolares, por lo que parte de nuestros usuarios son menores de edad. Cuando el estudiante es menor, el consentimiento debe otorgarlo su madre, padre o tutor legal, normalmente a través del establecimiento educacional que contrata la plataforma. Los datos de menores se tratan solo con fines educativos: nunca los usamos con fines comerciales ni publicitarios, ni construimos perfiles con ellos. Si detectas que se creó una cuenta de un menor sin la autorización correspondiente, escríbenos a cirta.contacto@gmail.com y la eliminaremos.
