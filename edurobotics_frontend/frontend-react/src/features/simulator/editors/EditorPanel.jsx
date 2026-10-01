@@ -1,6 +1,7 @@
 import React, { memo, useEffect, useCallback, useRef } from "react";
 import Editor, { loader } from "@monaco-editor/react";
 import { useResizeDetector } from "react-resize-detector";
+import { CODE_FONT_FAMILY, remeasureWhenFontLoads } from "@/features/simulator/lib/codeFont";
 
 // El editor viaja con la aplicación, no se descarga de un CDN.
 //
@@ -28,7 +29,86 @@ self.MonacoEnvironment = {
   },
 };
 
+// Tema propio con la paleta del simulador. `vs-dark` tiene un fondo gris azulado que
+// desentonaba con el resto de la pantalla. Colores de sintaxis en la línea de One Dark, la
+// paleta que usa codi.link, ajustados al fondo casi negro.
+export const EDITOR_THEME = "edurobotics-dark";
+monaco.editor.defineTheme(EDITOR_THEME, {
+  base: "vs-dark",
+  inherit: true,
+  rules: [
+    { token: "comment", foreground: "6b6a76", fontStyle: "italic" },
+    { token: "keyword", foreground: "c792ea" },
+    { token: "string", foreground: "a5d6a7" },
+    { token: "string.escape", foreground: "89ddff" },
+    { token: "number", foreground: "f5b97a" },
+    { token: "delimiter", foreground: "8b8a95" },
+    { token: "delimiter.bracket", foreground: "a1a0ab" },
+    { token: "identifier", foreground: "e4e3ea" },
+    { token: "type", foreground: "82aaff" },
+    { token: "predefined", foreground: "82aaff" },
+  ],
+  colors: {
+    "editor.background": "#0d0d10",
+    "editor.foreground": "#e4e3ea",
+    "editor.lineHighlightBackground": "#ffffff08",
+    "editor.lineHighlightBorder": "#00000000",
+    "editor.selectionBackground": "#7d79e340",
+    "editor.inactiveSelectionBackground": "#7d79e322",
+    "editor.selectionHighlightBackground": "#7d79e31f",
+    "editorCursor.foreground": "#a5a1ee",
+    "editorLineNumber.foreground": "#3f3f48",
+    "editorLineNumber.activeForeground": "#8b8a95",
+    "editorIndentGuide.background1": "#ffffff0a",
+    "editorIndentGuide.activeBackground1": "#ffffff1f",
+    "editorBracketMatch.background": "#7d79e326",
+    "editorBracketMatch.border": "#7d79e366",
+    "editorWidget.background": "#16161b",
+    "editorWidget.border": "#2a2a31",
+    "editorSuggestWidget.background": "#16161b",
+    "editorSuggestWidget.border": "#2a2a31",
+    "editorSuggestWidget.selectedBackground": "#7d79e333",
+    "scrollbarSlider.background": "#ffffff14",
+    "scrollbarSlider.hoverBackground": "#ffffff24",
+    "scrollbarSlider.activeBackground": "#ffffff30",
+  },
+});
+
 loader.config({ monaco });
+
+// Opciones tomadas de codi.link: poco adorno (sin minimapa, sin margen de iconos, sin
+// plegado), relleno arriba y abajo, nada de desplazamiento más allá del final, cursor y
+// desplazamiento suaves. Más ajuste de línea —los diccionarios de move_joints son largos— y
+// sangría de 4, que es Python.
+const EDITOR_OPTIONS = {
+  fontFamily: CODE_FONT_FAMILY,
+  fontSize: 14,
+  lineHeight: 23,
+  fontLigatures: true,
+  tabSize: 4,
+  insertSpaces: true,
+  wordWrap: "on",
+  minimap: { enabled: false },
+  glyphMargin: false,
+  folding: false,
+  lineDecorationsWidth: 14,
+  lineNumbersMinChars: 3,
+  padding: { top: 16, bottom: 16 },
+  scrollBeyondLastLine: false,
+  smoothScrolling: true,
+  cursorBlinking: "smooth",
+  cursorSmoothCaretAnimation: "on",
+  roundedSelection: true,
+  renderLineHighlight: "line",
+  overviewRulerBorder: false,
+  overviewRulerLanes: 0,
+  hideCursorInOverviewRuler: true,
+  bracketPairColorization: { enabled: true },
+  guides: { indentation: true, bracketPairs: false },
+  fixedOverflowWidgets: true,
+  scrollbar: { verticalScrollbarSize: 8, horizontalScrollbarSize: 8, useShadows: false },
+  semanticHighlighting: { enabled: true },
+};
 
 const PanelEditor = memo(({ handleEditorDidMount, handleEditorChange }) => {
   const editorRef = useRef();
@@ -36,6 +116,7 @@ const PanelEditor = memo(({ handleEditorDidMount, handleEditorChange }) => {
   const _handleEditorDidMount = useCallback(
     (editor, monaco) => {
       editorRef.current = editor;
+      remeasureWhenFontLoads(monaco);
       handleEditorDidMount(editor, monaco);
     },
     [handleEditorDidMount]
@@ -77,7 +158,7 @@ const PanelEditor = memo(({ handleEditorDidMount, handleEditorChange }) => {
 
   return (
     <div
-      className="relative w-full h-full overflow-hidden"
+      className="relative w-full h-full overflow-hidden bg-[#0d0d10]"
       ref={ref}
     >
       <Editor
@@ -87,18 +168,11 @@ const PanelEditor = memo(({ handleEditorDidMount, handleEditorChange }) => {
         // fija a "python": solo servía para sugerir un soporte que no existe, y
         // obligaba a empaquetar un lenguaje que nunca se usa.
         language="python"
-        theme="vs-dark"
+        theme={EDITOR_THEME}
         onChange={handleEditorChange}
         onMount={_handleEditorDidMount}
-        options={{
-          minimap: {
-            enabled: false,
-          },
-          semanticHighlighting: {
-            enabled: true,
-          },
-          scrollBeyondLastLine: false,
-        }}
+        options={EDITOR_OPTIONS}
+        loading={<div className="h-full w-full bg-[#0d0d10]" />}
       />
     </div>
   );
