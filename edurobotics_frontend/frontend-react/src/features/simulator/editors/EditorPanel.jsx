@@ -122,16 +122,16 @@ const PanelEditor = memo(({ handleEditorDidMount, handleEditorChange }) => {
     [handleEditorDidMount]
   );
 
-  const onResize = useCallback(
-    (width, height) => {
-      // Guard: never pass 0 dimensions to Monaco
-      // (happens when panel is hidden with 'hidden' class)
-      if (editorRef.current && width > 0 && height > 0) {
-        editorRef.current?.layout({ height, width });
-      }
-    },
-    [editorRef]
-  );
+  // react-resize-detector 12 pasa UN objeto { width, height, entry }. Esto recibía dos
+  // argumentos sueltos, así que `width` era el objeto, la guarda nunca se cumplía y el editor
+  // no se recolocaba nunca: funcionaba porque su contenedor tenía un alto fijo. Con la
+  // terminal redimensionable, el editor tiene que seguir a su contenedor de verdad.
+  const onResize = useCallback(({ width, height }) => {
+    // Nunca dimensiones 0: pasa cuando el panel está oculto con la clase 'hidden'.
+    if (editorRef.current && width > 0 && height > 0) {
+      editorRef.current.layout({ height, width });
+    }
+  }, []);
 
   const { ref } = useResizeDetector({
     handleHeight: true,
@@ -141,12 +141,11 @@ const PanelEditor = memo(({ handleEditorDidMount, handleEditorChange }) => {
     onResize,
   });
 
+  // Sin argumentos, Monaco mide su contenedor. Con { width: "auto", height: "auto" } —lo que
+  // había— no entiende el texto y se queda en 0 de alto.
   const windowResize = useCallback(() => {
-    editorRef.current?.layout({
-      width: "auto",
-      height: "auto",
-    });
-  }, [editorRef]);
+    editorRef.current?.layout();
+  }, []);
 
   useEffect(() => {
     window.addEventListener("resize", windowResize);
