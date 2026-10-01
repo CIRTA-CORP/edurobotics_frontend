@@ -74,8 +74,6 @@ export default function LeftPanel({ setAlertType, handleHide, onJointAngles, onQ
   const monacoRef       = useRef(null);
   const decorationsRef  = useRef([]);
   const startTimeRef    = useRef(null);
-  // Lines of wrapper code before user code — used to map traceback line → editor line
-  const WRAPPER_OFFSET  = 37;
 
   const ts = () => {
     const n = new Date();
@@ -94,12 +92,17 @@ export default function LeftPanel({ setAlertType, handleHide, onJointAngles, onQ
     }
   }, []);
 
-  const highlightErrorLine = useCallback((wrapperLine) => {
+  // Recibe la línea YA en la numeración del editor: la traduce el backend, que es el único
+  // que sabe cuánto mide el código que envuelve al del alumno (mensaje `error_line`).
+  //
+  // Antes se restaba aquí un 37 escrito a mano y se buscaba `File "<string>"` en el texto.
+  // Nunca funcionó: el programa corre leyendo de la entrada estándar y Python escribe
+  // `File "<stdin>"`, así que la expresión no coincidía nunca. Y el 37 dejó de ser cierto
+  // en cuanto el wrapper cambió de longitud.
+  const highlightErrorLine = useCallback((userLine) => {
     const editor  = editorRef.current;
     const monaco  = monacoRef.current;
-    if (!editor || !monaco) return;
-    const userLine = wrapperLine - WRAPPER_OFFSET;
-    if (userLine < 1) return;
+    if (!editor || !monaco || !Number.isInteger(userLine) || userLine < 1) return;
     decorationsRef.current = editor.deltaDecorations(decorationsRef.current, [{
       range: new monaco.Range(userLine, 1, userLine, 1),
       options: { isWholeLine: true, className: "monaco-error-line" },
@@ -233,13 +236,13 @@ export default function LeftPanel({ setAlertType, handleHide, onJointAngles, onQ
           return;
         }
 
+        if (data.type === "error_line") {
+          highlightErrorLine(data.line);
+          return;
+        }
+
         if (data.type === "log" || data.type === "success" || data.type === "error" || data.type === "done") {
           appendLine(data.msg);
-          // Detect Python traceback and highlight the offending line in the editor
-          if (data.msg) {
-            const m = data.msg.match(/File "<string>", line (\d+)/);
-            if (m) highlightErrorLine(parseInt(m[1]));
-          }
         }
 
         // On success/error: stop the spinner immediately so the user sees feedback,
