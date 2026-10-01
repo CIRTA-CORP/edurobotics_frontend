@@ -7,10 +7,50 @@ import DocumentationPanel from '@/features/simulator/components/DocumentationPan
 import Terminal from '@/features/simulator/components/Terminal';
 import { Code2, BookOpen, RotateCcw } from "lucide-react";
 import { getToken, getStoredUser } from '@/features/auth/services/auth';
+import { classifyMessage } from '@/features/simulator/lib/terminalLines';
+import { planInsertion } from '@/features/simulator/lib/editorCode';
 
 const BLOCKLY = "blockly";
 const EDITOR = "editor";
+
+// Enfoca el editor y muestra una línea cuando ya se ve. Quien llama acaba de cambiar a la
+// pestaña Editor, pero el cambio se pinta en el siguiente render: hasta entonces el editor
+// está oculto (display: none), sin tamaño, y ni el foco ni el desplazamiento surten efecto.
+function focusWhenVisible(editor, lineNumber) {
+  requestAnimationFrame(() => requestAnimationFrame(() => {
+    editor.layout();
+    editor.revealLineInCenterIfOutsideViewport(lineNumber);
+    editor.focus();
+  }));
+}
 const DOCUMENTATION = "docs";
+
+// Terminal: alto por defecto y límites, en píxeles. El alto se recuerda en el navegador.
+const TERMINAL_HEADER = 36;
+const TERMINAL_DEFAULT = 220;
+const TERMINAL_MIN = 96;
+const EDITOR_MIN = 140;
+const TERMINAL_HEIGHT_KEY = "simTerminalHeight";
+
+function readTerminalHeight() {
+  try {
+    const stored = Number(localStorage.getItem(TERMINAL_HEIGHT_KEY));
+    return Number.isFinite(stored) && stored >= TERMINAL_MIN ? stored : TERMINAL_DEFAULT;
+  } catch {
+    return TERMINAL_DEFAULT;
+  }
+}
+
+// Resalta unas líneas un momento. Cuando el código cambia desde fuera del editor —una postura
+// añadida, un ejemplo, un archivo— el cambio no se nota si no se señala.
+function flashLines(editor, monaco, ranges) {
+  if (!editor || !monaco || !ranges.length) return;
+  const collection = editor.createDecorationsCollection(ranges.map(([from, to]) => ({
+    range: new monaco.Range(from, 1, to, 1),
+    options: { isWholeLine: true, className: "sim-line-added" },
+  })));
+  setTimeout(() => collection.clear(), 1600);
+}
 
 /* ── Top bar tab button (canvas: pestañas en la cabecera del panel) ──────────── */
 function TabButton({ label, icon, active, onClick }) {
@@ -36,31 +76,64 @@ function TabButton({ label, icon, active, onClick }) {
 // va con `#`: la plantilla anterior empezaba con `//`, que es C++, y un estudiante que
 // pulsara Ejecutar sin escribir nada recibía un SyntaxError como primera experiencia.
 //
-// Además arranca con un programa que funciona: mover el robot a su posición de reposo.
-// Ver algo moverse antes de escribir nada es mejor introducción que un archivo vacío.
-const STARTER_CODE = `# Escribe aquí tu programa.
-# Pulsa Ejecutar para ver el robot moverse en la vista 3D.
+// Es un recorrido que siempre se ve moverse. La plantilla anterior llevaba el brazo a todo
+// cero: si ya estaba ahí, no pasaba nada, y parecía que el simulador no funcionaba. Esta
+// empieza poniendo el brazo vertical, venga de donde venga, y gira la muñeca con el brazo
+// arriba: con el brazo horizontal la herramienta queda a 6 cm del suelo y los dedos chocan
+// con él. Verificada en la máquina real: sin choques ni avisos, ~22 s.
+const STARTER_CODE = `# Tu primer programa: un recorrido por lo que sabe hacer el robot.
+# Pulsa Ejecutar (o Ctrl+Enter). Abre la Guía para ver todo lo que puedes usar.
 
 from robot_api import Robot
 
 robot = Robot()
 
-# Posición de reposo: el UR5e queda extendido en horizontal.
+print("1. Brazo vertical")
 robot.move_joints({
-    "shoulder_pan_joint": 0.000,
-    "shoulder_lift_joint": 0.000,
-    "elbow_joint": 0.000,
-    "wrist_1_joint": 0.000,
-    "wrist_2_joint": 0.000,
-    "wrist_3_joint": 0.000,
-}, duration=2.0)
+    "shoulder_pan_joint": 0.0,
+    "shoulder_lift_joint": -1.57,
+    "elbow_joint": 0.0,
+    "wrist_1_joint": -1.57,
+    "wrist_2_joint": 0.0,
+    "wrist_3_joint": 0.0,
+}, duration=3.0)
+
+print("2. Girar la muñeca una vuelta y media")
+robot.move_joints({"wrist_3_joint": 3.14}, duration=2.5)
+robot.move_joints({"wrist_3_joint": 0.0}, duration=2.5)
+
+print("3. Postura de trabajo: codo doblado, pinza hacia abajo")
+robot.move_joints({
+    "shoulder_lift_joint": -1.57,
+    "elbow_joint": 1.57,
+    "wrist_1_joint": -1.57,
+    "wrist_2_joint": -1.57,
+}, duration=3.0)
+
+print("4. Girar la base a la izquierda")
+robot.move_joints({"shoulder_pan_joint": 1.0}, duration=3.0)
+
+print("5. Cerrar y abrir la pinza")
+robot.close_gripper()
+robot.open_gripper()
+
+print("6. Girar la base a la derecha")
+robot.move_joints({"shoulder_pan_joint": -1.0}, duration=3.0)
+
+print("7. Volver al brazo vertical")
+robot.move_joints({
+    "shoulder_pan_joint": 0.0,
+    "shoulder_lift_joint": -1.57,
+    "elbow_joint": 0.0,
+    "wrist_1_joint": -1.57,
+    "wrist_2_joint": 0.0,
+    "wrist_3_joint": 0.0,
+}, duration=3.0)
+
+print("Listo")
 `;
 
 export default function LeftPanel({ setAlertType, handleHide, onJointAngles, onQueueChange, editorApiRef }) {
-  const [enviromentConfig, setEnviromentConfig] = useState({
-    language: "python",
-    editor: "python",
-  });
   const runningEnviroment = "python_env";
 
   // Código de la clase, si se llegó desde un bloque «Código para el simulador»
@@ -101,9 +174,25 @@ export default function LeftPanel({ setAlertType, handleHide, onJointAngles, onQ
   // Si el código actual difiere del de la clase. Solo cambia cuando cruza esa frontera,
   // así que no vuelve a pintar el panel en cada tecla.
   const [isModified, setIsModified] = useState(false);
+  // El editor de Monaco ya está montado: hace falta para registrar el atajo de teclado.
+  const [editorReady, setEditorReady] = useState(false);
 
   const [runLoading, setRunLoading] = useState(false);
-  const [terminalOutput, setTerminalOutput] = useState("");
+  const [terminalOpen, setTerminalOpen] = useState(true);
+  const [terminalHeight, setTerminalHeight] = useState(readTerminalHeight);
+  const editorAreaRef = useRef(null);
+  // Aviso breve sobre el editor ({ id, text }); se va solo.
+  const [notice, setNotice] = useState(null);
+  const noticeTimerRef = useRef(null);
+  const showNotice = useCallback((text) => {
+    clearTimeout(noticeTimerRef.current);
+    setNotice({ id: Date.now(), text });
+    noticeTimerRef.current = setTimeout(() => setNotice(null), 2600);
+  }, []);
+  useEffect(() => () => clearTimeout(noticeTimerRef.current), []);
+  // Filas de la terminal, ya clasificadas: { id, time, kind, text } (lib/terminalLines.js).
+  const [terminalEntries, setTerminalEntries] = useState([]);
+  const entryIdRef = useRef(0);
   const [panelSelected, setPanelSelected] = useState(() => {
     // Viniendo de una clase se abre en el Editor: es donde está el código que se pidió ver,
     // aunque la última vez el alumno dejara abierta la Guía.
@@ -120,14 +209,23 @@ export default function LeftPanel({ setAlertType, handleHide, onJointAngles, onQ
 
   const ts = () => {
     const n = new Date();
-    return `[${String(n.getHours()).padStart(2,"0")}:${String(n.getMinutes()).padStart(2,"0")}:${String(n.getSeconds()).padStart(2,"0")}]`;
+    return `${String(n.getHours()).padStart(2,"0")}:${String(n.getMinutes()).padStart(2,"0")}:${String(n.getSeconds()).padStart(2,"0")}`;
   };
 
-  const appendLine = useCallback((line) => {
-    setTerminalOutput(prev => (prev ? prev + "\n" : "") + ts() + " " + line);
+  // `type` es el tipo del mensaje del backend (log, success, error…) o 'local' para los del
+  // propio panel. Se clasifica al entrar, no al pintar: ver lib/terminalLines.js.
+  const appendMessage = useCallback((type, msg) => {
+    const row = classifyMessage(type, msg);
+    if (!row) return;
+    entryIdRef.current += 1;
+    const entry = { id: entryIdRef.current, time: ts(), ...row };
+    setTerminalEntries((prev) => [...prev, entry]);
   }, []);
 
-  const clearTerminal = useCallback(() => setTerminalOutput(""), []);
+  const appendLine = useCallback((line) => appendMessage("local", line), [appendMessage]);
+  const appendError = useCallback((line) => appendMessage("local-error", line), [appendMessage]);
+
+  const clearTerminal = useCallback(() => setTerminalEntries([]), []);
 
   const clearDecorations = useCallback(() => {
     if (editorRef.current && decorationsRef.current.length) {
@@ -162,10 +260,7 @@ export default function LeftPanel({ setAlertType, handleHide, onJointAngles, onQ
   const handleEditorDidMount = useCallback((editor, monaco) => {
     editorRef.current  = editor;
     monacoRef.current  = monaco;
-    // Inject CSS for error line highlight
-    const style = document.createElement("style");
-    style.textContent = ".monaco-error-line { background: rgba(255,60,60,0.18) !important; border-left: 3px solid #ff3c3c; }";
-    document.head.appendChild(style);
+    setEditorReady(true);
     // Primero la versión del alumno de este ejercicio; si no hay, la de la clase; si no se
     // viene de una clase, la plantilla.
     const savedCode = localStorage.getItem(storageKey) || null;
@@ -173,22 +268,46 @@ export default function LeftPanel({ setAlertType, handleHide, onJointAngles, onQ
     editorRef.current.setValue(initial);
     setIsModified(Boolean(lessonCode) && initial !== lessonCode.code);
 
-    // El botón «Copiar al editor» de las juntas vive en el panel del simulador, al otro
-    // lado del divisor. Se expone aquí la única operación que necesita, para no sacar el
-    // editor entero de este componente.
+    // «Añadir al editor», de la vista previa de posturas, vive en el panel del simulador, al
+    // otro lado del divisor. Se expone aquí la única operación que necesita.
+    //
+    // AÑADE, no reemplaza: antes ponía una sola línea `robot.move_joints(...)` en lugar del
+    // programa entero, sin import ni `robot = Robot()`, y al ejecutarla daba NameError. Ahora
+    // se agrega al final lo que falte (ver lib/editorCode.js), como una edición: Ctrl+Z la
+    // deshace. El guardado lo hace handleEditorChange, que salta con la edición.
     if (editorApiRef) {
       editorApiRef.current = {
-        replaceCode: (code) => {
-          editorRef.current?.setValue(code);
-          // En la clave activa: si no, lo copiado se guardaría en un sitio y se leería de otro.
-          localStorage.setItem(storageKey, code);
+        insertMove: (angles) => {
+          const ed = editorRef.current;
+          const model = ed?.getModel();
+          if (!ed || !model) return;
+          const { prefix, suffix, bodyLength } = planInsertion(model.getValue(), angles);
+          const bodyEnd = model.getPositionAt(bodyLength);
+          const fileEnd = model.getFullModelRange().getEndPosition();
+          const edits = [{
+            range: new monaco.Range(bodyEnd.lineNumber, bodyEnd.column, fileEnd.lineNumber, fileEnd.column),
+            text: suffix,
+          }];
+          if (prefix) edits.unshift({ range: new monaco.Range(1, 1, 1, 1), text: prefix });
+          ed.pushUndoStop();
+          ed.executeEdits("anadir-movimiento", edits);
+          ed.pushUndoStop();
           // Si el estudiante está en la Guía, el código aparecería fuera de su vista.
           setPanelSelected(EDITOR);
-          editorRef.current?.focus();
+          const last = model.getLineCount();
+          ed.setPosition({ lineNumber: last, column: 1 });
+          focusWhenVisible(ed, last);
+          // Lo añadido al final ocupa las últimas líneas antes de la línea vacía final; la
+          // cabecera, si se puso, las primeras.
+          const added = suffix.replace(/^\n+|\n+$/g, "").split("\n").length;
+          const ranges = [[last - added, last - 1]];
+          if (prefix) ranges.push([1, prefix.replace(/\n+$/, "").split("\n").length]);
+          flashLines(ed, monaco, ranges);
+          showNotice("Postura añadida al final de tu programa · Ctrl+Z para deshacer");
         },
       };
     }
-  }, [storageKey, lessonCode, editorApiRef]);
+  }, [storageKey, lessonCode, editorApiRef, showNotice]);
 
   const handleEditorChange = useCallback((value) => {
     localStorage.setItem(storageKey, value);
@@ -212,11 +331,56 @@ export default function LeftPanel({ setAlertType, handleHide, onJointAngles, onQ
     editor.focus();
   }, [lessonCode]);
 
-  const handleHideTerminal = useCallback(() => {
-    if (editorRef.current) {
-        editorRef.current.layout({ width: "auto", height: "auto" });
-    }
+  // Antes plegar la terminal ocultaba su contenido pero dejaba el hueco: el editor no
+  // crecía. Ahora plegada ocupa solo su cabecera, y el editor (que vigila su tamaño) se
+  // reajusta solo.
+  const toggleTerminal = useCallback(() => setTerminalOpen((open) => !open), []);
+
+  const clampTerminal = useCallback((height) => {
+    const area = editorAreaRef.current?.clientHeight ?? 0;
+    const max = Math.max(TERMINAL_MIN, area - EDITOR_MIN);
+    return Math.round(Math.min(max, Math.max(TERMINAL_MIN, height)));
   }, []);
+
+  const saveTerminalHeight = useCallback((height) => {
+    try { localStorage.setItem(TERMINAL_HEIGHT_KEY, String(height)); } catch { /* sin almacenamiento */ }
+  }, []);
+
+  // Arrastrar el borde entre editor y terminal.
+  const handleResizeStart = useCallback((event) => {
+    event.preventDefault();
+    const area = editorAreaRef.current;
+    if (!area) return;
+    const bottom = area.getBoundingClientRect().bottom;
+    let latest = null;
+    const onMove = (e) => {
+      latest = clampTerminal(bottom - e.clientY);
+      setTerminalHeight(latest);
+      setTerminalOpen(true);
+    };
+    const onUp = () => {
+      window.removeEventListener("pointermove", onMove);
+      window.removeEventListener("pointerup", onUp);
+      document.body.style.cursor = "";
+      document.body.style.userSelect = "";
+      if (latest !== null) saveTerminalHeight(latest);
+    };
+    document.body.style.cursor = "row-resize";
+    document.body.style.userSelect = "none";
+    window.addEventListener("pointermove", onMove);
+    window.addEventListener("pointerup", onUp);
+  }, [clampTerminal, saveTerminalHeight]);
+
+  // Y con el teclado: flechas arriba y abajo, de 24 en 24 píxeles.
+  const handleResizeKey = useCallback((event) => {
+    const step = event.key === "ArrowUp" ? 24 : event.key === "ArrowDown" ? -24 : 0;
+    if (!step) return;
+    event.preventDefault();
+    const next = clampTerminal(terminalHeight + step);
+    setTerminalHeight(next);
+    setTerminalOpen(true);
+    saveTerminalHeight(next);
+  }, [clampTerminal, saveTerminalHeight, terminalHeight]);
 
   // Fix Monaco negro: cuando el tab Editor se activa, hay que forzar layout()
   // porque Monaco pierde sus dimensiones al estar oculto con 'hidden'
@@ -235,7 +399,7 @@ export default function LeftPanel({ setAlertType, handleHide, onJointAngles, onQ
   const handleRun = useCallback(() => {
     const code = editorRef.current?.getValue()?.trim();
     if (!code) {
-      appendLine("Error: no hay código para ejecutar.");
+      appendError("No hay código para ejecutar.");
       return;
     }
 
@@ -253,6 +417,7 @@ export default function LeftPanel({ setAlertType, handleHide, onJointAngles, onQ
     wsRef.current = ws;
 
     setRunLoading(true);
+    setTerminalOpen(true);
     appendLine("Connecting...");
 
     ws.onopen = () => {
@@ -295,7 +460,7 @@ export default function LeftPanel({ setAlertType, handleHide, onJointAngles, onQ
 
         if (data.type === "queue_timeout") {
           onQueueChange?.(null);
-          appendLine(data.msg);
+          appendMessage("error", data.msg);
           setRunLoading(false);
           return;
         }
@@ -306,7 +471,7 @@ export default function LeftPanel({ setAlertType, handleHide, onJointAngles, onQ
         }
 
         if (data.type === "log" || data.type === "success" || data.type === "error" || data.type === "done") {
-          appendLine(data.msg);
+          appendMessage(data.type, data.msg);
         }
 
         // On success/error: stop the spinner immediately so the user sees feedback,
@@ -331,7 +496,7 @@ export default function LeftPanel({ setAlertType, handleHide, onJointAngles, onQ
 
     ws.onerror = () => {
       onQueueChange?.(null);
-      appendLine("Error: no se pudo conectar. ¿Está el backend corriendo?");
+      appendError("No se pudo conectar con el simulador. Revisa tu conexión y vuelve a intentarlo.");
       setRunLoading(false);
     };
 
@@ -339,7 +504,23 @@ export default function LeftPanel({ setAlertType, handleHide, onJointAngles, onQ
       onQueueChange?.(null);
       setRunLoading(false);
     };
-  }, [appendLine, onJointAngles, onQueueChange, clearDecorations, highlightErrorLine]);
+  }, [appendLine, appendError, appendMessage, onJointAngles, onQueueChange, clearDecorations, highlightErrorLine]);
+
+  // Ctrl+Enter / Cmd+Enter ejecuta, como en cualquier playground. Se registra como acción
+  // del editor y se vuelve a registrar cuando handleRun cambia, para que el atajo llame
+  // siempre a la versión actual.
+  useEffect(() => {
+    const editor = editorRef.current;
+    const monaco = monacoRef.current;
+    if (!editorReady || !editor || !monaco) return undefined;
+    const action = editor.addAction({
+      id: "edurobotics.ejecutar",
+      label: "Ejecutar el programa",
+      keybindings: [monaco.KeyMod.CtrlCmd | monaco.KeyCode.Enter],
+      run: () => handleRun(),
+    });
+    return () => action.dispose();
+  }, [editorReady, handleRun]);
 
   const handleStop = useCallback(() => {
     if (wsRef.current) {
@@ -350,20 +531,54 @@ export default function LeftPanel({ setAlertType, handleHide, onJointAngles, onQ
     setRunLoading(false);
   }, [appendLine]);
 
+  // Descargar el programa como programa.py. El botón existía pero no hacía nada.
+  const handleDownload = useCallback(() => {
+    const code = editorRef.current?.getValue() ?? "";
+    const url = URL.createObjectURL(new Blob([code], { type: "text/x-python;charset=utf-8" }));
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "programa.py";
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+  }, []);
+
+  // Reemplaza el programa entero como una edición, no con setValue: setValue vacía el
+  // historial y el alumno perdería lo que tenía sin poder volver con Ctrl+Z.
+  const replaceProgram = useCallback((code, source, message) => {
+    const editor = editorRef.current;
+    const model = editor?.getModel();
+    if (!editor || !model) return;
+    editor.pushUndoStop();
+    editor.executeEdits(source, [{ range: model.getFullModelRange(), text: code }]);
+    editor.pushUndoStop();
+    setPanelSelected(EDITOR);
+    editor.setPosition({ lineNumber: 1, column: 1 });
+    focusWhenVisible(editor, 1);
+    showNotice(message);
+  }, [showNotice]);
+
+  // «Abrir en el editor», en los ejemplos de la Guía.
+  const handleUseExample = useCallback(
+    (code) => replaceProgram(code, "abrir-ejemplo", "Ejemplo abierto en el editor · Ctrl+Z para volver a tu código"),
+    [replaceProgram],
+  );
+
   const handleUpload = useCallback((event) => {
-    const file = event.target.files[0];
+    const input = event.target;
+    const file = input.files[0];
+    if (!file) return;
     const fileReader = new FileReader();
     fileReader.onloadend = () => {
-      const content = fileReader.result;
-      if (editorRef.current) {
-        editorRef.current.setValue(content);
+      if (typeof fileReader.result === "string") {
+        replaceProgram(fileReader.result, "subir-archivo", `${file.name} abierto en el editor · Ctrl+Z para volver`);
       }
-      setPanelSelected(EDITOR);
     };
-    if (file) {
-        fileReader.readAsText(file);
-    }
-  }, []);
+    fileReader.readAsText(file);
+    // Sin esto, volver a subir el mismo archivo no dispara onChange.
+    input.value = "";
+  }, [replaceProgram]);
 
   return (
     <div className="flex h-full w-full flex-col bg-[#131316] text-[#f4f4f6]">
@@ -386,10 +601,10 @@ export default function LeftPanel({ setAlertType, handleHide, onJointAngles, onQ
         </div>
         <CodeButtons
           runLoading={runLoading}
-          stopDisabled={false}
+          stopDisabled={!runLoading}
           handleRun={handleRun}
           handleStop={handleStop}
-          handleDownload={() => {}}
+          handleDownload={handleDownload}
           handleUpload={handleUpload}
           handleHide={handleHide}
         />
@@ -418,21 +633,56 @@ export default function LeftPanel({ setAlertType, handleHide, onJointAngles, onQ
                 </button>
               </div>
             )}
-            <div className="flex-grow h-[70%]">
-              <EditorPanel
-                handleEditorDidMount={handleEditorDidMount}
-                handleEditorChange={handleEditorChange}
-              />
-            </div>
-            <div id="terminal-container" className="h-[30%] max-h-[250px] overflow-y-auto border-t border-[#23232a] bg-[#0d0d10]">
-              <Terminal output={terminalOutput} running={runLoading} onHide={handleHideTerminal} onClear={clearTerminal} />
+            <div ref={editorAreaRef} className="flex min-h-0 flex-1 flex-col">
+              <div className="relative min-h-0 flex-1">
+                <EditorPanel
+                  handleEditorDidMount={handleEditorDidMount}
+                  handleEditorChange={handleEditorChange}
+                />
+                {notice && (
+                  <div
+                    key={notice.id}
+                    role="status"
+                    className="sim-notice pointer-events-none absolute bottom-3 right-4 z-20 max-w-[calc(100%-2rem)] rounded-lg border border-[#7d79e3]/30 bg-[#16161b]/95 px-3 py-2 text-[12px] font-medium text-[#d6d4f5] shadow-lg shadow-black/40 backdrop-blur"
+                  >
+                    {notice.text}
+                  </div>
+                )}
+              </div>
+              {terminalOpen && (
+                <div
+                  role="separator"
+                  aria-orientation="horizontal"
+                  aria-label="Cambiar el alto de la terminal"
+                  aria-valuenow={terminalHeight}
+                  tabIndex={0}
+                  onPointerDown={handleResizeStart}
+                  onKeyDown={handleResizeKey}
+                  className="group relative h-[5px] shrink-0 cursor-row-resize border-t border-[#23232a] bg-[#0d0d10] focus-visible:outline-none"
+                >
+                  <span className="absolute inset-x-0 top-[-3px] h-[7px] transition-colors group-hover:bg-[#7d79e3]/40 group-focus-visible:bg-[#7d79e3]/60 group-active:bg-[#7d79e3]/60" />
+                </div>
+              )}
+              <div
+                id="terminal-container"
+                style={{ height: terminalOpen ? terminalHeight : TERMINAL_HEADER }}
+                className={`shrink-0 overflow-hidden bg-[#0d0d10] ${terminalOpen ? "" : "border-t border-[#23232a]"}`}
+              >
+                <Terminal
+                  entries={terminalEntries}
+                  running={runLoading}
+                  open={terminalOpen}
+                  onToggle={toggleTerminal}
+                  onClear={clearTerminal}
+                />
+              </div>
             </div>
           </Panel>
         </div>
 
         <div className={`absolute inset-0 ${panelSelected === DOCUMENTATION ? 'block' : 'hidden'}`}>
           <Panel id="documentacion" selected={panelSelected === DOCUMENTATION}>
-             <DocumentationPanel url_doc={enviromentConfig?.doc_url} />
+             <DocumentationPanel onUseCode={handleUseExample} />
           </Panel>
         </div>
       </div>
