@@ -9,7 +9,7 @@
 
 import { useEditor, EditorContent, ReactNodeViewRenderer, NodeViewWrapper } from '@tiptap/react'
 import StarterKit from '@tiptap/starter-kit'
-import CodeBlockLowlight from '@tiptap/extension-code-block-lowlight'
+import { CodeBlockWithSimulator, toggleSimulatorBlock } from './simulatorCodeBlock'
 import { createLowlight } from 'lowlight'
 import python from 'highlight.js/lib/languages/python'
 import javascript from 'highlight.js/lib/languages/javascript'
@@ -30,7 +30,7 @@ import {
   ImageIcon, Youtube as YoutubeIcon, FileDown, LinkIcon,
   AlignLeft, AlignCenter, AlignRight,
   Undo, Redo, Minus, Loader2,
-  PenLine, Eye, Columns2, Code, SquareCode
+  PenLine, Eye, Columns2, Code, SquareCode, Cpu
 } from 'lucide-react'
 
 const lowlight = createLowlight({ python, javascript, bash })
@@ -240,8 +240,15 @@ function EditorToolbar({ editor, onImageUpload, onFileUpload, uploading }) {
       <ToolbarDivider />
 
       {/* Code */}
-      <ToolbarButton onClick={() => editor.chain().focus().toggleCodeBlock().run()} active={editor.isActive('codeBlock')} title="Bloque de código">
+      <ToolbarButton onClick={() => editor.chain().focus().toggleCodeBlock().run()} active={editor.isActive('codeBlock', { simulator: false })} title="Bloque de código">
         <SquareCode className="w-4 h-4" />
+      </ToolbarButton>
+      {/* El código que el alumno abre en el simulador. Los bloques de código normales
+          siguen siendo para ilustrar: los que hay hoy en los cursos son XML, datos y
+          pseudocódigo, y un botón «Probar en el simulador» junto a ellos solo daría
+          errores. Por eso lo decide el profesor, bloque a bloque. */}
+      <ToolbarButton onClick={() => toggleSimulatorBlock(editor)} active={editor.isActive('codeBlock', { simulator: true })} title="Código para el simulador">
+        <Cpu className="w-4 h-4" />
       </ToolbarButton>
       <ToolbarButton onClick={() => editor.chain().focus().toggleCode().run()} active={editor.isActive('code')} title="Código en línea">
         <Code className="w-4 h-4" />
@@ -334,7 +341,7 @@ export const RichTextEditor = forwardRef(function RichTextEditor({ content, onSa
           class: 'underline',
         },
       }),
-      CodeBlockLowlight.configure({
+      CodeBlockWithSimulator.configure({
         lowlight,
         HTMLAttributes: {
           class: 'code-block',

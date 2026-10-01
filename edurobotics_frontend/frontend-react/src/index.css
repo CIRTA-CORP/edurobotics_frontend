@@ -534,3 +534,73 @@
   .faq-item[open] .faq-item__icon { transform: none; }
   .faq-item__answer { animation: none; }
 }
+
+/* ── Bloque «Código para el simulador» ─────────────────────────────────────
+   Un bloque de código marcado por el profesor para abrirse en el simulador
+   (`data-simulator="true"`, ver simulatorCodeBlock.js). Se distingue con el
+   acento del simulador, en el editor (.tiptap) y en todo lo que pinta la clase
+   (.rich-content: la clase del alumno, la vista previa y la impresión).
+   La etiqueta hereda la fuente del bloque: no se introduce tipografía nueva. */
+.tiptap pre[data-simulator="true"],
+.rich-content pre[data-simulator="true"] {
+  position: relative;
+  border-left: 3px solid #7d79e3;
+  padding-top: 2rem;
+}
+
+.tiptap pre[data-simulator="true"]::before,
+.rich-content pre[data-simulator="true"]::before {
+  content: 'Código para el simulador';
+  position: absolute;
+  top: 0.55rem;
+  left: 1rem;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #a5a1ee;
+  pointer-events: none;
+}
+
+/* En la clase del alumno el bloque lleva debajo su botón, pegado: se leen como
+   una sola pieza. Solo cuando el botón está (la vista previa y la impresión no
+   lo tienen, y ahí el bloque conserva sus esquinas). */
+.rich-content pre[data-simulator="true"]:has(+ .sim-code-actions) {
+  margin-bottom: 0;
+  border-bottom-left-radius: 0;
+  border-bottom-right-radius: 0;
+}
+
+.rich-content .sim-code-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin: 0 0 0.75rem;
+  padding: 0.5rem 0.75rem;
+  background: #0f172a;
+  border-left: 3px solid #7d79e3;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 0 0 0.5rem 0.5rem;
+}
+
+.rich-content .sim-code-run {
+  display: inline-flex;
+  align-items: center;
+  height: 2rem;
+  padding: 0 0.875rem;
+  border-radius: 0.5rem;
+  background: #f4f4f6;
+  color: #16151b;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.15s;
+}
+
+.rich-content .sim-code-run:hover {
+  background: #ffffff;
+}
+
+.rich-content .sim-code-run:focus-visible {
+  outline: 2px solid #a5a1ee;
+  outline-offset: 2px;
+}
