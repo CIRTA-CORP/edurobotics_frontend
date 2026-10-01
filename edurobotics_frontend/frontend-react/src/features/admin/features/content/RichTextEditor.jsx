@@ -372,8 +372,19 @@ export const RichTextEditor = forwardRef(function RichTextEditor({ content, onSa
   })
 
   // Update editor content when prop changes (e.g. switching units)
+  //
+  // `editor` puede ser una instancia YA DESTRUIDA. Al montarse, React desmonta y vuelve a
+  // montar el componente, y `useEditor` destruye la instancia vieja con un setTimeout de
+  // 1 ms; durante esa ventana la referencia sigue llegando aquí. Destruida, tiene
+  // `schema = null`, y `getHTML()` lanza «Cannot read properties of null (reading
+  // 'cached')» — el error que tiraba la página en producción al abrir un curso.
+  //
+  // Pasaba sobre todo en el primer ingreso: con el contenido llegando tarde desde la red,
+  // el efecto se dispara justo en la ventana. Al reintentar, los datos ya estaban en
+  // caché y no había carrera, así que parecía un problema de carga del backend. No lo
+  // era, y por eso un keep-alive no lo habría arreglado.
   useEffect(() => {
-    if (editor && content !== undefined) {
+    if (editor && !editor.isDestroyed && content !== undefined) {
       const currentContent = editor.getHTML()
       // Only update if content actually changed (avoid cursor reset)
       if (currentContent !== content && !(currentContent === '<p></p>' && content === '')) {
@@ -441,10 +452,13 @@ export const RichTextEditor = forwardRef(function RichTextEditor({ content, onSa
   }, [editor])
 
   const handleSave = useCallback(() => {
-    if (!editor || !onSave) return
-    const html = editor.getHTML()
+    if (!onSave) return
+    // Con una instancia destruida no se puede leer el documento, pero tampoco se puede
+    // dejar de guardar sin avisar: el profesor pulsó Guardar y cree que guardó. Se usa
+    // `liveHtml`, que se actualiza en cada edición y es exactamente lo que tiene delante.
+    const html = editor && !editor.isDestroyed ? editor.getHTML() : liveHtml
     onSave(html)
-  }, [editor, onSave])
+  }, [editor, onSave, liveHtml])
 
   // The workshop header owns the primary "Guardar" (canvas 2b.3): expose the
   // same save action so the header button can trigger it from outside.
