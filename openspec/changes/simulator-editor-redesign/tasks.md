@@ -65,3 +65,6 @@
       filas de la terminal, el cambio de pestaña y el aviso; faltan el panel de la vista
       previa y el resaltado de líneas, que necesitan el simulador encendido (6.3)
 - [x] 7.9 «ROS2» junto, como pidió Mario
+- [ ] 7.10 Robot casi negro en producción: la CSP bloqueaba las texturas de los `.glb`
+      (`connect-src` sin `blob:`; comprobado en www.edurobotics.cl: «connect-src bloqueó
+      blob»). Añadido `blob:` — falta verlo en producción tras desplegar

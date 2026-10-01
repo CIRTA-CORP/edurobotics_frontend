@@ -79,6 +79,13 @@ entre versiones —en 0.55 había carpeta por lenguaje y en 0.56 ya no— así q
 es el punto de entrada estable. La CSP de `vercel.json` ya no permite jsDelivr:
 si el autoalojamiento se rompe, el editor no tiene red de seguridad.
 
+**`connect-src` necesita `blob:` para el robot.** Las texturas van dentro de cada
+`.glb`, y three.js las lee con `fetch()` sobre una URL `blob:` (en Chrome y Edge,
+vía `ImageBitmapLoader`). Sin `blob:` en `connect-src`, la CSP las bloquea y el
+robot sale casi negro: las piezas quedan como metal puro y sin color. **Solo pasa en
+producción**, porque el servidor de desarrollo no aplica la CSP de `vercel.json`;
+en local el robot se ve bien y el fallo pasa inadvertido.
+
 **Blockly y Babylon se retiraron por completo.** El visor es `UrdfViewer`
 (three.js + urdf-loader), y toda la geometría sale de
 `public/robots/ur5e/*.urdf`. No hay ni una medida del robot escrita en el código,
