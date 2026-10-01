@@ -7,7 +7,7 @@
  * Quiz section appears at the bottom.
  */
 
-import { useState, useEffect, useMemo, useRef } from 'react'
+import { useState, useEffect, useMemo, useRef, useCallback } from 'react'
 import {
   FileText, FileDown,
   CheckCircle, ChevronRight, ExternalLink,
@@ -18,6 +18,7 @@ import { useNavigate, useParams } from 'react-router-dom'
 import { CourseFeedbackModal } from './CourseFeedbackModal'
 import { API_BASE } from '@/config'
 import { sanitizeHtml } from '@/shared/lib/sanitizeHtml'
+import { injectSimulatorButtons, readSimulatorBlock } from '@/features/courses/lib/simulatorBlocks'
 import { sendHeartbeat } from '@/features/progress/services/progress'
 
 const isVideoUrl = (url) => {
@@ -325,10 +326,30 @@ export function ContentViewer({
 
   // Prepare HTML with heading IDs for ToC anchors. Sanitize AFTER injecting
   // ids so any malicious markup is stripped before it reaches the DOM.
+  //
+  // Los botones «Probar en el simulador» van al revés: DESPUÉS de sanitizar, porque son
+  // marcado nuestro y no del contenido (ver `simulatorBlocks.js`).
   const processedHtml = useMemo(
-    () => sanitizeHtml(injectHeadingIds(richContent?.content_value)),
+    () => injectSimulatorButtons(sanitizeHtml(injectHeadingIds(richContent?.content_value))),
     [richContent?.content_value]
   )
+
+  // Un solo manejador para todos los botones del contenido, porque el HTML se pinta con
+  // dangerouslySetInnerHTML y sus botones no pueden llevar el suyo.
+  //
+  // Da acceso al simulador igual que el bloque «Simulador 3D», y le pasa el código por el
+  // estado de la navegación, no por la URL: un programa no cabe con comodidad en la URL,
+  // quedaría en el historial y cualquiera podría fabricar un enlace con código ajeno.
+  const handleRichContentClick = useCallback((event) => {
+    const block = readSimulatorBlock(event.currentTarget, event.target)
+    if (!block || !unit?.id) return
+    sessionStorage.setItem('sim_access', '1')
+    navigate('/simulator', {
+      state: {
+        lessonCode: { code: block.code, index: block.index, unitId: unit.id, unitTitle: unit.title },
+      },
+    })
+  }, [navigate, unit?.id, unit?.title])
   const headings = useMemo(() => extractHeadings(richContent?.content_value), [richContent?.content_value])
 
   // Whether the rich editor actually has written content (an empty TipTap doc
@@ -568,6 +589,7 @@ export function ContentViewer({
             {hasRichBody && (
               <div
                 className="rich-content max-w-none w-full overflow-hidden break-words"
+                onClick={handleRichContentClick}
                 dangerouslySetInnerHTML={{ __html: processedHtml }}
               />
             )}

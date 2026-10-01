@@ -1,6 +1,7 @@
-import { useState, useEffect, useCallback, useRef, lazy, Suspense } from "react";
-import { Loader2, Play, SlidersHorizontal, Home, AlertCircle, Globe, ArrowDown, Focus, MoveRight, Users } from "lucide-react";
-import { getSimulatorStatus, startSimulator } from '@/features/simulator/services/simulator';
+import { useState, useEffect, useRef, lazy, Suspense } from "react";
+import { Loader2, Play, SlidersHorizontal, AlertCircle, Globe, ArrowDown, Focus, MoveRight, Users } from "lucide-react";
+import { startSimulator } from '@/features/simulator/services/simulator';
+import { useSimulatorStatus, refreshSimulatorStatus, setSimulatorStatus } from '@/features/simulator/lib/simulatorStatus';
 import JointSliders from "./JointSliders";
 
 // Visor basado en URDF: lee la descripción del robot desde el mismo `robot_description`
@@ -11,11 +12,6 @@ import JointSliders from "./JointSliders";
 const UrdfViewer = lazy(() => import('@/features/simulator/viewer/UrdfViewer'));
 
 const DEFAULT_ANGLES = {
-  shoulder_pan_joint: 0, shoulder_lift_joint: 0, elbow_joint: 0,
-  wrist_1_joint: 0,      wrist_2_joint: 0,       wrist_3_joint: 0,
-};
-
-const HOME_ANGLES = {
   shoulder_pan_joint: 0, shoulder_lift_joint: 0, elbow_joint: 0,
   wrist_1_joint: 0,      wrist_2_joint: 0,       wrist_3_joint: 0,
 };
@@ -86,89 +82,107 @@ function QueueOverlay({ position }) {
   );
 }
 
-const START_STEPS = [
-  { text: "Reservando un contenedor", time: "3 s", state: "done" },
-  { text: "Levantando ROS 2 y el modelo del UR5e", time: "38 s", state: "busy" },
-  { text: "Conectando el visor 3D", time: "", state: "wait" },
-];
+// El arranque se da por fallido a los 2 minutos. Es lo único que se sabe con certeza del
+// tiempo de arranque, así que es lo que se le dice al alumno.
+const START_TIMEOUT_MS = 120000;
 
-export default function SimulatorPanel({ jointAngles, queue, onCopyToEditor }) {
-  const [serverRunning, setServerRunning] = useState(false);
+/** Tiempo transcurrido desde `since`, en m:ss, que se actualiza cada segundo. */
+function Elapsed({ since }) {
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    const id = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(id);
+  }, []);
+  const secs = Math.max(0, Math.floor((now - since) / 1000));
+  return <span className="tabular-nums">{Math.floor(secs / 60)}:{String(secs % 60).padStart(2, "0")}</span>;
+}
+
+// La pantalla de arranque decía «te avisamos al terminar» y no había ningún aviso. Este es
+// el aviso: si el alumno está en otra pestaña cuando el simulador queda listo, el título de
+// la pestaña lo dice, y vuelve a ser el de siempre cuando regresa.
+function announceReadyInTitle() {
+  if (typeof document === "undefined" || !document.hidden) return;
+  const original = document.title;
+  document.title = `Simulador listo · ${original}`;
+  const restore = () => {
+    if (document.hidden) return;
+    document.title = original;
+    document.removeEventListener("visibilitychange", restore);
+  };
+  document.addEventListener("visibilitychange", restore);
+}
+
+export default function SimulatorPanel({ jointAngles, frameTime, queue, onCopyToEditor }) {
+  const { status, loaded } = useSimulatorStatus();
   const [showSliders, setShowSliders] = useState(false);
   const [manualAngles, setManualAngles] = useState(DEFAULT_ANGLES);
   const [cameraView, setCameraView] = useState("free");
-  const [homeActive, setHomeActive] = useState(false);
-  const [loadingStatus, setLoadingStatus] = useState(true);
-  const [startingServer, setStartingServer] = useState(false);
+  // Desde que el alumno pulsa Iniciar hasta que el servidor responde «running». Hace falta
+  // aparte del estado del servidor: justo después de pedir el arranque, un sondeo todavía
+  // puede responder «stopped» y la pantalla volvería a ofrecer el botón.
+  const [startRequested, setStartRequested] = useState(false);
   const [startError, setStartError] = useState(null);
+  // Desde cuándo se cuenta el tiempo de arranque: el clic, o la apertura de la página si el
+  // servidor ya venía arrancando.
+  const [mountedAt] = useState(() => Date.now());
+  const [startedAt, setStartedAt] = useState(null);
   const startPollRef = useRef(null);
   const startTimeoutRef = useRef(null);
 
-  const checkStatus = useCallback(async () => {
-    if (startPollRef.current) return;
-    try {
-      const response = await getSimulatorStatus();
-      if (response.status === "running") {
-        setServerRunning(true);
-        setStartingServer(false);
-      } else if (response.status === "starting") {
-        setServerRunning(false);
-        setStartingServer(true);
-      } else {
-        setServerRunning(false);
-        setStartingServer(false);
-      }
-    } catch {
-      setServerRunning(false);
-    } finally {
-      setLoadingStatus(false);
-    }
+  const serverRunning = status === "running";
+  const startingServer = !serverRunning && (startRequested || status === "starting");
+  const loadingStatus = !loaded;
+
+  useEffect(() => () => {
+    clearInterval(startPollRef.current);
+    clearTimeout(startTimeoutRef.current);
   }, []);
 
-  useEffect(() => {
-    checkStatus();
-    const interval = setInterval(checkStatus, 5000);
-    return () => {
-      clearInterval(interval);
-      clearInterval(startPollRef.current);
-      clearTimeout(startTimeoutRef.current);
-    };
-  }, [checkStatus]);
+  const stopStartWatch = () => {
+    clearInterval(startPollRef.current);
+    clearTimeout(startTimeoutRef.current);
+    startPollRef.current = null;
+  };
 
   const handleStart = async () => {
-    setStartingServer(true);
+    setStartRequested(true);
+    setStartedAt(Date.now());
     setStartError(null);
     try {
       await startSimulator();
+      setSimulatorStatus("starting");
+      // Mientras arranca se consulta más a menudo que el sondeo general (cada 2 s y no 5).
       startPollRef.current = setInterval(async () => {
-        try {
-          const res = await getSimulatorStatus();
-          if (res.status === "running") {
-            setServerRunning(true);
-            setStartingServer(false);
-            clearInterval(startPollRef.current);
-            clearTimeout(startTimeoutRef.current);
-          }
-        } catch { /* ignore transient errors */ }
+        if (await refreshSimulatorStatus() === "running") {
+          stopStartWatch();
+          setStartRequested(false);
+          announceReadyInTitle();
+        }
       }, 2000);
       startTimeoutRef.current = setTimeout(() => {
-        clearInterval(startPollRef.current);
-        setStartingServer(false);
-        setStartError("El simulador tardó demasiado en iniciar. Inténtalo de nuevo.");
-      }, 120000);
+        stopStartWatch();
+        setStartRequested(false);
+        setStartError("El simulador tardó más de 2 minutos en encender. Inténtalo de nuevo.");
+      }, START_TIMEOUT_MS);
     } catch (err) {
-      setStartingServer(false);
+      setStartRequested(false);
       setStartError(err.message || "No se pudo iniciar el simulador.");
     }
   };
 
-  // Track whether server frames are actively arriving
+  // Si están llegando fotogramas del servidor. Se marca durante el render, al cambiar la
+  // prop, y no en el efecto: un setState síncrono en el efecto pinta dos veces cada
+  // fotograma. El efecto solo programa el «ya no llegan más».
   const [isAnimating, setIsAnimating] = useState(false);
+  const [lastAngles, setLastAngles] = useState(jointAngles);
   const animTimeoutRef = useRef(null);
+  if (jointAngles !== lastAngles) {
+    setLastAngles(jointAngles);
+    if (jointAngles && !isAnimating) setIsAnimating(true);
+  }
 
   useEffect(() => {
     if (!jointAngles) return;
-    setIsAnimating(true);
     clearTimeout(animTimeoutRef.current);
     animTimeoutRef.current = setTimeout(() => {
       setIsAnimating(false);
@@ -176,22 +190,22 @@ export default function SimulatorPanel({ jointAngles, queue, onCopyToEditor }) {
     }, 600);
   }, [jointAngles]);
 
-  const handleHome = () => {
-    setManualAngles(HOME_ANGLES);
-    setHomeActive(true);
-  };
-
-  useEffect(() => {
-    if (isAnimating) setHomeActive(false);
-  }, [isAnimating]);
-
   const showStartScreen = !serverRunning && !loadingStatus && !startingServer;
-  const effectiveAngles = isAnimating         ? jointAngles
-                        : homeActive          ? manualAngles
-                        : showSliders         ? manualAngles
+  // La vista previa de posturas solo cambia lo que se dibuja: el robot no se mueve. Al
+  // cerrarla, el visor vuelve a la pose real. Se quitó «Posición de inicio», que hacía lo
+  // mismo pero parecía una orden al robot: el visor quedaba mostrando una pose que no era la
+  // real, y al ejecutar parecía que el robot saltaba.
+  const effectiveAngles = isAnimating ? jointAngles
+                        : showSliders ? manualAngles
                         : jointAngles;
-  const handleSliderChange = (angles) => { setManualAngles(angles); setHomeActive(false); };
-  const handleCopyToEditor = (code) => onCopyToEditor?.(code);
+  const handleSliderChange = (angles) => setManualAngles(angles);
+  const handleCopyToEditor = (angles) => onCopyToEditor?.(angles);
+  // Al abrir la vista previa, se parte de la pose real del robot, no de la última que se
+  // dejó en los deslizadores.
+  const toggleSliders = () => {
+    if (!showSliders && jointAngles) setManualAngles(jointAngles);
+    setShowSliders((s) => !s);
+  };
 
   return (
     <div id="right-panel" className="pointer-events-auto relative flex h-full w-full flex-row bg-[#0a0a0c]">
@@ -203,19 +217,26 @@ export default function SimulatorPanel({ jointAngles, queue, onCopyToEditor }) {
           {/* 3D viewer — takes remaining width */}
           <div className="relative min-w-0 flex-1">
             <Suspense fallback={<div className="grid h-full w-full place-items-center bg-[#0a0a0c] text-xs text-[#6e6d78]">Cargando visor 3D…</div>}>
-              <UrdfViewer jointAngles={effectiveAngles} cameraView={cameraView} />
+              {/* El instante de captura solo acompaña a los fotogramas del servidor. Los
+                  deslizadores manuales no tienen grabación detrás, así que el visor los
+                  interpola con su separación por defecto. */}
+              <UrdfViewer
+                jointAngles={effectiveAngles}
+                frameTime={effectiveAngles === jointAngles ? frameTime : undefined}
+                cameraView={cameraView}
+              />
             </Suspense>
 
             {/* Estado del programa — top-left (canvas §estado del programa) */}
             <div
-              className={`absolute left-3.5 top-3.5 z-20 inline-flex h-8 items-center gap-2 rounded-full border px-3.5 text-xs font-semibold backdrop-blur-md ${
+              className={`absolute left-3.5 top-3.5 z-20 inline-flex h-8 items-center gap-2 rounded-full border px-3.5 text-xs font-semibold backdrop-blur-md transition-colors duration-300 ${
                 isAnimating
                   ? "border-[#7d79e3]/30 bg-[#7d79e3]/[0.14] text-[#a5a1ee]"
                   : "border-[#2c2c34] bg-[#101014]/80 text-[#a1a0ab]"
               }`}
             >
               <span
-                className={`h-[7px] w-[7px] rounded-full ${isAnimating ? "animate-pulse bg-[#a5a1ee]" : "bg-[#6e6d78]"}`}
+                className={`h-[7px] w-[7px] rounded-full transition-colors duration-300 ${isAnimating ? "animate-pulse bg-[#a5a1ee]" : "bg-[#6e6d78]"}`}
               />
               {isAnimating ? "Moviendo" : "En reposo"}
             </div>
@@ -227,7 +248,9 @@ export default function SimulatorPanel({ jointAngles, queue, onCopyToEditor }) {
                   <button
                     key={id}
                     onClick={() => setCameraView(id)}
-                    title={label}
+                    title={`Cámara: ${label}`}
+                    aria-label={`Cámara: ${label}`}
+                    aria-pressed={cameraView === id}
                     className={`grid h-[30px] w-8 place-items-center rounded-[7px] transition-colors ${
                       cameraView === id
                         ? "bg-[#7d79e3]/[0.14] text-[#a5a1ee]"
@@ -240,21 +263,15 @@ export default function SimulatorPanel({ jointAngles, queue, onCopyToEditor }) {
               </div>
 
               <button
-                onClick={handleHome}
-                className="grid h-[34px] w-[34px] place-items-center rounded-[10px] border border-[#2c2c34] bg-[#101014]/80 text-[#a1a0ab] backdrop-blur-md transition-colors hover:text-[#f4f4f6]"
-                title="Posición de inicio"
-              >
-                <Home className="h-4 w-4" strokeWidth={1.8} />
-              </button>
-
-              <button
-                onClick={() => setShowSliders(s => !s)}
+                onClick={toggleSliders}
                 className={`grid h-[34px] w-[34px] place-items-center rounded-[10px] border backdrop-blur-md transition-colors ${
                   showSliders
                     ? "border-[#7d79e3]/40 bg-[#7d79e3]/[0.14] text-[#a5a1ee]"
                     : "border-[#2c2c34] bg-[#101014]/80 text-[#a1a0ab] hover:text-[#f4f4f6]"
                 }`}
-                title="Control manual de juntas"
+                title="Vista previa de posturas"
+                aria-label="Vista previa de posturas"
+                aria-pressed={showSliders}
               >
                 <SlidersHorizontal className="h-4 w-4" strokeWidth={1.8} />
               </button>
@@ -287,7 +304,7 @@ export default function SimulatorPanel({ jointAngles, queue, onCopyToEditor }) {
           {startingServer ? (
             /* ── Levantando el entorno ─────────────────────── */
             <div className="relative z-10 w-[460px] px-8 text-center">
-              <p className="font-mono text-[10px] font-semibold uppercase tracking-[0.16em] text-[#6e6d78]">Simulador ROS 2 · UR5e</p>
+              <p className="font-mono text-[10px] font-semibold uppercase tracking-[0.16em] text-[#6e6d78]">Simulador ROS2 · UR5e</p>
               <h2 className="mt-4 text-[34px] font-bold leading-[1.14] tracking-[-0.016em] text-[#f4f4f6]">
                 Levantando el entorno
               </h2>
@@ -296,51 +313,30 @@ export default function SimulatorPanel({ jointAngles, queue, onCopyToEditor }) {
                 <span className="sim-start-slide absolute top-0 h-full w-[40%] rounded-full bg-[#7d79e3]" />
               </div>
 
-              <div className="mt-9 flex flex-col gap-[3px]">
-                {START_STEPS.map((s) => (
-                  <div
-                    key={s.text}
-                    className={`flex items-center gap-3.5 rounded-[11px] px-4 py-3 ${
-                      s.state === "busy" ? "bg-[#7d79e3]/[0.07]" : ""
-                    }`}
-                  >
-                    <span
-                      className={`grid h-[22px] w-[22px] flex-shrink-0 place-items-center rounded-full ${
-                        s.state === "done"
-                          ? "bg-[#34d399]"
-                          : s.state === "busy"
-                            ? ""
-                            : "border-[1.6px] border-[#2c2c34]"
-                      }`}
-                    >
-                      {s.state === "done" && (
-                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#04231a" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12.5l4.5 4.5L19 7" /></svg>
-                      )}
-                      {s.state === "busy" && (
-                        <svg className="animate-spin" width="14" height="14" viewBox="0 0 24 24" fill="none" strokeWidth="2.6" strokeLinecap="round"><path d="M12 3a9 9 0 019 9" stroke="#a5a1ee" /><circle cx="12" cy="12" r="9" stroke="rgba(165,161,238,0.3)" /></svg>
-                      )}
-                    </span>
-                    <span className={`flex-1 text-left text-[13.5px] ${s.state === "wait" ? "text-[#55555f]" : "text-[#d6d5de]"}`}>
-                      {s.text}
-                    </span>
-                    <span className="flex-shrink-0 font-mono text-[11px] text-[#4a4a54]">{s.time}</span>
-                  </div>
-                ))}
-              </div>
+              {/* Lo que se sabe de verdad: cuánto lleva. El backend no informa en qué fase va, así
+                  que no se muestran pasos: antes eran tres escritos a mano que nunca avanzaban. */}
+              <p className="mt-7 font-mono text-[28px] font-semibold text-[#f4f4f6]">
+                <Elapsed since={startedAt ?? mountedAt} />
+              </p>
+              <p className="mt-1 text-[12px] text-[#6e6d78]">tiempo transcurrido</p>
 
-              <p className="mt-6 font-mono text-[11px] text-[#55555f]">Puedes dejar la pestaña abierta; te avisamos al terminar</p>
+              <p className="mx-auto mt-6 max-w-[360px] text-[13.5px] leading-[1.65] text-[#a1a0ab]">
+                Se está encendiendo la máquina del simulador en la nube, con ROS2 y el modelo del UR5e.
+                Puede tardar hasta 2 minutos.
+              </p>
+              <p className="mt-4 font-mono text-[11px] text-[#55555f]">Puedes cambiar de pestaña: el título te avisará cuando esté listo</p>
             </div>
           ) : showStartScreen ? (
             /* ── Listo para programar ─────────────────────── */
             <div className="relative z-10 w-[520px] px-8 text-center">
               <RobotIllustration />
 
-              <p className="mt-6 font-mono text-[10px] font-semibold uppercase tracking-[0.16em] text-[#6e6d78]">Simulador ROS 2 · UR5e</p>
+              <p className="mt-6 font-mono text-[10px] font-semibold uppercase tracking-[0.16em] text-[#6e6d78]">Simulador ROS2 · UR5e</p>
               <h2 className="mt-4 text-[38px] font-bold leading-[1.12] tracking-[-0.018em] text-[#f4f4f6]">
                 Listo para programar
               </h2>
               <p className="mx-auto mt-3.5 max-w-[400px] text-[15.5px] leading-[1.66] text-[#a1a0ab]">
-                Enciende el entorno para ejecutar tu código y ver el brazo moverse en 3D, en el momento.
+                Enciende el entorno para ejecutar tu código y ver en 3D cómo se mueve el brazo.
               </p>
 
               {startError && (
@@ -359,13 +355,13 @@ export default function SimulatorPanel({ jointAngles, queue, onCopyToEditor }) {
                   Iniciar simulador
                 </button>
               </div>
-              <p className="mt-4.5 font-mono text-[11px] text-[#55555f]">Se apaga solo cuando sales · tarda entre 40 y 90 s en levantar</p>
+              <p className="mt-4.5 font-mono text-[11px] text-[#55555f]">Puede tardar hasta 2 minutos en encender</p>
             </div>
           ) : (
             /* ── Initial loading ──────────────────────────── */
             <div className="relative z-10 flex flex-col items-center gap-4">
               <Loader2 className="h-10 w-10 animate-spin text-[#a5a1ee]" />
-              <p className="text-sm text-[#6e6d78]">Conectando con el simulador...</p>
+              <p className="text-sm text-[#6e6d78]">Comprobando el estado del simulador…</p>
             </div>
           )}
         </div>

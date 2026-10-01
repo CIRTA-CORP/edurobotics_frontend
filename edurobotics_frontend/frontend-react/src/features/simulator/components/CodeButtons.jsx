@@ -4,7 +4,7 @@ import { Play, Square, Download, Upload, ChevronLeft, Loader2 } from "lucide-rea
 const Tooltip = ({ title, children }) => (
   <div className="group relative flex items-center justify-center">
     {children}
-    <div className="pointer-events-none absolute top-full mt-2 left-1/2 -translate-x-1/2 hidden group-hover:flex z-50 whitespace-nowrap">
+    <div className="pointer-events-none absolute top-full mt-2 left-1/2 -translate-x-1/2 hidden group-hover:flex group-focus-within:flex z-50 whitespace-nowrap">
       <span className="px-2.5 py-1 text-[11px] font-medium text-[#f4f4f6] bg-[#1f1f26] border border-[#33333c] shadow-lg rounded-md">
         {title}
       </span>
@@ -15,9 +15,11 @@ const Tooltip = ({ title, children }) => (
 /* ── Run button — verde de marca, texto oscuro (canvas §02) ── */
 const RunButton = ({ runLoading, handleRun }) => (
   <button
+    type="button"
     onClick={handleRun}
+    title="Ejecutar (Ctrl + Enter)"
     disabled={runLoading}
-    className={`inline-flex h-8 items-center gap-2 rounded-[9px] px-3.5 text-[12.5px] font-semibold transition-colors ${
+    className={`inline-flex h-8 items-center gap-2 rounded-[9px] px-3.5 text-[12.5px] font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#a5a1ee] ${
       runLoading
         ? "cursor-wait bg-[#34d399]/20 text-[#6ee7b7]"
         : "bg-[#10b981] text-[#04231a] hover:bg-[#34d399]"
@@ -40,9 +42,11 @@ const RunButton = ({ runLoading, handleRun }) => (
 /* ── Stop button — contorno, rosa solo al correr ── */
 const StopButton = ({ handleStop, disabled, running }) => (
   <button
+    type="button"
     onClick={handleStop}
+    title={disabled ? "No hay nada ejecutándose" : "Dejar de esperar la respuesta"}
     disabled={disabled}
-    className={`inline-flex h-8 items-center gap-2 rounded-[9px] border px-3.5 text-[12.5px] font-semibold transition-colors ${
+    className={`inline-flex h-8 items-center gap-2 rounded-[9px] border px-3.5 text-[12.5px] font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#a5a1ee] ${
       running
         ? "border-[#f08099]/40 text-[#f08099] hover:bg-[#f08099]/10"
         : disabled
@@ -59,8 +63,10 @@ const StopButton = ({ handleStop, disabled, running }) => (
 const IconButton = ({ onClick, title, children }) => (
   <Tooltip title={title}>
     <button
+      type="button"
       onClick={onClick}
-      className="grid h-[30px] w-[30px] place-items-center rounded-lg text-[#8b8a95] transition-colors hover:bg-[#26262d] hover:text-[#f4f4f6]"
+      aria-label={title}
+      className="grid h-[30px] w-[30px] place-items-center rounded-lg text-[#8b8a95] transition-colors hover:bg-[#26262d] hover:text-[#f4f4f6] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#a5a1ee]"
     >
       {children}
     </button>
@@ -69,16 +75,19 @@ const IconButton = ({ onClick, title, children }) => (
 
 /* ── Upload (label + hidden file input) ─────────── */
 const UploadButton = ({ handleUpload }) => (
-  <Tooltip title="Subir archivo">
+  <Tooltip title="Subir un archivo .py">
     <label
       htmlFor="upload-icon-button-file"
-      className="grid h-[30px] w-[30px] cursor-pointer place-items-center rounded-lg text-[#8b8a95] transition-colors hover:bg-[#26262d] hover:text-[#f4f4f6]"
+      className="grid h-[30px] w-[30px] cursor-pointer place-items-center rounded-lg text-[#8b8a95] transition-colors hover:bg-[#26262d] hover:text-[#f4f4f6] has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-[#a5a1ee]"
     >
+      {/* `sr-only` y no `hidden`: con display:none el campo no se alcanza con el teclado. */}
       <input
         type="file"
         id="upload-icon-button-file"
+        accept=".py,text/x-python,text/plain"
         onChange={handleUpload}
-        className="hidden"
+        aria-label="Subir un archivo .py"
+        className="sr-only"
       />
       <Upload className="h-4 w-4" strokeWidth={1.8} />
     </label>
@@ -106,7 +115,7 @@ export default function CodeButtons({
       <div className="mx-1 h-[18px] w-px bg-[#2c2c34]" />
 
       {/* Secondary actions */}
-      <IconButton onClick={handleDownload} title="Descargar archivo">
+      <IconButton onClick={handleDownload} title="Descargar programa.py">
         <Download className="h-4 w-4" strokeWidth={1.8} />
       </IconButton>
       <UploadButton handleUpload={handleUpload} />

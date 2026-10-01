@@ -57,4 +57,4 @@
       es equivalente y más repetible: el segundo recibió «EN COLA — puesto 1»
       mientras el primero tenía el hueco, y «ES TU TURNO» al soltarlo, sin
       pulsar nada.
-- [x] 6.4 Incorporar el delta a `specs/` y archivar el change.
+- [ ] 6.4 Incorporar el delta a `specs/` y archivar el change.

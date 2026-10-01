@@ -99,6 +99,59 @@
   }
 }
 
+/* ── Simulador: animaciones cortas que explican algo ─────────────────────────
+   Una fila nueva de la terminal, el panel que se abre, la pestaña que cambia, el aviso
+   de que el código cambió. El visor 3D no se anima: ahí solo se mueve lo que hizo el robot. */
+@keyframes simFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes simRowIn {
+  from { opacity: 0; transform: translateY(3px); }
+  to { opacity: 1; transform: none; }
+}
+
+@keyframes simSlideIn {
+  from { opacity: 0; transform: translateX(14px); }
+  to { opacity: 1; transform: none; }
+}
+
+@keyframes simNotice {
+  0% { opacity: 0; transform: translateY(6px); }
+  10%, 85% { opacity: 1; transform: none; }
+  100% { opacity: 0; }
+}
+
+@keyframes simLineAdded {
+  from { background: rgba(125, 121, 227, 0.32); }
+  to { background: transparent; }
+}
+
+.sim-fade-in { animation: simFadeIn 0.16s ease-out; }
+.sim-row-in { animation: simRowIn 0.18s ease-out; }
+.sim-slide-in { animation: simSlideIn 0.2s ease-out; }
+.sim-notice { animation: simNotice 2.6s ease-out forwards; }
+.sim-line-added { animation: simLineAdded 1.6s ease-out forwards; }
+
+/* La línea donde falló el programa. Antes se inyectaba como <style> en cada montaje del
+   editor, y cada vuelta al simulador dejaba una etiqueta más en el documento. */
+.monaco-error-line {
+  background: rgba(255, 60, 60, 0.18) !important;
+  border-left: 3px solid #ff3c3c;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sim-fade-in,
+  .sim-row-in,
+  .sim-slide-in {
+    animation: none;
+  }
+  /* El aviso y el resaltado se siguen viendo, sin desplazamiento: dan información. */
+  .sim-notice { animation: simFadeIn 0.01s linear; }
+  .sim-line-added { animation: none; background: rgba(125, 121, 227, 0.22); }
+}
+
 .animate-scale-in {
   animation: scaleIn 0.2s ease-out;
 }
@@ -533,4 +586,74 @@
   .faq-item__icon { transition: background-color 200ms ease, color 200ms ease; }
   .faq-item[open] .faq-item__icon { transform: none; }
   .faq-item__answer { animation: none; }
+}
+
+/* ── Bloque «Código para el simulador» ─────────────────────────────────────
+   Un bloque de código marcado por el profesor para abrirse en el simulador
+   (`data-simulator="true"`, ver simulatorCodeBlock.js). Se distingue con el
+   acento del simulador, en el editor (.tiptap) y en todo lo que pinta la clase
+   (.rich-content: la clase del alumno, la vista previa y la impresión).
+   La etiqueta hereda la fuente del bloque: no se introduce tipografía nueva. */
+.tiptap pre[data-simulator="true"],
+.rich-content pre[data-simulator="true"] {
+  position: relative;
+  border-left: 3px solid #7d79e3;
+  padding-top: 2rem;
+}
+
+.tiptap pre[data-simulator="true"]::before,
+.rich-content pre[data-simulator="true"]::before {
+  content: 'Código para el simulador';
+  position: absolute;
+  top: 0.55rem;
+  left: 1rem;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #a5a1ee;
+  pointer-events: none;
+}
+
+/* En la clase del alumno el bloque lleva debajo su botón, pegado: se leen como
+   una sola pieza. Solo cuando el botón está (la vista previa y la impresión no
+   lo tienen, y ahí el bloque conserva sus esquinas). */
+.rich-content pre[data-simulator="true"]:has(+ .sim-code-actions) {
+  margin-bottom: 0;
+  border-bottom-left-radius: 0;
+  border-bottom-right-radius: 0;
+}
+
+.rich-content .sim-code-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin: 0 0 0.75rem;
+  padding: 0.5rem 0.75rem;
+  background: #0f172a;
+  border-left: 3px solid #7d79e3;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 0 0 0.5rem 0.5rem;
+}
+
+.rich-content .sim-code-run {
+  display: inline-flex;
+  align-items: center;
+  height: 2rem;
+  padding: 0 0.875rem;
+  border-radius: 0.5rem;
+  background: #f4f4f6;
+  color: #16151b;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.15s;
+}
+
+.rich-content .sim-code-run:hover {
+  background: #ffffff;
+}
+
+.rich-content .sim-code-run:focus-visible {
+  outline: 2px solid #a5a1ee;
+  outline-offset: 2px;
 }

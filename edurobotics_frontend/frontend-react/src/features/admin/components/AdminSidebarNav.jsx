@@ -6,7 +6,7 @@
  * contador.
  */
 import { useAdmin } from '@/features/admin/context/AdminContext'
-import { BarChart3, BookOpen, GraduationCap, Globe, Users } from 'lucide-react'
+import { BarChart3, BookOpen, DatabaseBackup, GraduationCap, Globe, Users } from 'lucide-react'
 
 const LEVEL_DOT = {
   beginner: 'bg-emerald-500',
@@ -102,6 +102,9 @@ export function AdminSidebarNav() {
           <SectionLabel>Sitio</SectionLabel>
           <NavButton active={activeTab === 'landing'} onClick={() => setActiveTab('landing')} icon={Globe}>
             Landing
+          </NavButton>
+          <NavButton active={activeTab === 'respaldos'} onClick={() => setActiveTab('respaldos')} icon={DatabaseBackup}>
+            Respaldos
           </NavButton>
         </>
       )}

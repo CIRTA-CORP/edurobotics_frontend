@@ -43,9 +43,11 @@
 
 ## Pendiente detectado durante la revisión
 
-- [ ] 5.1 `DELETE /api/users/me` no impide que un admin borre su propia cuenta. Si es el
+- [x] 5.1 `DELETE /api/users/me` no impide que un admin borre su propia cuenta. Si es el
       único administrador, la plataforma queda sin acceso de administración y no hay
       vuelta atrás. Falta un guard que bloquee el borrado del último admin.
+      Resuelto en `p0-p1-hardening`: `ensure_not_last_admin()` protege el borrado
+      propio (`auth/routes.py`) y el de un admin por otro (`admin/routes.py`).
 
 ## Diferido (documental/legal)
 - RAT del proyecto; protocolo de brechas + responsable/DPO; reglamentos pendientes de la

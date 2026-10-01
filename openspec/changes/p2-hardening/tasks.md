@@ -84,4 +84,4 @@ Siete bloques independientes, uno por commit. En orden de valor, no de esfuerzo.
 - [x] 8.3 Frontend: `npm run lint` y `npm run build`.
 - [x] 8.4 Recorrido a mano: login, una lección, el editor de la directora y
       `/simulator`.
-- [x] 8.5 Incorporar los deltas a `specs/` y archivar el change.
+- [ ] 8.5 Incorporar los deltas a `specs/` y archivar el change.
