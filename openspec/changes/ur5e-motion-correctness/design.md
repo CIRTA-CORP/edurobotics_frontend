@@ -255,3 +255,50 @@ El de la Robotiq 85 va de 0 a 0,804 rad, así que «abierta» quedaba en 0,196 r
 ~75 %: exactamente lo medido. Se refleja dentro del rango real. Y `robot_api` espera a que
 los dedos dejen de moverse en vez de a que lleguen: al cerrar sobre un objeto, la pinza
 nunca llega, y eso es lo correcto.
+
+### 17. Ajuste del cierre de la pinza
+
+Al corregir la apertura de la pinza (16), el cierre empeoró: el límite de cierre
+(`EPSILON_CLOSING`, 0,268) estaba calibrado para la fórmula equivocada, donde caía justo
+en 0,785 rad, el punto en que las yemas se tocan. Con la fórmula corregida dejaba 22,5 mm
+de hueco. Medido con `getClosestPoints`: 83,0 mm abierta, 22,5 mm a 0,589 rad, 0,2 mm a
+0,785 rad. Se recalculó a 0,0243 para que el cierre siga en 0,785 rad.
+
+### 18. El ruido de los motores anulaba la deduplicación
+
+Con el brazo sostenido por sus motores, cada lectura en reposo difiere de la anterior
+entre 2·10⁻⁸ y 10⁻⁶ rad, así que «emitir solo si cambió» dejó de filtrar: un programa de
+40 s sin mover el robot daba ~400 fotogramas, y la animación reproducía 40 s de un brazo
+quieto. El muestreador usa ahora una tolerancia de 10⁻⁴ rad respecto del último
+fotograma enviado. Medido: un programa quieto de 5 s da 1 fotograma.
+
+## Verificación en producción
+
+Imagen `registry.fly.io/edurobotics-sim:ur5e-motion-20261001d`, aplicada con
+`flyctl machine update` a la máquina `148ee95dc34489` (que conserva su ID).
+Imagen anterior, para volver atrás:
+`registry.fly.io/edurobotics-sim@sha256:df42b3062afbf92d7b38a37d21b2bbeb049b9f7d9b9d3d3dea1dfaf2c10ca48b`.
+
+**Física y `robot_api`, 13 de 13:**
+
+| | Antes | Medido |
+|---|---|---|
+| Retraso de la orden | 900 ms | 7 ms |
+| Llegada tras 2 s | 84–95 % | error 0,0002 rad |
+| 3 s después | de vuelta en 0 | error 0,0000 rad |
+| 3 rad pedidos en 0,5 s | no llegaba | aviso, 1,82 s, error 0,0007 |
+| Codo a 4 rad | aceptado | `ValueError` antes de moverse |
+| Choque contra el suelo | rebotaba | parada; quieto 1,5 s (−0,408 → −0,408) |
+| Alejarse tras la parada | — | error 0,0000 |
+| Pinza | abría al 75 % | cerrada 0,784, abierta 0,000 |
+| Escrituras por segundo / a medias | ~3 / 3 en 6 s | 10,3 / 0 |
+| Procesos sobrantes | 2 | 0 |
+
+**De punta a punta, por el código del backend, 10 de 10:** animación de 5,44 s para
+2 s + 1 s + 2 s con el brazo quieto en la pausa; error de la línea 3 marcado como línea 3;
+programa de 48 KB ejecutado; aviso de velocidad; programa trivial en 0,9 s (antes ~17 s);
+programa de 60 s detenido a los 40 s conservando 39 líneas.
+
+**Compatibilidad:** el backend de producción actual (`main`) funciona con la imagen
+nueva. Ya recibe el movimiento corregido; el resto de mejoras llega al mergear
+`feature/7-backend-restructure` y `feature/3-urdf-viewer`.

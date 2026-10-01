@@ -48,7 +48,7 @@
       Fly, con una simulación aparte** de la de producción
 - [x] 6.4 El ciclo nuevo completo en esa simulación aparte: llega, se mantiene, se para al
       chocar y se puede alejar del choque
-- [ ] 6.3 **Tras desplegar:** repetir las mediciones de `design.md`
+- [x] 6.3 **Tras desplegar:** repetir las mediciones de `design.md` — 13/13 física, 10/10 de punta a punta
 
 ## 8. Hallazgos durante la implementación (ver design.md, 9–12)
 
@@ -63,6 +63,8 @@
 - [x] 9.2 Límite del programa dentro de la máquina (`timeout 40`); 408 explicado
 - [x] 9.3 Entorno de ROS guardado al arrancar: de ~17 s a ~1 s por ejecución
 - [x] 9.4 Apertura de la pinza reflejada en su rango real; `robot_api` espera a que pare
+- [x] 9.5 Límite de cierre recalculado para la fórmula corregida (cerrada a 0,785 rad)
+- [x] 9.6 Tolerancia de 1e-4 rad en el muestreador frente al ruido de los motores
 
 Nota: una prueba de `robot_api` (`test_unnamed_joints_keep_their_measured_position`)
 falló una vez en ~14 corridas y no se reprodujo en 13 más. Está en el simulador falso de
