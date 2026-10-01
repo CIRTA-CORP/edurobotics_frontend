@@ -17,10 +17,9 @@ backend `feature/7-backend-restructure`, frontend `feature/6-simulator-editor-re
 
 ## 2. Backend
 
-- [ ] 2.1 `postgresql-client-17` en la imagen final; comprobar `pg_dump --version` en el
-      build — escrito. Comprobado en fuentes públicas que `python:3.12-slim` es Debian 13
-      (trixie) y que trixie trae `postgresql-client-17` 17.11. **Falta construir la imagen**:
-      Docker Desktop no arranca en este equipo (cuadro de error al iniciar)
+- [x] 2.1 `postgresql-client-17` en la imagen final; comprobar `pg_dump --version` en el
+      build. Comprobado en producción: Railway construyó la imagen y el primer respaldo
+      (2026-10-01, manual, 85 KB) pasó la comprobación de versión y de volcado completo
 - [x] 2.2 `features/backups/service.py`: volcado, compresión, comprobación, subida,
       rotación a 8. La rotación nunca borra el respaldo recién creado (encontrado al
       probar: con el reloj desfasado lo habría borrado)
@@ -45,8 +44,10 @@ backend `feature/7-backend-restructure`, frontend `feature/6-simulator-editor-re
 ## 4. Frontend
 
 - [x] 4.1 Pestaña «Respaldos» en el panel de administración: lista, Descargar, Crear
-      respaldo ahora, aviso de datos sensibles (verificada en el navegador: sin configurar,
-      con lista simulada, y error de descarga en español)
+      respaldo ahora (verificada en el navegador: sin configurar, con lista simulada, y
+      error de descarga en español; en producción, Mario creó el primer respaldo). La nota
+      sobre datos de menores se quitó a pedido de Mario: hoy no hay alumnos menores en la
+      plataforma y los administradores ya lo saben
 - [x] 4.2 Aviso en amarillo si el último respaldo tiene más de 8 días (verificado)
 - [ ] 4.3 Texto de conservación en la política de privacidad — escrito; **lo revisa Mario**
 
@@ -59,5 +60,6 @@ backend `feature/7-backend-restructure`, frontend `feature/6-simulator-editor-re
 ## 6. Verificación
 
 - [x] 6.1 Build y ESLint sin hallazgos nuevos (frontend); tests y migraciones (backend)
-- [ ] 6.2 Primer respaldo automático visto en la lista
+- [ ] 6.2 Primer respaldo automático visto en la lista — el manual ya funcionó en
+      producción; falta lanzar el workflow (Actions → Run workflow) para probar el token
 - [ ] 6.3 **A mano:** la directora descarga un respaldo desde la plataforma

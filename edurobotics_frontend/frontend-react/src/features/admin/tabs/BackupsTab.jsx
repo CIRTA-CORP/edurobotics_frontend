@@ -205,19 +205,10 @@ export function BackupsTab() {
         )}
       </div>
 
-      {/* Lo que hay que saber se dice aquí, no solo en el manual. */}
-      <div className="space-y-1.5 text-[11.5px] leading-relaxed text-[#8b8a95]">
-        <p>
-          <strong className="font-semibold text-[#55545f]">Un respaldo contiene datos personales</strong>, también
-          de estudiantes menores de edad, y las contraseñas cifradas. Guárdalo en un lugar seguro y no lo
-          compartas. Cada descarga queda registrada.
-        </p>
-        <p>
-          El archivo es la base completa en SQL comprimido (<span className="font-mono">.sql.gz</span>). Restaurarlo
-          no se hace desde aquí, a propósito: reemplazaría los datos actuales. Sigue el procedimiento de
-          restauración del backend o pide ayuda a quien mantiene la plataforma.
-        </p>
-      </div>
+      <p className="text-[11.5px] leading-relaxed text-[#8b8a95]">
+        Cada respaldo es una copia completa de la base de datos (<span className="font-mono">.sql.gz</span>).
+        Restaurarlo no se hace desde aquí; si lo necesitas, pide ayuda a quien mantiene la plataforma.
+      </p>
     </div>
   )
 }
