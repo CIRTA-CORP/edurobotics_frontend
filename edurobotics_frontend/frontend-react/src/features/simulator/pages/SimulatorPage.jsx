@@ -2,7 +2,8 @@ import { lazy, Suspense, useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Loader2, Monitor } from 'lucide-react';
 import { getStoredUser } from '@/features/auth/services/auth';
-import { getSimulatorCapacity, getSimulatorStatus, stopSimulator } from '@/features/simulator/services/simulator';
+import { getSimulatorCapacity, stopSimulator } from '@/features/simulator/services/simulator';
+import { useSimulatorStatus, refreshSimulatorStatus } from '@/features/simulator/lib/simulatorStatus';
 
 // Lazy so the heavy 3D engine only downloads on desktop, where the simulator
 // actually runs — phones never pull it.
@@ -97,7 +98,6 @@ export default function SimulatorPage() {
   );
   const [capacity, setCapacity] = useState(null); // null = checking
   const [capacityError, setCapacityError] = useState(false);
-  const [serverStatus, setServerStatus] = useState('stopped');
   const [stopping, setStopping] = useState(false);
 
   useEffect(() => {
@@ -131,27 +131,16 @@ export default function SimulatorPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [navigate]);
 
-  // Pill de estado del servidor en la cabecera.
-  useEffect(() => {
-    const poll = async () => {
-      try {
-        const res = await getSimulatorStatus();
-        setServerStatus(res.status === 'running' ? 'running' : res.status === 'starting' ? 'starting' : 'stopped');
-      } catch {
-        setServerStatus('stopped');
-      }
-    };
-    poll();
-    const interval = setInterval(poll, 8000);
-    return () => clearInterval(interval);
-  }, []);
+  // Pill de estado del servidor en la cabecera. Lee el mismo estado que el panel del robot
+  // (lib/simulatorStatus.js): antes cada uno sondeaba por su cuenta y podían contradecirse.
+  const { status: serverStatus } = useSimulatorStatus();
 
   const handleStopServer = async () => {
     setStopping(true);
     try {
       await stopSimulator();
-      setServerStatus('stopped');
     } catch { /* ignore */ } finally {
+      await refreshSimulatorStatus();
       setStopping(false);
     }
   };
@@ -183,14 +172,14 @@ export default function SimulatorPage() {
             <img src="/cirtanitido.svg" alt="CIRTA" className="h-[22px] shrink-0 brightness-0 invert" />
             <span className="h-4 w-px shrink-0 bg-[#33333c]" aria-hidden="true" />
             <span className="truncate text-[13.5px] font-semibold text-[#f4f4f6]">Simulador</span>
-            <span className="hidden font-mono text-[11px] text-[#6e6d78] sm:inline">UR5e · ROS 2</span>
+            <span className="hidden font-mono text-[11px] text-[#6e6d78] sm:inline">UR5e · ROS2</span>
             <span className="hidden rounded-full bg-[#7d79e3]/[0.16] px-1.5 py-0.5 font-mono text-[9px] font-bold tracking-[0.1em] text-[#a5a1ee] sm:inline">BETA</span>
           </div>
         </div>
 
         <div className="flex items-center gap-3">
-          <div className={`inline-flex h-8 items-center gap-2 rounded-full border px-3.5 text-xs font-semibold ${statusMeta.cls}`}>
-            <span className={`h-[7px] w-[7px] rounded-full ${statusMeta.dot}`} />
+          <div className={`inline-flex h-8 items-center gap-2 rounded-full border px-3.5 text-xs font-semibold transition-colors duration-300 ${statusMeta.cls}`}>
+            <span className={`h-[7px] w-[7px] rounded-full transition-colors duration-300 ${statusMeta.dot}`} />
             {statusMeta.text}
           </div>
           {/* Detener la máquina es de administrador: es compartida, así que
