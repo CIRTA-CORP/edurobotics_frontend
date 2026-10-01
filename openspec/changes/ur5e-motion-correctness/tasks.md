@@ -57,7 +57,19 @@
 - [x] 8.3 Programa comprimido, tope de tamaño y rechazos de Fly con estado 200
 - [x] 8.4 Líneas de error traducidas por el backend y mensaje `error_line`
 
+## 9. Hallazgos durante el despliegue (ver design.md, 13–16)
+
+- [x] 9.1 Choques por fuerza (50 N sobre la línea base), no por penetración
+- [x] 9.2 Límite del programa dentro de la máquina (`timeout 40`); 408 explicado
+- [x] 9.3 Entorno de ROS guardado al arrancar: de ~17 s a ~1 s por ejecución
+- [x] 9.4 Apertura de la pinza reflejada en su rango real; `robot_api` espera a que pare
+
+Nota: una prueba de `robot_api` (`test_unnamed_joints_keep_their_measured_position`)
+falló una vez en ~14 corridas y no se reprodujo en 13 más. Está en el simulador falso de
+las pruebas, que en Windows reemplaza archivos mientras otro hilo los lee. La causa no se
+identificó.
+
 ## 7. Despliegue — con el OK de Mario
 
-- [ ] 7.1 Construir y desplegar la imagen en Fly
+- [x] 7.1 Construir y desplegar la imagen en Fly (con `machine update`: la máquina no es de Fly Launch)
 - [ ] 7.2 Subir backend y frontend

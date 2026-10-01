@@ -209,3 +209,49 @@ la línea del editor del alumno y la envía en un mensaje `error_line`.
 `robot.xacro` usa por defecto `kinematics_uni.yaml`, la calibración de fábrica de un
 robot real, y el visor usa la nominal. Difieren en hasta 1 mm y 0,2°: los dos son un
 UR5e, y la diferencia no se ve. No se cambia.
+
+## Hallazgos durante el despliegue
+
+Medidos en la máquina real tras aplicar la primera imagen, y corregidos antes de dar el
+cambio por terminado.
+
+### 13. Los choques se reconocen por la fuerza, no por la penetración
+
+Con la primera imagen, la parada de protección funcionaba unas veces sí y otras no. El
+solver de PyBullet es muy rígido: mantiene las piezas a 0,01 mm aunque se empujen con
+cientos de newtons, así que el umbral de 1 mm solo se superaba en golpes bruscos.
+Medido con los mismos filtros:
+
+| Situación | Fuerza | Penetración |
+|---|---|---|
+| Poses normales, rozar el suelo | ninguna | — |
+| Empujar contra el suelo | 200–300 N | hasta 3 mm |
+| Plegar el codo sobre sí mismo | **684 N** | **0,01 mm** |
+
+Pasa a contar como choque una fuerza de **50 N o más por encima** de la que ya había al
+empezar el movimiento. Restar lo que había al empezar es además lo que permite alejarse
+tras una parada: con la primera imagen, el intento de alejarse volvía a detenerse.
+
+Verificado: 10 de 10 casos (movimientos normales sin paradas falsas, paradas al empujar
+y al plegarse, recuperación tras las dos, rozar sin parada). Tras una parada el brazo
+frena en ~200 ms, con un pequeño rebote, y queda fijo.
+
+### 14. Fly corta las ejecuciones a los ~60 s y se traga la salida
+
+Un programa de 35 s vuelve; uno de 55 s da 408 sin nada de lo impreso. El límite de 120 s
+configurado nunca se cumplió. El límite del programa (40 s) se aplica ahora dentro de la
+máquina con `timeout`, que lo detiene conservando su salida y su movimiento.
+
+### 15. Cada ejecución esperaba ~17 s antes de empezar
+
+15 de esos 17 s eran cargar tres `setup.bash` de ROS (4 + 4 + 6 s), que el código del
+alumno ni necesita. El contenedor guarda el entorno al arrancar, en `/tmp/ros_env.sh`, y
+el backend lo lee de ahí.
+
+### 16. La pinza nunca abría del todo
+
+`bullet_interface` traducía la apertura con `1.0 - width`, suponiendo un rango de 1 rad.
+El de la Robotiq 85 va de 0 a 0,804 rad, así que «abierta» quedaba en 0,196 rad, al
+~75 %: exactamente lo medido. Se refleja dentro del rango real. Y `robot_api` espera a que
+los dedos dejen de moverse en vez de a que lleguen: al cerrar sobre un objeto, la pinza
+nunca llega, y eso es lo correcto.
