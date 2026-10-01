@@ -1,10 +1,11 @@
-import React, { useEffect, useState, useRef, useCallback } from "react";
+import React, { useEffect, useState, useRef, useCallback, useMemo } from "react";
+import { useLocation } from "react-router-dom";
 import CodeButtons from '@/features/simulator/components/CodeButtons';
 import Panel from '@/features/simulator/components/Panel';
 import EditorPanel from '@/features/simulator/editors/EditorPanel';
 import DocumentationPanel from '@/features/simulator/components/DocumentationPanel';
 import Terminal from '@/features/simulator/components/Terminal';
-import { Code2, BookOpen } from "lucide-react";
+import { Code2, BookOpen, RotateCcw } from "lucide-react";
 import { getToken } from '@/features/auth/services/auth';
 
 const BLOCKLY = "blockly";
@@ -62,9 +63,40 @@ export default function LeftPanel({ setAlertType, handleHide, onJointAngles, onQ
   });
   const runningEnviroment = "python_env";
 
+  // Código de la clase, si se llegó desde un bloque «Código para el simulador»
+  // (ContentViewer). Solo se acepta con la forma exacta que pone la clase: el estado de la
+  // navegación viene del historial del navegador, y un estado viejo o raro no debe poner
+  // nada inesperado en el editor.
+  const location = useLocation();
+  const lessonCode = useMemo(() => {
+    const lc = location.state?.lessonCode;
+    if (!lc || typeof lc.code !== "string" || lc.unitId == null || !Number.isInteger(lc.index)) {
+      return null;
+    }
+    return lc;
+  }, [location.state]);
+
+  // Una clave por ejercicio: unidad + posición del bloque entre los de simulador de esa
+  // unidad. Antes había una sola clave para todo, así que lo escrito en una clase aparecía
+  // en otra. Entrar sin venir de una clase mantiene la clave de siempre.
+  //
+  // No se usa un hash del código: corregir una errata en el bloque cambiaría la clave y el
+  // alumno perdería lo que llevaba. El coste es que reordenar bloques los cruza; para eso
+  // está «Restablecer».
+  const storageKey = lessonCode
+    ? `code_${runningEnviroment}:unit:${lessonCode.unitId}:${lessonCode.index}`
+    : `code_${runningEnviroment}`;
+
+  // Si el código actual difiere del de la clase. Solo cambia cuando cruza esa frontera,
+  // así que no vuelve a pintar el panel en cada tecla.
+  const [isModified, setIsModified] = useState(false);
+
   const [runLoading, setRunLoading] = useState(false);
   const [terminalOutput, setTerminalOutput] = useState("");
   const [panelSelected, setPanelSelected] = useState(() => {
+    // Viniendo de una clase se abre en el Editor: es donde está el código que se pidió ver,
+    // aunque la última vez el alumno dejara abierta la Guía.
+    if (lessonCode) return EDITOR;
     const stored = localStorage.getItem("panelSelected") || EDITOR;
     // Blockly se retiró, pero queda gente con esa pestaña guardada de antes:
     // sin esta guarda, abrirían el simulador en un panel que ya no existe.
@@ -120,10 +152,12 @@ export default function LeftPanel({ setAlertType, handleHide, onJointAngles, onQ
     const style = document.createElement("style");
     style.textContent = ".monaco-error-line { background: rgba(255,60,60,0.18) !important; border-left: 3px solid #ff3c3c; }";
     document.head.appendChild(style);
-    const savedCode = localStorage.getItem(`code_${runningEnviroment}`) || null;
-    editorRef.current.setValue(
-      savedCode !== null && savedCode !== undefined ? savedCode : STARTER_CODE
-    );
+    // Primero la versión del alumno de este ejercicio; si no hay, la de la clase; si no se
+    // viene de una clase, la plantilla.
+    const savedCode = localStorage.getItem(storageKey) || null;
+    const initial = savedCode ?? lessonCode?.code ?? STARTER_CODE;
+    editorRef.current.setValue(initial);
+    setIsModified(Boolean(lessonCode) && initial !== lessonCode.code);
 
     // El botón «Copiar al editor» de las juntas vive en el panel del simulador, al otro
     // lado del divisor. Se expone aquí la única operación que necesita, para no sacar el
@@ -132,18 +166,37 @@ export default function LeftPanel({ setAlertType, handleHide, onJointAngles, onQ
       editorApiRef.current = {
         replaceCode: (code) => {
           editorRef.current?.setValue(code);
-          localStorage.setItem(`code_${runningEnviroment}`, code);
+          // En la clave activa: si no, lo copiado se guardaría en un sitio y se leería de otro.
+          localStorage.setItem(storageKey, code);
           // Si el estudiante está en la Guía, el código aparecería fuera de su vista.
           setPanelSelected(EDITOR);
           editorRef.current?.focus();
         },
       };
     }
-  }, [runningEnviroment, editorApiRef]);
+  }, [storageKey, lessonCode, editorApiRef]);
 
   const handleEditorChange = useCallback((value) => {
-    localStorage.setItem(`code_${runningEnviroment}`, value);
-  }, [runningEnviroment]);
+    localStorage.setItem(storageKey, value);
+    if (lessonCode) setIsModified(value !== lessonCode.code);
+  }, [storageKey, lessonCode]);
+
+  // Vuelve al código ACTUAL del profesor, el que trae la clase, no a una copia guardada.
+  //
+  // Se reemplaza con una edición y no con setValue, a propósito: setValue vacía el
+  // historial de deshacer, y entonces pulsar Restablecer sin querer borraría el trabajo del
+  // alumno sin vuelta atrás. Así, Ctrl+Z lo recupera.
+  const handleRestoreLessonCode = useCallback(() => {
+    const editor = editorRef.current;
+    const model = editor?.getModel();
+    if (!editor || !model || !lessonCode) return;
+    editor.pushUndoStop();
+    editor.executeEdits("restablecer-codigo-clase", [
+      { range: model.getFullModelRange(), text: lessonCode.code },
+    ]);
+    editor.pushUndoStop();
+    editor.focus();
+  }, [lessonCode]);
 
   const handleHideTerminal = useCallback(() => {
     if (editorRef.current) {
@@ -328,6 +381,26 @@ export default function LeftPanel({ setAlertType, handleHide, onJointAngles, onQ
       <div className="flex-grow flex flex-col w-full overflow-hidden relative">
         <div className={`absolute inset-0 ${panelSelected === EDITOR ? 'flex flex-col' : 'hidden'}`}>
           <Panel selected={panelSelected === EDITOR}>
+            {lessonCode && (
+              <div className="flex shrink-0 items-center justify-between gap-3 border-b border-[#23232a] bg-[#7d79e3]/[0.08] px-3.5 py-2">
+                <p className="min-w-0 truncate text-[12px] text-[#a1a0ab]">
+                  Código de la clase:{" "}
+                  <span className="font-semibold text-[#f4f4f6]" title={lessonCode.unitTitle}>
+                    {lessonCode.unitTitle || "sin título"}
+                  </span>
+                </p>
+                <button
+                  type="button"
+                  onClick={handleRestoreLessonCode}
+                  disabled={!isModified}
+                  title="Vuelve al código que puso el profesor. Ctrl+Z lo deshace."
+                  className="inline-flex h-7 shrink-0 items-center gap-1.5 rounded-md px-2.5 text-[11.5px] font-semibold text-[#a5a1ee] transition-colors hover:bg-[#7d79e3]/[0.14] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#a5a1ee] disabled:cursor-default disabled:text-[#55555f] disabled:hover:bg-transparent"
+                >
+                  <RotateCcw className="h-3.5 w-3.5" strokeWidth={1.8} />
+                  Restablecer el código de la clase
+                </button>
+              </div>
+            )}
             <div className="flex-grow h-[70%]">
               <EditorPanel
                 handleEditorDidMount={handleEditorDidMount}
