@@ -55,6 +55,13 @@
 - [ ] 7.3 Test: flujo mezclado (muestreador + `robot_api`) produce marcas monótonas
       y sin alternancia ordenada/medida
 - [ ] 7.4 Rehacer la simulación de «Medido» con los dos escritores
+- [ ] 7.5 **El resaltado de errores quedaría corrido.** El frontend resta
+      `WRAPPER_OFFSET = 37` a la línea del traceback para marcarla en el editor,
+      y 37 son las líneas que tiene el wrapper en `main` antes del código del
+      alumno. El wrapper nuevo tiene **69**. Subido tal cual, cada error de
+      Python marcaría una línea 32 más abajo de la real, o ninguna. Arreglo de
+      fondo, no otro número fijo: que el backend traduzca las líneas del
+      traceback antes de enviarlas, porque es el único que conoce el wrapper
 
 ## 6. Cierre
 
