@@ -9,7 +9,7 @@
 
 import { useEditor, EditorContent, ReactNodeViewRenderer, NodeViewWrapper } from '@tiptap/react'
 import StarterKit from '@tiptap/starter-kit'
-import CodeBlockLowlight from '@tiptap/extension-code-block-lowlight'
+import { CodeBlockWithSimulator, toggleSimulatorBlock } from './simulatorCodeBlock'
 import { createLowlight } from 'lowlight'
 import python from 'highlight.js/lib/languages/python'
 import javascript from 'highlight.js/lib/languages/javascript'
@@ -30,7 +30,7 @@ import {
   ImageIcon, Youtube as YoutubeIcon, FileDown, LinkIcon,
   AlignLeft, AlignCenter, AlignRight,
   Undo, Redo, Minus, Loader2,
-  PenLine, Eye, Columns2, Code, SquareCode
+  PenLine, Eye, Columns2, Code, SquareCode, Cpu
 } from 'lucide-react'
 
 const lowlight = createLowlight({ python, javascript, bash })
@@ -240,8 +240,15 @@ function EditorToolbar({ editor, onImageUpload, onFileUpload, uploading }) {
       <ToolbarDivider />
 
       {/* Code */}
-      <ToolbarButton onClick={() => editor.chain().focus().toggleCodeBlock().run()} active={editor.isActive('codeBlock')} title="Bloque de código">
+      <ToolbarButton onClick={() => editor.chain().focus().toggleCodeBlock().run()} active={editor.isActive('codeBlock', { simulator: false })} title="Bloque de código">
         <SquareCode className="w-4 h-4" />
+      </ToolbarButton>
+      {/* El código que el alumno abre en el simulador. Los bloques de código normales
+          siguen siendo para ilustrar: los que hay hoy en los cursos son XML, datos y
+          pseudocódigo, y un botón «Probar en el simulador» junto a ellos solo daría
+          errores. Por eso lo decide el profesor, bloque a bloque. */}
+      <ToolbarButton onClick={() => toggleSimulatorBlock(editor)} active={editor.isActive('codeBlock', { simulator: true })} title="Código para el simulador">
+        <Cpu className="w-4 h-4" />
       </ToolbarButton>
       <ToolbarButton onClick={() => editor.chain().focus().toggleCode().run()} active={editor.isActive('code')} title="Código en línea">
         <Code className="w-4 h-4" />
@@ -334,7 +341,7 @@ export const RichTextEditor = forwardRef(function RichTextEditor({ content, onSa
           class: 'underline',
         },
       }),
-      CodeBlockLowlight.configure({
+      CodeBlockWithSimulator.configure({
         lowlight,
         HTMLAttributes: {
           class: 'code-block',
@@ -372,8 +379,19 @@ export const RichTextEditor = forwardRef(function RichTextEditor({ content, onSa
   })
 
   // Update editor content when prop changes (e.g. switching units)
+  //
+  // `editor` puede ser una instancia YA DESTRUIDA. Al montarse, React desmonta y vuelve a
+  // montar el componente, y `useEditor` destruye la instancia vieja con un setTimeout de
+  // 1 ms; durante esa ventana la referencia sigue llegando aquí. Destruida, tiene
+  // `schema = null`, y `getHTML()` lanza «Cannot read properties of null (reading
+  // 'cached')» — el error que tiraba la página en producción al abrir un curso.
+  //
+  // Pasaba sobre todo en el primer ingreso: con el contenido llegando tarde desde la red,
+  // el efecto se dispara justo en la ventana. Al reintentar, los datos ya estaban en
+  // caché y no había carrera, así que parecía un problema de carga del backend. No lo
+  // era, y por eso un keep-alive no lo habría arreglado.
   useEffect(() => {
-    if (editor && content !== undefined) {
+    if (editor && !editor.isDestroyed && content !== undefined) {
       const currentContent = editor.getHTML()
       // Only update if content actually changed (avoid cursor reset)
       if (currentContent !== content && !(currentContent === '<p></p>' && content === '')) {
@@ -441,10 +459,13 @@ export const RichTextEditor = forwardRef(function RichTextEditor({ content, onSa
   }, [editor])
 
   const handleSave = useCallback(() => {
-    if (!editor || !onSave) return
-    const html = editor.getHTML()
+    if (!onSave) return
+    // Con una instancia destruida no se puede leer el documento, pero tampoco se puede
+    // dejar de guardar sin avisar: el profesor pulsó Guardar y cree que guardó. Se usa
+    // `liveHtml`, que se actualiza en cada edición y es exactamente lo que tiene delante.
+    const html = editor && !editor.isDestroyed ? editor.getHTML() : liveHtml
     onSave(html)
-  }, [editor, onSave])
+  }, [editor, onSave, liveHtml])
 
   // The workshop header owns the primary "Guardar" (canvas 2b.3): expose the
   // same save action so the header button can trigger it from outside.
