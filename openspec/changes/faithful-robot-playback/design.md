@@ -281,3 +281,54 @@ hallazgos nuevos.
 
 **Pendiente**: la ejecución real contra la máquina de Fly.io, que es la que puede
 confirmar los 24 ± 3 fotogramas y los 2,4 s de extremo a extremo.
+
+## Hallazgo posterior — el cambio NO está listo para subir
+
+Encontrado al leer `robot_api.py` antes de la prueba real, no por la prueba.
+
+`robot_api.move_joints` escribe **él mismo** 8 líneas `JOINTS:` al terminar cada
+movimiento (6 el gripper), directo a stderr, cada 0,05 s, **en el formato
+antiguo** sin marca de tiempo. Lo hace a propósito: tras la trayectoria el
+controlador de ROS 2 deriva junta por junta, así que inyecta la pose *ordenada*
+en vez de la medida.
+
+Hay por tanto **dos escritores** en el mismo canal, y el diseño de arriba solo
+contempló uno. La simulación de la sección «Medido» modeló el muestreador y el
+fichero; no a `robot_api`. Consecuencias, reproducidas con el parser real:
+
+1. **El tiempo retrocede.** `_parse_joint_frame` da a los fotogramas sin `t` un
+   tiempo por *conteo* (`índice · 0,1`), pensado para una máquina con la imagen
+   antigua. Mezclados con fotogramas de tiempo real, salen marcas que van hacia
+   atrás en cada asentamiento: 2,90 → 2,32 → 3,10 → 2,40…
+2. **Se alternan la pose ordenada y la medida** durante el asentamiento
+   (1,0 → 1,004 → 1,0 → 0,996…), porque el muestreador sigue leyendo la deriva
+   mientras `robot_api` inyecta la ordenada.
+
+Al reproducir, el final de cada movimiento se convierte en un parón (espera a
+marcas inventadas en el futuro) seguido de una ráfaga (manda de golpe las que
+quedaron «en el pasado»). Es peor que antes en ese tramo.
+
+### Arreglo propuesto — sigue sin tocar la imagen del contenedor
+
+El wrapper y el código del alumno corren **en el mismo proceso de Python**, y
+`robot_api` escribe en `sys.stderr`. Así que el wrapper puede interceptarlo:
+
+- **Sustituir `sys.stderr` por un proxy** que, al ver una línea `JOINTS:` sin
+  `t`, la reescriba al formato nuevo con el instante real en que se escribió.
+  Deja de haber tiempos inventados: cada fotograma lleva la hora a la que ocurrió.
+- **La pose ordenada manda hasta la siguiente orden.** Tras un fotograma de
+  `robot_api`, el muestreador deja de emitir la pose medida hasta que cambie la
+  fecha de modificación de `/tmp/robot_cmd.json` — es decir, hasta que el alumno
+  dé la siguiente orden. No es un temporizador ni una tolerancia numérica: es la
+  semántica que el autor de `robot_api` buscaba, «al terminar, la pose es la
+  ordenada».
+
+El parseo del formato antiguo se mantiene para lo que fue pensado: una máquina
+cuya imagen no tenga el wrapper nuevo. Pero ya no se aplica a fotogramas que
+convivan con los nuevos, porque el proxy los habrá convertido antes.
+
+### Lección para la verificación
+
+La simulación validó el componente que se cambió, no el canal completo. Antes de
+dar por buena una prueba de un flujo de datos, enumerar **todos** los escritores
+del canal leyendo el código, no el diagrama de arquitectura.

@@ -46,6 +46,16 @@
       contra los criterios de `design.md` — **pendiente, necesita la máquina de
       Fly.io levantada**
 
+## 7. Segundo escritor en stderr (hallazgo posterior — bloquea la subida)
+
+- [ ] 7.1 Proxy de `sys.stderr` en el wrapper: reescribir las líneas `JOINTS:` sin
+      `t` de `robot_api` al formato nuevo con el instante real
+- [ ] 7.2 El muestreador no emite la pose medida tras un fotograma de `robot_api`
+      hasta que cambie la fecha de `/tmp/robot_cmd.json`
+- [ ] 7.3 Test: flujo mezclado (muestreador + `robot_api`) produce marcas monótonas
+      y sin alternancia ordenada/medida
+- [ ] 7.4 Rehacer la simulación de «Medido» con los dos escritores
+
 ## 6. Cierre
 
 - [ ] 6.1 Anotar en el change los números medidos frente a los calculados
