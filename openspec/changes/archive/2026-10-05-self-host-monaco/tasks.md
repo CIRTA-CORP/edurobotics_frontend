@@ -1,3 +1,5 @@
+> **Archivado el 2026-10-05** por decisión de Mario, con 1 tarea(s) sin marcar: quedan abajo tal cual, como registro de lo que no se hizo o no se verificó. El delta se volcó en `openspec/specs/`.
+
 # Tasks — Autoalojar Monaco
 
 El orden importa: el CDN sale de la CSP **al final**, cuando ya está probado que

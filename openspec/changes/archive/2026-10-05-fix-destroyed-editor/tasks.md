@@ -1,3 +1,5 @@
+> **Archivado el 2026-10-05** por decisión de Mario, con 2 tarea(s) sin marcar: quedan abajo tal cual, como registro de lo que no se hizo o no se verificó. El delta se volcó en `openspec/specs/`.
+
 # Tasks — El editor de contenido deja de romperse
 
 ## 1. Arreglo

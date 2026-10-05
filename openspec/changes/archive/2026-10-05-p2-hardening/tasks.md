@@ -1,3 +1,5 @@
+> **Archivado el 2026-10-05** por decisión de Mario, con 1 tarea(s) sin marcar: quedan abajo tal cual, como registro de lo que no se hizo o no se verificó. El delta se volcó en `openspec/specs/`.
+
 # Tasks — Endurecimiento P2
 
 Siete bloques independientes, uno por commit. En orden de valor, no de esfuerzo.
