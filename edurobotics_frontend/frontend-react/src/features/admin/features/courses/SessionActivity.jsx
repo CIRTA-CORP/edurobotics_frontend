@@ -7,7 +7,7 @@
  */
 import { useQuery } from '@tanstack/react-query'
 import { UserCheck, LogIn, Shield } from 'lucide-react'
-import { getAdminSessions } from '@/features/courses/services/courses'
+import { adminSessionsQuery } from '@/features/admin/services/panelQueries'
 
 /** "hace 5 min" / "hace 2 h" / "hace 3 días". */
 function timeAgo(iso) {
@@ -43,11 +43,7 @@ function initials(name, username) {
 }
 
 export function SessionActivity() {
-  const { data, isLoading } = useQuery({
-    queryKey: ['admin-sessions'],
-    queryFn: getAdminSessions,
-    staleTime: 30_000,
-  })
+  const { data, isLoading } = useQuery(adminSessionsQuery())
 
   const s = data?.sessions
 

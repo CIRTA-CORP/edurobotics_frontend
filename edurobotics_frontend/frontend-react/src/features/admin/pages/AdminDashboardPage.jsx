@@ -8,6 +8,7 @@
  */
 import { lazy, Suspense, useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useQueryClient } from '@tanstack/react-query'
 import { BookOpen, Loader2, PanelsTopLeft } from 'lucide-react'
 import { clearStoredUser, getStoredUser } from '@/features/auth/services/auth'
 import { AdminHeader } from '@/features/admin/components/AdminHeader'
@@ -18,6 +19,7 @@ import { AdminSidebarNav } from '@/features/admin/components/AdminSidebarNav'
 import { CourseCreateDrawer } from '@/features/admin/components/CourseCreateDrawer'
 import { WorkshopDrawers } from '@/features/admin/components/WorkshopDrawers'
 import { CourseColumn } from '@/features/admin/components/CourseColumn'
+import { prefetchPanel } from '@/features/admin/services/panelQueries'
 
 // Lazy-load each tab so the admin shell stays light. The heavy Content tab
 // (TipTap editor) and the student preview only download when actually opened.
@@ -52,6 +54,8 @@ function AdminDashboardLayout() {
     handleLogout,
     isTeacher,
     selectedCourse,
+    selectedCourseId,
+    courses,
   } = useAdmin()
 
   const navigate = useNavigate()
@@ -67,6 +71,16 @@ function AdminDashboardLayout() {
     }
     setUser(storedUser)
   }, [navigate, setUser])
+
+  // Al entrar al panel se piden por adelantado el Dashboard y la Analítica del curso
+  // elegido: cuando se abren, los datos ya están o vienen en camino. Lo fresco no se
+  // vuelve a pedir (change admin-analytics-v2).
+  const queryClient = useQueryClient()
+  const prefetchCourseId = selectedCourseId ?? courses?.[0]?.id ?? null
+  useEffect(() => {
+    if (!user) return
+    prefetchPanel(queryClient, { isTeacher, courseId: prefetchCourseId })
+  }, [user, isTeacher, prefetchCourseId, queryClient])
 
   // A teacher has no course-meta tab ('cursos' is only the empty shell behind the
   // course column; they pick a course there and land on 'taller') nor the

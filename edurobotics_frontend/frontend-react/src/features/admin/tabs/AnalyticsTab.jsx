@@ -16,17 +16,15 @@
  * a teacher sees the same screen scoped to their own courses without those two.
  */
 import { useState } from 'react'
-import { useQuery } from '@tanstack/react-query'
-import { AlertTriangle, BarChart3, Clock, Info } from 'lucide-react'
+import { keepPreviousData, useQuery } from '@tanstack/react-query'
+import { AlertTriangle, BarChart3, Clock, Info, Loader2 } from 'lucide-react'
 import { useAdmin } from '@/features/admin/context/AdminContext'
-import { getCourseFeedbackSummary } from '@/features/courses/services/courses'
 import {
-  getCourseProgressAnalytics,
-  getCoursePerformanceAnalytics,
-  getCourseContentAnalytics,
-  getDailySessions,
-  getInteractionAnalytics,
-} from '@/features/admin/services/analytics'
+  courseOverviewQuery,
+  dailySessionsQuery,
+  interactionQuery,
+  updatedAgo,
+} from '@/features/admin/services/panelQueries'
 
 const fmtPct = (value) => (value == null ? '—' : `${Math.round(value)}%`)
 
@@ -120,51 +118,26 @@ export function AnalyticsTab() {
 
   const courseId = localCourseId ?? selectedCourseId ?? courses?.[0]?.id ?? null
 
-  const progressQ = useQuery({
-    queryKey: ['analytics-progress', courseId],
-    queryFn: () => getCourseProgressAnalytics(courseId),
-    enabled: !!courseId,
-    staleTime: 30_000,
-  })
-  const performanceQ = useQuery({
-    queryKey: ['analytics-performance', courseId],
-    queryFn: () => getCoursePerformanceAnalytics(courseId),
-    enabled: !!courseId,
-    staleTime: 30_000,
-  })
-  const contentQ = useQuery({
-    queryKey: ['analytics-content', courseId],
-    queryFn: () => getCourseContentAnalytics(courseId),
-    enabled: !!courseId,
-    staleTime: 30_000,
-  })
-  const sessionsQ = useQuery({
-    queryKey: ['analytics-sessions-daily', periodDays],
-    queryFn: () => getDailySessions(periodDays),
-    enabled: !isTeacher,
-    staleTime: 30_000,
-  })
+  // Todo lo del curso en UNA petición (antes eran cuatro, y entre todas sumaban 52 consultas
+  // a la base). Al cambiar de curso se mantiene lo anterior hasta que llega lo nuevo, en vez
+  // de vaciar la pantalla.
+  const overviewQ = useQuery({ ...courseOverviewQuery(courseId), placeholderData: keepPreviousData })
+  const sessionsQ = useQuery({ ...dailySessionsQuery(periodDays), enabled: !isTeacher, placeholderData: keepPreviousData })
   // Días activos, tiempo entre sesiones y avance por login: existían en la
   // pantalla anterior y la consolidación los había dejado fuera.
-  const interactionQ = useQuery({
-    queryKey: ['analytics-interaction'],
-    queryFn: getInteractionAnalytics,
-    enabled: !isTeacher,
-    staleTime: 30_000,
-  })
-  const feedbackQ = useQuery({
-    queryKey: ['course-feedback-summary', courseId],
-    queryFn: () => getCourseFeedbackSummary(courseId),
-    enabled: !isTeacher && !!courseId,
-    staleTime: 30_000,
-  })
+  const interactionQ = useQuery({ ...interactionQuery(), enabled: !isTeacher })
 
-  const progress = progressQ.data?.success ? progressQ.data : null
-  const performance = performanceQ.data?.success ? performanceQ.data : null
-  const content = contentQ.data?.success ? contentQ.data : null
+  const overview = overviewQ.data?.success ? overviewQ.data : null
+  const progress = overview?.progress ?? null
+  const performance = overview?.performance ?? null
+  const content = overview?.content ?? null
+  // El resumen de opiniones respondía sin `success` y la tarjeta decía siempre «Aún no hay
+  // respuestas»; ahora viene dentro del overview (solo para administradores).
+  const feedback = overview?.feedback ?? null
   const sessions = sessionsQ.data?.success ? sessionsQ.data : null
-  const feedback = feedbackQ.data?.success ? feedbackQ.data : null
   const interaction = interactionQ.data?.success ? interactionQ.data : null
+  const refreshing = overviewQ.isFetching && !overviewQ.isLoading
+  const switchingCourse = overviewQ.isPlaceholderData
 
   // Cada sección decide por sí misma, contando alumnos (no intentos ni filas).
   const progInsuf = progress?.insufficient_data ?? false
@@ -213,6 +186,22 @@ export function AnalyticsTab() {
           <h1 className="mt-2 text-[28px] font-bold leading-[1.16] tracking-[-0.014em] text-[#16151b]">
             Analítica
           </h1>
+          <p className="mt-2 flex items-center gap-1.5 text-[12px] text-[#a9a8b4]" aria-live="polite">
+            {overviewQ.isLoading ? (
+              <>
+                <Loader2 className="h-3 w-3 animate-spin" /> Calculando…
+              </>
+            ) : switchingCourse ? (
+              <>
+                <Loader2 className="h-3 w-3 animate-spin" /> Cargando el curso…
+              </>
+            ) : overview?.computed_at ? (
+              <>
+                Actualizado {updatedAgo(overview.computed_at)}
+                {refreshing && <Loader2 className="h-3 w-3 animate-spin" aria-label="Actualizando" />}
+              </>
+            ) : null}
+          </p>
         </div>
         <div className="flex items-center gap-2.5">
           <div className="relative">
@@ -255,7 +244,7 @@ export function AnalyticsTab() {
       </div>
 
       {/* 1 ── Figure cards */}
-      <div className="grid grid-cols-2 gap-4 xl:grid-cols-4">
+      <div className={`grid grid-cols-2 gap-4 transition-opacity xl:grid-cols-4 ${switchingCourse ? 'opacity-60' : ''}`}>
         <StatCard
           label="Alumnos activos"
           value={withValue(courseTime.learners ?? 0, progInsuf)}

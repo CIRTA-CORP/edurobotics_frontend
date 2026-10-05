@@ -1,7 +1,7 @@
 // Dashboard "Métricas Globales": platform-wide cumulative cards (registered
 // students, published courses, completions, pass rate, avg difficulty).
 import { useQuery } from '@tanstack/react-query'
-import { getAdminMetrics } from '@/features/courses/services/courses'
+import { adminMetricsQuery } from '@/features/admin/services/panelQueries'
 
 function MetricCard({ label, value, sub }) {
     return (
@@ -16,11 +16,7 @@ function MetricCard({ label, value, sub }) {
 }
 
 export function GlobalMetrics() {
-    const { data, isLoading: loading } = useQuery({
-        queryKey: ['admin-metrics'],
-        queryFn: getAdminMetrics,
-        staleTime: 30_000,
-    })
+    const { data, isLoading: loading } = useQuery(adminMetricsQuery())
 
     const metrics = data?.metrics || null
 
