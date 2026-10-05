@@ -1,3 +1,5 @@
+> **Archivado el 2026-10-05** por decisión de Mario. El delta se volcó en `openspec/specs/`.
+
 # data-protection-compliance (#44) — Ley 21.719
 
 ## 1. Backend: consentimiento

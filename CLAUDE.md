@@ -4,8 +4,9 @@ Plataforma educativa de robótica de CIRTA. React 19 + Vite 7 + Tailwind 4 +
 TanStack Query, con Tiptap para el contenido, Monaco para el editor de código y
 three.js + urdf-loader para el visor del robot. Se despliega en Vercel.
 
-Este repositorio contiene además **`openspec/`**, que gobierna los cambios de los
-dos repositorios — este y el backend (`cirta-work/edurobotics_backend`).
+El código vive en la ruta anidada **`edurobotics_frontend/frontend-react/`**. Este
+repositorio contiene además **`openspec/`**, que gobierna los cambios de los dos
+repositorios — este y el backend (`cirta-work/edurobotics_backend`).
 
 ## Reglas que no se negocian
 
@@ -20,13 +21,19 @@ el hueco con algo plausible. Si algo falla, se dice y se enseña la salida.
 **Esperar el OK de Mario antes de escribir código.** Primero el change de
 OpenSpec, después la implementación.
 
-**La tipografía no se cambia.** La serif tipo Iowan/Palatino está descartada.
+**La tipografía no se cambia.** La serif tipo Iowan/Palatino está descartada. Única
+excepción, pedida por Mario: el **código** (editor, terminal y bloques de la Guía del
+simulador) usa Cascadia Code, empaquetada en `features/simulator/lib/codeFont.js`. No
+extenderla a otros textos sin preguntar.
 
-**Ramas**: `feature/<n>-<slug>`, con número correlativo simple.
-La rama de trabajo del frontend es `feature/3-urdf-viewer`.
+**Ramas**: `feature/<n>-<slug>`, con número correlativo simple, **una sola rama de
+trabajo a la vez** con todo lo que está en curso, y un solo PR a `main`. Varios changes
+pueden compartir esa rama; los commits siguen separados por tema. Cuando se fusiona, la
+siguiente toma el número siguiente (mirar el último `feature/<n>` en `git branch -a`).
+Nada de ramas o worktrees extra «por si acaso».
 
 **Commits en inglés, en imperativo, separados por tema.** Un commit por asunto.
-El cuerpo explica *por qué*, no *qué*.
+El cuerpo explica *por qué*, no *qué*. Sin línea de coautor (`openspec/AGENTS.md`).
 
 **Todo lo que ve el usuario va en español.** Textos, errores, estados vacíos.
 
@@ -63,9 +70,16 @@ Todo cambio de comportamiento pasa por aquí antes de escribirse:
 Se escribe, se espera el OK, y solo entonces se implementa. Al terminar, el
 delta se vuelca en `openspec/specs/` y el change se archiva.
 
-**Hoy hay siete changes atascados en esa última tarea**, así que
-`openspec/specs/` describe menos de lo que el sistema hace. Conviene cerrarlos
-antes de abrir más.
+El 2026-10-05 se archivaron doce changes que estaban terminados y desplegados (algunos
+con una o dos casillas sin marcar, por decisión de Mario: cada `tasks.md` archivado lo
+dice al principio). Quedan abiertos diez, de tres tipos:
+
+- **Hechos y en producción, con pruebas a mano pendientes:** `database-backups`,
+  `simulator-editor-redesign`, `simulator-code-block`, `faithful-robot-playback`.
+- **Rediseños a medias:** `admin-panel-redesign`, `design-system-foundations`,
+  `student-pages-redesign`, `study-mode-redesign`.
+- **Nunca empezados** (propuestas sin una sola casilla hecha): `community-forum`,
+  `interleaved-content`. Antes de tocarlos, preguntar si siguen en pie.
 
 Un change nunca se marca completo por un reemplazo masivo: cada casilla se marca
 cuando su trabajo está hecho y verificado. Ya pasó una vez y hubo que revertirlo.
@@ -105,6 +119,26 @@ anterior y la duración del tramo saldría mal.
 son otra cosa y se muestran siempre: un visor que falló al cargar es
 indistinguible de una escena vacía.
 
+**El simulador del frontend se apoya en `features/simulator/lib/`**, módulos sin React
+que se pueden probar solos:
+
+- `terminalLines.js` clasifica cada línea de la terminal por el **tipo** del mensaje
+  (no por su texto) y traduce al español lo que el backend manda en inglés.
+- `editorCode.js` arma lo que «Añadir al editor» agrega al programa: solo lo que
+  falta (import, `Robot()`), respetando el nombre que el alumno le dio a su robot.
+- `simulatorStatus.js` es el **único** sondeo del estado del servidor; la cabecera y
+  el panel leen de ahí. No volver a sondear por separado: se contradecían.
+- `codeFont.js`, la letra del código (ver arriba).
+
+Los ejemplos de la Guía (`DocumentationPanel.jsx`) se ejecutaron en la máquina del
+simulador antes de publicarse. Si cambia `robot_api`, se revisan con él.
+
+**Respaldos de la base:** panel de administración → Sitio → **Respaldos**
+(`features/admin/tabs/BackupsTab.jsx`). El volcado lo hace el backend; aquí solo se
+lista, se descarga (enlace firmado de 60 s) y se pide uno al momento.
+
 **`npm audit fix` ha roto cosas dos veces.** Subió solo `@tiptap/core` dejando 32
 paquetes atrás, y `--omit=dev` se lleva Vite, Tailwind, ESLint y los tipos.
-Revisar qué propone antes de aceptarlo.
+Revisar qué propone antes de aceptarlo. Estado al 2026-10-05: solo `dompurify` (baja;
+el fallo exige el modo `IN_PLACE` con hooks, que el código no usa). La alerta alta de
+`undici` desapareció al quitar `jsdom`, que nada usaba.
