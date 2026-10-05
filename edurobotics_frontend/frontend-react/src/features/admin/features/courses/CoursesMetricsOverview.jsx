@@ -80,7 +80,7 @@ export function CoursesMetricsOverview() {
         )}
       </div>
       <p className="text-[11.5px] leading-relaxed text-[#8b8a95]">
-        "Inscritos" = alumnos que abrieron el curso. "Completaron" = terminaron todo el contenido y aprobaron los quizzes, sobre los que tuvieron actividad. Utilidad y dificultad son el promedio del feedback.
+        "Inscritos" = alumnos matriculados. "Completaron" = terminaron todo el contenido y aprobaron las evaluaciones, sobre los que tuvieron actividad. Utilidad y dificultad son el promedio de lo que respondieron los alumnos. Administradores y profesores no se cuentan.
       </p>
     </div>
   )

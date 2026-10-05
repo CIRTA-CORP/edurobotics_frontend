@@ -50,17 +50,18 @@ export function GlobalMetrics() {
         {
             label: 'Contenidos completados',
             value: metrics.progress.total_completions,
-            sub: 'suma de todas las unidades terminadas',
+            sub: 'por alumnos, sumando todos los cursos',
         },
         {
             label: 'Aprobación de evaluaciones',
             value: `${metrics.quizzes.pass_rate}%`,
-            sub: `${metrics.quizzes.passed} de ${metrics.quizzes.total_attempts} intentos`,
+            // Por alumno: aprobar al tercer intento cuenta como una aprobada, no una de tres.
+            sub: `${metrics.quizzes.passed} de ${metrics.quizzes.attempted ?? metrics.quizzes.total_attempts} rendidas, una por alumno`,
         },
         {
             label: 'Feedback · utilidad',
             value: `${metrics.feedback.avg_usefulness}/5`,
-            sub: `dificultad ${metrics.feedback.avg_difficulty}/5 · ${metrics.feedback.total} respuestas`,
+            sub: `dificultad ${metrics.feedback.avg_difficulty}/5 · ${metrics.feedback.total} respuestas de alumnos`,
         },
     ]
 

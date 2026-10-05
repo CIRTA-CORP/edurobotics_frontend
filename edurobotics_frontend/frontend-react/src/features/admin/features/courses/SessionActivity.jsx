@@ -1,8 +1,9 @@
 /**
  * SessionActivity — real session/activity for the admin dashboard (#25).
  *
- * Uses recorded login events (GET /api/admin/sessions): active users (truly
- * recent, by login), login totals, and a list of the latest sessions.
+ * Uses recorded login events (GET /api/admin/sessions). The counters are students only
+ * and «hoy» starts at midnight in Chile (change admin-analytics-v2); the list of recent
+ * logins shows every account, each labelled with its role.
  */
 import { useQuery } from '@tanstack/react-query'
 import { UserCheck, LogIn, Shield } from 'lucide-react'
@@ -68,17 +69,17 @@ export function SessionActivity() {
       </span>
 
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-        <StatCard icon={UserCheck} label="Activos · 7 días" value={s.active_7d} />
-        <StatCard icon={UserCheck} label="Activos · hoy" value={s.active_24h} />
-        <StatCard icon={LogIn} label="Logins · 7 días" value={s.logins_7d} />
-        <StatCard icon={LogIn} label="Logins · hoy" value={s.logins_24h} />
+        <StatCard icon={UserCheck} label="Alumnos activos · 7 días" value={s.active_7d} />
+        <StatCard icon={UserCheck} label="Alumnos activos · hoy" value={s.active_today ?? s.active_24h} />
+        <StatCard icon={LogIn} label="Ingresos de alumnos · 7 días" value={s.logins_7d} />
+        <StatCard icon={LogIn} label="Ingresos de alumnos · hoy" value={s.logins_today ?? s.logins_24h} />
       </div>
 
       {/* Recent sessions */}
       <div className="overflow-hidden rounded-[14px] border border-[#e9e9ee] bg-white">
         <div className="border-b border-[#f2f1f6] bg-[#fcfcfd] px-4 py-3">
           <h4 className="text-sm font-semibold text-[#16151b]">Sesiones recientes</h4>
-          <p className="mt-0.5 text-[12px] text-[#a9a8b4]">Últimos inicios de sesión</p>
+          <p className="mt-0.5 text-[12px] text-[#a9a8b4]">Últimos inicios de sesión de todas las cuentas; los contadores de arriba son solo de alumnos</p>
         </div>
         {s.recent?.length > 0 ? (
           <ul className="max-h-80 overflow-y-auto">
@@ -94,6 +95,11 @@ export function SessionActivity() {
                       {r.role === 'admin' && (
                         <span className="ml-1.5 inline-flex items-center gap-0.5 rounded bg-[#16151b] px-1.5 py-0.5 align-middle font-mono text-[9px] font-bold text-white">
                           <Shield className="h-2 w-2" /> ADMIN
+                        </span>
+                      )}
+                      {r.role === 'teacher' && (
+                        <span className="ml-1.5 inline-flex items-center rounded bg-[#e6e6fb] px-1.5 py-0.5 align-middle font-mono text-[9px] font-bold text-[#4338ca]">
+                          PROFESOR
                         </span>
                       )}
                     </p>

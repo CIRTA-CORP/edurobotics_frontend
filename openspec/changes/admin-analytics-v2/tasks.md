@@ -4,21 +4,24 @@ Ramas: `feature/9-analytics` en los dos repositorios.
 
 ## 1. Datos correctos (fase 1)
 
-- [ ] 1.1 `auth/roles.py`: `student_ids(db)`, la única definición de «alumno»
-- [ ] 1.2 Analítica de curso solo con alumnos: matriculados, embudo, inactivos, contenidos,
+- [x] 1.1 `auth/roles.py`: `student_ids()`, la única definición de «alumno»
+- [x] 1.2 Analítica de curso solo con alumnos: matriculados, embudo, inactivos, contenidos,
       tiempo activo, evaluaciones y respuestas por pregunta
-- [ ] 1.3 Interacción solo con alumnos; días activos entre quienes entraron en 4 semanas
-- [ ] 1.4 Aprobación por alumno, por evaluación y en la tarjeta del curso
-- [ ] 1.5 `core/clock.py`: día local y medianoche local (`APP_TIMEZONE`, `tzdata`);
+- [x] 1.3 Interacción solo con alumnos; días activos entre quienes entraron en 4 semanas
+- [x] 1.4 Aprobación por alumno, por evaluación y en la tarjeta del curso
+- [x] 1.5 `core/clock.py`: día local y medianoche local (`APP_TIMEZONE`, `tzdata`);
       sesiones por día y «activos hoy» con ellas
-- [ ] 1.6 Dashboard (`/api/admin/metrics`, `/courses/metrics`, `/sessions`): contadores solo
-      de alumnos, aprobación por alumno, la lista reciente con el rol de cada cuenta
-- [ ] 1.7 «Datos insuficientes» por sección, contando alumnos
-- [ ] 1.8 Frontend: fechas locales en el gráfico, avisos por sección, etiquetas que dicen lo
-      que se calcula
-- [ ] 1.9 Tests: administradores y profesores no cuentan, aprobación por alumno, días
-      locales cerca de medianoche, aviso por sección
-- [ ] 1.10 Comparar en producción, antes y después, las cifras que cambian
+- [x] 1.6 Dashboard (`/api/admin/metrics`, `/courses/metrics`, `/sessions`): contadores solo
+      de alumnos, aprobación por alumno, la lista reciente con el rol de cada cuenta. Las
+      claves `*_24h` quedan como alias de las de «hoy» hasta publicar el frontend nuevo
+- [x] 1.7 «Datos insuficientes» por sección, contando alumnos
+- [x] 1.8 Frontend: fechas locales en el gráfico, avisos por sección, etiquetas que dicen lo
+      que se calcula (verificado en el navegador contra el backend local)
+- [x] 1.9 Tests: 7 nuevos (169 en total); **los 7 fallan con el código anterior**
+- [x] 1.10 Comparación en producción, conexión de solo lectura, código anterior frente al
+      nuevo: activos 7 días 5 → 1, ingresos 7 días 10 → 1, ingresos 28 días 27 → 2,
+      aprobación 81,8 % (por intento) → 100 % (los 12 alumnos que rindieron aprobaron),
+      curso 14 matriculados 22 → 18, cursos 21 y 23 solo tenían al equipo (3 y 1 → 0)
 
 ## 2. Rápida (fase 2)
 
