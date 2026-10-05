@@ -86,9 +86,12 @@ nadie.
 
 `GET /api/analytics/courses/{id}/overview` devuelve progreso, rendimiento, contenidos y
 opiniones del curso en una respuesta. Carga la estructura del curso **una vez** y la pasa a
-cada cálculo; las consultas sueltas se reemplazan por consultas agrupadas. Meta: **10
-consultas o menos** por pantalla, fijada con un test que cuenta las consultas, para que no
-vuelva a crecer sin que nadie lo note. Los endpoints actuales se mantienen mientras algo los
+cada cálculo; las consultas sueltas se reemplazan por consultas agrupadas. Meta: **15
+consultas o menos** por pantalla, contando la de permisos, y un número que **no crece con el
+tamaño del curso**, fijado con un test que cuenta las consultas, para que no vuelva a crecer
+sin que nadie lo note. (La primera meta era 10; contando lo que de verdad hace falta —
+estructura, matrículas, avance, intentos, respuestas, actividad, opiniones— son 13 más el
+permiso. Lo que importa es que sean fijas: antes eran 52 y subían con cada módulo.) Los endpoints actuales se mantienen mientras algo los
 use.
 
 #### 8. Caché de 60 s en el servidor
@@ -110,6 +113,22 @@ se mantiene lo anterior hasta que llega lo nuevo, en vez de vaciar la pantalla.
 Railway no tiene región en Sudamérica; la más cercana a Supabase (São Paulo) es US East.
 **Datos insuficientes** sobre la región actual del backend: si es US West, moverlo a US East
 acorta cada viaje a la base. Lo revisa Mario en Railway → Settings.
+
+### Uso de la plataforma por rol (pedido de la directora)
+
+#### 13. Aprendizaje y administración son dos preguntas
+
+La directora quiere ver también a profesores y administradores. No se contradice con la
+decisión 1: **cómo aprenden los alumnos** se sigue midiendo solo con alumnos (un profesor que
+revisa un curso no es un alumno que avanzó), y **quién usa la plataforma** se muestra aparte,
+con una fila por rol, sin mezclarlos.
+
+- En el Dashboard, «Uso de la plataforma por rol»: cuentas, activos hoy, activos en 7 días e
+  ingresos en 7 días, para alumnos, profesores y administradores. Sale de la misma respuesta
+  de `/api/admin/sessions` (una consulta agrupada más), sin otra petición.
+- En Usuarios, la **última vez que entró** cada cuenta.
+- Qué **hace** cada miembro del personal (crear, editar, borrar) no se registra hoy: es otro
+  change, `staff-activity-log`.
 
 ### Fase 3 — Gráficos
 

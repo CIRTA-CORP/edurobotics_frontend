@@ -25,16 +25,31 @@ Ramas: `feature/9-analytics` en los dos repositorios.
 
 ## 2. Rápida (fase 2)
 
-- [ ] 2.1 `GET /api/analytics/courses/{id}/overview` con la estructura del curso cargada
-      una sola vez
-- [ ] 2.2 Consultas agrupadas en vez de sueltas; test que falla si una pantalla pasa de 10
-      consultas
-- [ ] 2.3 Caché de 60 s en el servidor, con el permiso comprobado antes; `computed_at`
-- [ ] 2.4 Frontend: una petición por pantalla de curso, precarga al entrar al panel,
-      mantener lo anterior al cambiar de curso, «actualizado hace N min»
-- [ ] 2.5 Medir en producción el tiempo de cada pantalla, antes y después
+- [x] 2.1 `GET /api/analytics/courses/{id}/overview` con la estructura del curso cargada
+      una sola vez (`analytics/course_data.py`)
+- [x] 2.2 Consultas agrupadas en vez de sueltas: 7 a 13 por curso en producción (antes ~48
+      entre las tres secciones); test que falla si pasa de 15 o si crece de 3 a 120
+      contenidos. Comprobado en producción, solo lectura: **cero diferencias** con la versión
+      anterior en los 10 cursos
+- [x] 2.3 Caché de 60 s en el servidor (`core/cache.py`), con el permiso comprobado antes;
+      `computed_at`. También para los tres endpoints del Dashboard
+- [x] 2.4 Frontend: una petición por pantalla de curso, precarga al entrar al panel,
+      mantener lo anterior al cambiar de curso, «actualizado hace N min». Verificado: curso
+      precargado en 5 ms, volver a un curso visto no hace peticiones
+- [x] 2.4b CORS: el navegador recuerda la comprobación previa 2 h en vez de 10 min (cada una
+      era otro viaje completo a Railway)
+- [ ] 2.5 Medir en producción el tiempo de cada pantalla, antes y después (tras desplegar)
 - [ ] 2.6 **Mario:** revisar la región del backend en Railway (US East es la más cercana a
       Supabase)
+
+## 2b. Uso de la plataforma por rol
+
+- [x] 2b.1 `/api/admin/sessions`: `by_role` con cuentas, activos hoy, activos en 7 días e
+      ingresos en 7 días por rol, en una consulta agrupada
+- [x] 2b.2 `/api/admin/users`: último ingreso de cada cuenta, en una consulta
+- [x] 2b.3 Dashboard: «Uso de la plataforma por rol»; Usuarios: columna «Último ingreso»
+      (verificado en el navegador)
+- [x] 2b.4 Tests: 2 nuevos (176 en total)
 
 ## 3. Gráficos (fase 3)
 

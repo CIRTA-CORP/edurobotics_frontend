@@ -27,14 +27,15 @@ default), and the UI SHALL read `YYYY-MM-DD` dates as local dates.
 
 ### Requirement: Analytics load quickly
 
-A course analytics screen SHALL be served by one request issuing at most 10 database
-queries, cached on the server for up to 60 s after the caller's permission is checked, and
+A course analytics screen SHALL be served by one request issuing at most 15 database
+queries, a number that SHALL NOT grow with the size of the course, cached on the server for up to 60 s after the caller's permission is checked, and
 SHALL tell how long ago it was computed. Returning to a screen already seen in the same tab
 SHALL show the previous data immediately while it refreshes.
 
 #### Scenario: Query budget
 - **WHEN** the course overview is requested
-- **THEN** it issues no more than 10 queries, enforced by a test
+- **THEN** it issues no more than 15 queries, the same for 3 contents as for 120, enforced
+  by a test
 
 #### Scenario: A teacher and the cache
 - **WHEN** a teacher requests a course that is not theirs while it is cached for an admin
@@ -51,6 +52,18 @@ week.
 #### Scenario: Where students drop out
 - **WHEN** an admin opens a course's analytics
 - **THEN** the funnel highlights the content after which the most students stop
+
+### Requirement: Platform usage is shown per role
+
+Separately from learning analytics, the dashboard SHALL show platform usage for every role
+(students, teachers, administrators), one row per role and never combined: number of
+accounts, accounts active today and in the last 7 days, and logins in the last 7 days. The
+user list SHALL show each account's last login.
+
+#### Scenario: The director checks staff usage
+- **WHEN** an administrator opens the dashboard
+- **THEN** they see students, teachers and administrators in separate rows, and student
+  learning metrics still exclude staff
 
 ## MODIFIED Requirements
 

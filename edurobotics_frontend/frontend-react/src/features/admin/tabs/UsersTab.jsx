@@ -203,6 +203,7 @@ export function UsersTab() {
                   <th className="px-[14px] pb-2.5 pt-3 font-mono text-[9.5px] font-semibold uppercase tracking-[0.12em] text-[#a9a8b4]">Usuario</th>
                   <th className="px-[14px] pb-2.5 pt-3 font-mono text-[9.5px] font-semibold uppercase tracking-[0.12em] text-[#a9a8b4]">Rol</th>
                   <th className="px-[14px] pb-2.5 pt-3 font-mono text-[9.5px] font-semibold uppercase tracking-[0.12em] text-[#a9a8b4]">Registro</th>
+                  <th className="px-[14px] pb-2.5 pt-3 font-mono text-[9.5px] font-semibold uppercase tracking-[0.12em] text-[#a9a8b4]">Último ingreso</th>
                   <th className="px-[14px] pb-2.5 pt-3 text-center font-mono text-[9.5px] font-semibold uppercase tracking-[0.12em] text-[#a9a8b4]">Iniciados</th>
                   <th className="px-[14px] pb-2.5 pt-3 text-center font-mono text-[9.5px] font-semibold uppercase tracking-[0.12em] text-[#a9a8b4]">Completados</th>
                   <th className="px-[14px] pb-2.5 pt-3 text-right font-mono text-[9.5px] font-semibold uppercase tracking-[0.12em] text-[#a9a8b4]">Acción</th>
@@ -248,6 +249,7 @@ export function UsersTab() {
                         </span>
                       </td>
                       <td className="px-[14px] py-[13px] font-mono text-[12.5px] text-[#8b8a95]">{fmtDate(u.created_at)}</td>
+                      <td className="px-[14px] py-[13px] font-mono text-[12.5px] text-[#8b8a95]">{u.last_login ? fmtDate(u.last_login) : 'nunca'}</td>
                       <td className="px-[14px] py-[13px] text-center font-mono text-[13.5px] font-semibold tabular-nums text-[#16151b]">{u.courses_started}</td>
                       <td className="px-[14px] py-[13px] text-center font-mono text-[13.5px] font-semibold tabular-nums text-[#047857]">{u.courses_completed}</td>
                       <td className="px-[14px] py-[13px] text-right">
