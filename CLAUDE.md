@@ -139,6 +139,6 @@ lista, se descarga (enlace firmado de 60 s) y se pide uno al momento.
 
 **`npm audit fix` ha roto cosas dos veces.** Subió solo `@tiptap/core` dejando 32
 paquetes atrás, y `--omit=dev` se lleva Vite, Tailwind, ESLint y los tipos.
-Revisar qué propone antes de aceptarlo. Estado al 2026-10-05: `dompurify` (baja; el
-fallo exige el modo `IN_PLACE` con hooks, que el código no usa) y `undici` (alta, pero
-llega por `jsdom`, que solo usan los tests y no va en la página).
+Revisar qué propone antes de aceptarlo. Estado al 2026-10-05: solo `dompurify` (baja;
+el fallo exige el modo `IN_PLACE` con hooks, que el código no usa). La alerta alta de
+`undici` desapareció al quitar `jsdom`, que nada usaba.
