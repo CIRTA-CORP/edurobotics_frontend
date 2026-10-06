@@ -7,19 +7,26 @@
 
 ## 2. Backend
 
-- [ ] 2.1 Modelo y migración `staff_actions`
-- [ ] 2.2 `core/staff_activity.py`: lista de rutas del equipo con verbo y tipo de recurso
-- [ ] 2.3 Middleware: resolver el recurso antes, guardar solo si responde 2xx
-- [ ] 2.4 `GET /api/admin/staff-activity` con filtros y paginación; borrado de lo que pase de
+- [x] 2.1 Modelo y migración `staff_actions` (`d0e1f2a3b4c5`); `check_migrations` en verde.
+      `alembic/env.py` además importaba mal los modelos: le faltaba `enrollments`
+- [x] 2.2 `features/staff_activity/registry.py`: 39 rutas registradas y 13 excluidas con su
+      motivo (las 51 que modifican algo, más la descarga de respaldos)
+- [x] 2.3 Middleware ASGI: resuelve el recurso antes, guarda solo si responde 2xx, nunca
+      rompe la petición. Probado con uvicorn real: crear y borrar un módulo dejó «borró el
+      módulo «…» del curso «…»» con su nombre
+- [x] 2.4 `GET /api/admin/staff-activity` con filtros y paginación; borrado de lo que pase de
       12 meses
-- [ ] 2.5 Tests: se registra crear, editar y borrar (con el nombre aunque se haya borrado);
-      un 403 no se registra; lo de alumnos no se registra; un alumno no puede consultar;
-      **test que falla si una ruta del equipo no está en la lista**
+- [x] 2.5 Tests: 8 nuevos (186 en total). Sin el middleware fallan los 4 de registro; el de
+      cobertura nombra la ruta que falta si se quita una de la lista
+- [x] 2.6 De paso: `POST /admin/promote` no impedía degradar al último administrador; ahora
+      sí (test que falla con el código anterior)
 
 ## 3. Frontend
 
-- [ ] 3.1 Pestaña «Actividad del equipo» (solo administradores): lista y filtros
-- [ ] 3.2 Revisión en el navegador
+- [x] 3.1 Pestaña «Actividad del equipo» (solo administradores; un profesor que entra por la
+      dirección vuelve a «Progreso»): lista, filtros por persona, rol, curso y fechas, «Ver más»
+- [x] 3.2 Revisión en el navegador contra el backend local: las dos acciones reales y el
+      filtro por rol
 
 ## 4. Cierre
 

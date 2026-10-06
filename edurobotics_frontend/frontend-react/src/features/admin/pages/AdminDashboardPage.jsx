@@ -34,6 +34,7 @@ const UsersTab = named(() => import('@/features/admin/tabs/UsersTab'), 'UsersTab
 const AnalyticsTab = named(() => import('@/features/admin/tabs/AnalyticsTab'), 'AnalyticsTab')
 const StudentsTab = named(() => import('@/features/admin/tabs/StudentsTab'), 'StudentsTab')
 const BackupsTab = named(() => import('@/features/admin/tabs/BackupsTab'), 'BackupsTab')
+const StaffActivityTab = named(() => import('@/features/admin/tabs/StaffActivityTab'), 'StaffActivityTab')
 
 const TabLoader = () => (
   <div className="flex justify-center py-16">
@@ -86,7 +87,7 @@ function AdminDashboardLayout() {
   // course column; they pick a course there and land on 'taller') nor the
   // admin-only tabs; any of those (default or deep link) falls back to "Progreso".
   useEffect(() => {
-    if (isTeacher && ['dashboard', 'usuarios', 'especializaciones', 'landing', 'respaldos'].includes(activeTab)) {
+    if (isTeacher && ['dashboard', 'usuarios', 'equipo', 'especializaciones', 'landing', 'respaldos'].includes(activeTab)) {
       setActiveTab('progreso')
     }
   }, [isTeacher, activeTab, setActiveTab])
@@ -194,6 +195,7 @@ function AdminDashboardLayout() {
                   {activeTab === 'analitica' && <AnalyticsTab />}
                   {activeTab === 'progreso' && <StudentsTab />}
                   {activeTab === 'respaldos' && <BackupsTab />}
+                  {activeTab === 'equipo' && <StaffActivityTab />}
                 </Suspense>
               </div>
             </div>
