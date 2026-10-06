@@ -16,7 +16,7 @@
       módulo «…» del curso «…»» con su nombre
 - [x] 2.4 `GET /api/admin/staff-activity` con filtros y paginación; borrado de lo que pase de
       12 meses
-- [x] 2.5 Tests: 8 nuevos (186 en total). Sin el middleware fallan los 4 de registro; el de
+- [x] 2.5 Tests: 8 nuevos, más 1 del punto 2.6 (185 en total). Sin el middleware fallan los 4 de registro; el de
       cobertura nombra la ruta que falta si se quita una de la lista
 - [x] 2.6 De paso: `POST /admin/promote` no impedía degradar al último administrador; ahora
       sí (test que falla con el código anterior)
