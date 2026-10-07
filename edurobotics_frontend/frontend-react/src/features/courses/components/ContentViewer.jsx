@@ -40,6 +40,12 @@ const buildUrl = (value) => {
  * Renders a single content block seamlessly within the lesson flow
  */
 function ContentBlock({ content }) {
+  // Estable entre renders (ver `richHtml` en ContentViewer).
+  const textHtml = useMemo(
+    () => ({ __html: sanitizeHtml(content.content_value) }),
+    [content.content_value]
+  )
+
   if (content.content_type === 'video' && isVideoUrl(content.content_value)) {
     return (
       <div className="aspect-video bg-black rounded-xl overflow-hidden border border-gray-200">
@@ -61,7 +67,7 @@ function ContentBlock({ content }) {
       return (
         <div
           className="rich-content prose prose-sm md:prose-base max-w-none w-full overflow-hidden text-gray-700 leading-relaxed break-words"
-          dangerouslySetInnerHTML={{ __html: sanitizeHtml(content.content_value) }}
+          dangerouslySetInnerHTML={textHtml}
         />
       )
     }
@@ -439,6 +445,10 @@ export function ContentViewer({
     () => injectSimulatorButtons(sanitizeHtml(injectHeadingIds(richContent?.content_value))),
     [richContent?.content_value]
   )
+  // El mismo objeto mientras el HTML no cambie: React 19 compara `dangerouslySetInnerHTML`
+  // por identidad, y con un objeto nuevo en cada render reinsertaba la lección entera en
+  // cada cuadro de scroll (perdía el foco del índice y la selección del alumno).
+  const richHtml = useMemo(() => ({ __html: processedHtml }), [processedHtml])
 
   // Un solo manejador para todos los botones del contenido, porque el HTML se pinta con
   // dangerouslySetInnerHTML y sus botones no pueden llevar el suyo.
@@ -710,7 +720,7 @@ export function ContentViewer({
               <div
                 className="rich-content max-w-none w-full overflow-hidden break-words"
                 onClick={handleRichContentClick}
-                dangerouslySetInnerHTML={{ __html: processedHtml }}
+                dangerouslySetInnerHTML={richHtml}
               />
             )}
             {/* Legacy content blocks (old multi-block format) */}
