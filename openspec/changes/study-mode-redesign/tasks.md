@@ -49,10 +49,17 @@
 - [x] 3.3 Bloques con la misma gramática (borde, radio, densidad): video, PDF con
       previsualización, descarga, enlace externo, simulador (fondo oscuro), evaluación con
       estados Disponible/Bloqueada.
-- [ ] 3.4 Riel de secciones **lateral**. Hoy el índice de secciones existe pero es un bloque
+- [x] 3.4 Riel de secciones **lateral**. Hoy el índice de secciones existe pero es un bloque
       **en línea** sobre la lección (`TableOfContents`), no el riel a la derecha del canvas;
       ya cumple lo esencial (se construye desde los `h2`, se oculta con menos de dos) y no
       toca `sanitizeHtml`. Falta moverlo a una columna lateral pegajosa en pantallas anchas.
+      **Hecho y visto en el navegador (2026-10-07)**, con una unidad local de 4 secciones: a 1440
+      px el riel queda fijo a la derecha, marca la sección en lectura y al hacer clic salta y
+      deja el foco en el encabezado; a 375 px aparece el bloque en línea. La revisión destapó
+      dos fallos que se corrigieron: la página se desplazaba entera en vez del panel de
+      lectura (la barra de lectura y «Volver arriba» nunca funcionaban, ya en producción), y
+      la lección se reinsertaba en cada render (React 19 compara `dangerouslySetInnerHTML`
+      por identidad)
       **Pendiente a propósito:** es un cambio de layout de la columna de lectura y en esta
       sesión no había navegador para verificarlo visualmente; hacerlo a ciegas arriesgaba
       romper la pantalla más usada. Hacer con la app a la vista.
@@ -99,8 +106,10 @@
       viven en `QuizView`, `CoursePreviewPage` y dos efectos antiguos de `CoursePage`.
 - [ ] 6.2 Capturas DESPUÉS de las tres unidades de referencia (escritorio y 390 px) y
       comparación con las de 0.2.
-- [ ] 6.3 Prueba manual: completar una unidad y verificar que el avance queda registrado y que
-      el índice y el anillo de progreso reflejan el cambio.
+- [x] 6.3 Prueba manual: completar una unidad y verificar que el avance queda registrado y que
+      el índice y el anillo de progreso reflejan el cambio. Hecho en local (2026-10-07):
+      `mark-complete` 200, el índice pasa a «Listo» y el anillo a 1/1; en 20 s solo salen
+      heartbeats, sin peticiones en bucle
 
 ## Diferido (decidido en el canvas, no reabrir sin motivo)
 - Partir la unidad en pasos numerados (Opción D).

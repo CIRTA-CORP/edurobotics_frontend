@@ -72,7 +72,7 @@ Ramas: `feature/9-analytics` en los dos repositorios.
       semanas de 7 días que terminan hoy (ninguna barra a medias). El backend ahora dice
       cuántos alumnos hay detrás (`students`, `insufficient_data` con menos de 3). Reemplaza
       el gráfico por día y su selector 7/14/90 días
-- [ ] 3.6 Dashboard como resumen con enlace a la Analítica. Hecho, sin verlo en el panel
+- [x] 3.6 Dashboard como resumen con enlace a la Analítica. Visto en el panel local (2026-10-07)
       (solo ESLint y build): botón «Ver la Analítica» en la cabecera y un enlace por curso en
       «Métricas por curso» que abre su Analítica. Se mantienen todos los bloques. Falta la
       cifra global de «inactivos» de la decisión 12: ningún endpoint del Dashboard la da

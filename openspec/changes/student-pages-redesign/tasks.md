@@ -70,8 +70,10 @@
 - [ ] 5.2 Capturas antes/después de las tres pantallas, escritorio y 390 px.
       **Nota (2026-10-07):** el "antes" ya no existe (rediseño desplegado sin capturas
       previas); solo puede hacerse el "después".
-- [ ] 5.3 Prueba manual: entrar a una unidad, volver al dashboard y comprobar que «Continúa
-      donde quedaste» apunta a esa unidad.
+- [x] 5.3 Prueba manual: entrar a una unidad, volver al dashboard y comprobar que «Continúa
+      donde quedaste» apunta a esa unidad. Hecho en local (2026-10-07): apunta a la unidad y
+      muestra 100 % tras completarla. De paso: el saludo decía «Aún no has empezado ningún
+      curso» a quien había terminado todos los que empezó; ahora cuenta los terminados
 - [ ] 5.4 Recorrido de teclado en las tres pantallas (no regresar la capability
       `accessibility`).
       **Revisión por código hecha (2026-10-07), falta el recorrido real con Tab.** Arreglado:
