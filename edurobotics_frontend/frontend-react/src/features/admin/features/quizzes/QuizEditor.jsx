@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { Button } from '@/shared/components/button';
@@ -7,7 +7,16 @@ import {
     ClipboardCheck, BookOpen, Settings, Edit3
 } from 'lucide-react';
 import quizService from '@/features/quizzes/services/quizzes';
+import { useAdmin } from '@/features/admin/context/AdminContext';
 import { QuestionBlock } from './QuestionBlock';
+
+// Guarda el puntaje mínimo de una evaluación (lo usa el slider, con espera).
+async function savePassingScore({ quizId, value }) {
+    try {
+        await quizService.updateQuiz(quizId, { passing_score: value });
+        toast.success('Puntaje actualizado');
+    } catch { toast.error('Error al actualizar'); }
+}
 
 /**
  * QuizEditor — Full-page tab component for managing quizzes
@@ -20,6 +29,9 @@ import { QuestionBlock } from './QuestionBlock';
  */
 export function QuizEditor({ unitId, moduleId }) {
     const queryClient = useQueryClient();
+    // El contador de evaluaciones de la unidad sale del detalle del curso: hay que
+    // refrescarlo al crear o borrar una, o se queda viejo hasta recargar.
+    const { refreshSelectedCourse } = useAdmin();
     const [loading, setLoading] = useState(true);
     const [selectedQuiz, setSelectedQuiz] = useState(null);
     const [questions, setQuestions] = useState([]);
@@ -31,6 +43,9 @@ export function QuizEditor({ unitId, moduleId }) {
     const [editTitleValue, setEditTitleValue] = useState('');
     const [addingAnswerId, setAddingAnswerId] = useState(null);
     const quizListQueryKey = ['admin-quizzes', unitId ?? null, moduleId ?? null];
+    // Guardado del puntaje mínimo con espera: el slider se mueve con ratón, dedo o
+    // flechas, y guardar en cada cambio lanzaría una petición por paso al arrastrar.
+    const pendingScoreSave = useRef(null);
 
     const {
         data: quizzes = [],
@@ -55,6 +70,26 @@ export function QuizEditor({ unitId, moduleId }) {
         setSelectedQuiz(null);
         setQuestions([]);
     }, [unitId, moduleId]);
+
+    const schedulePassingScoreSave = (quizId, value) => {
+        clearTimeout(pendingScoreSave.current?.timer);
+        const pending = { quizId, value };
+        pending.timer = setTimeout(() => {
+            pendingScoreSave.current = null;
+            savePassingScore(pending);
+        }, 400);
+        pendingScoreSave.current = pending;
+    };
+
+    // Si el editor se desmonta con un guardado en espera, se manda ya: no se pierde.
+    useEffect(() => () => {
+        const pending = pendingScoreSave.current;
+        if (pending) {
+            clearTimeout(pending.timer);
+            pendingScoreSave.current = null;
+            savePassingScore(pending);
+        }
+    }, []);
 
     // ── QUIZ CRUD ──
     const handleSaveTitle = async () => {
@@ -88,7 +123,10 @@ export function QuizEditor({ unitId, moduleId }) {
             toast.success('Evaluación creada');
             setNewTitle('');
             setShowCreateForm(false);
-            await queryClient.invalidateQueries({ queryKey: quizListQueryKey });
+            await Promise.all([
+                queryClient.invalidateQueries({ queryKey: quizListQueryKey }),
+                refreshSelectedCourse(),
+            ]);
         } catch {
             toast.error('Error al crear evaluación');
         } finally {
@@ -105,7 +143,10 @@ export function QuizEditor({ unitId, moduleId }) {
             }
             toast.success('Evaluación eliminada');
             setConfirmDelete(null);
-            await queryClient.invalidateQueries({ queryKey: quizListQueryKey });
+            await Promise.all([
+                queryClient.invalidateQueries({ queryKey: quizListQueryKey }),
+                refreshSelectedCourse(),
+            ]);
         } catch {
             toast.error('Error al eliminar');
         }
@@ -378,6 +419,8 @@ export function QuizEditor({ unitId, moduleId }) {
                         <button
                             onClick={() => { setSelectedQuiz(null); setQuestions([]) }}
                             className="w-9 h-9 rounded-lg bg-gray-100 hover:bg-gray-200 flex items-center justify-center text-gray-500 transition-colors"
+                            aria-label="Volver a la lista de evaluaciones"
+                            title="Volver a la lista"
                         >
                             <X className="w-4 h-4" />
                         </button>
@@ -395,10 +438,10 @@ export function QuizEditor({ unitId, moduleId }) {
                                         }}
                                         autoFocus
                                     />
-                                    <Button size="sm" variant="ghost" onClick={handleSaveTitle} className="h-7 w-7 p-0 text-blue-600">
+                                    <Button size="sm" variant="ghost" onClick={handleSaveTitle} className="h-7 w-7 p-0 text-blue-600" aria-label="Guardar título" title="Guardar título">
                                         <Check className="w-4 h-4" />
                                     </Button>
-                                    <Button size="sm" variant="ghost" onClick={() => setIsEditingTitle(false)} className="h-7 w-7 p-0 text-gray-400 hover:text-red-500">
+                                    <Button size="sm" variant="ghost" onClick={() => setIsEditingTitle(false)} className="h-7 w-7 p-0 text-gray-400 hover:text-red-500" aria-label="Cancelar edición del título" title="Cancelar">
                                         <X className="w-4 h-4" />
                                     </Button>
                                 </div>
@@ -410,8 +453,9 @@ export function QuizEditor({ unitId, moduleId }) {
                                             setEditTitleValue(selectedQuiz.title);
                                             setIsEditingTitle(true);
                                         }}
-                                        className="opacity-100 sm:opacity-0 group-hover:opacity-100 transition-opacity p-1 text-gray-400 hover:text-blue-600 rounded"
+                                        className="opacity-100 sm:opacity-0 group-hover:opacity-100 focus-visible:opacity-100 transition-opacity p-1 text-gray-400 hover:text-blue-600 rounded"
                                         title="Editar Título"
+                                        aria-label="Editar título"
                                     >
                                         <Edit3 className="w-3.5 h-3.5" />
                                     </button>
@@ -493,19 +537,9 @@ export function QuizEditor({ unitId, moduleId }) {
                                             step="5"
                                             value={selectedQuiz.passing_score ?? 80}
                                             onChange={(e) => {
-                                                setSelectedQuiz(prev => ({ ...prev, passing_score: parseInt(e.target.value) }));
-                                            }}
-                                            onMouseUp={async (e) => {
-                                                try {
-                                                    await quizService.updateQuiz(selectedQuiz.id, { passing_score: parseInt(e.target.value) });
-                                                    toast.success('Puntaje actualizado');
-                                                } catch { toast.error('Error al actualizar'); }
-                                            }}
-                                            onTouchEnd={async (e) => {
-                                                try {
-                                                    await quizService.updateQuiz(selectedQuiz.id, { passing_score: parseInt(e.target.value) });
-                                                    toast.success('Puntaje actualizado');
-                                                } catch { toast.error('Error al actualizar'); }
+                                                const value = parseInt(e.target.value);
+                                                setSelectedQuiz(prev => ({ ...prev, passing_score: value }));
+                                                schedulePassingScoreSave(selectedQuiz.id, value);
                                             }}
                                             className="absolute inset-0 h-8 w-full cursor-pointer opacity-0"
                                             aria-label="Puntaje mínimo"
@@ -643,7 +677,8 @@ export function QuizEditor({ unitId, moduleId }) {
                                     <Settings className="w-3.5 h-3.5" /> Gestionar
                                 </Button>
                                 <Button onClick={() => setConfirmDelete({ type: 'quiz', id: q.id, title: q.title })} variant="ghost" size="sm"
-                                    className="text-gray-400 hover:text-red-500 hover:bg-red-50 p-2">
+                                    className="text-gray-400 hover:text-red-500 hover:bg-red-50 p-2"
+                                    aria-label={`Eliminar evaluación «${q.title}»`} title="Eliminar evaluación">
                                     <Trash2 className="w-4 h-4" />
                                 </Button>
                             </div>

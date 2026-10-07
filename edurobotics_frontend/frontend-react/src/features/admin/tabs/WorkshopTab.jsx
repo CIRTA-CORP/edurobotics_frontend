@@ -78,7 +78,10 @@ export function WorkshopTab() {
   const [editorTab, setEditorTab] = useState('contenido')
   const navigate = useNavigate()
   const richEditorRef = useRef(null)
-  const [lastSavedAt, setLastSavedAt] = useState(null)
+  // «Último guardado» es de una unidad concreta: se guarda junto a su id y, si la
+  // unidad abierta es otra, se muestra «Sin guardar aún» en vez de la hora ajena.
+  const [lastSaved, setLastSaved] = useState({ unitId: null, at: null })
+  const lastSavedAt = lastSaved.unitId === selectedUnit?.id ? lastSaved.at : null
 
   const quizCount = selectedUnit?.quizzes?.length || 0
   const hasModules = (selectedCourse?.modules || []).length > 0
@@ -162,12 +165,13 @@ export function WorkshopTab() {
                     editorRef={richEditorRef}
                     hideEditorSave
                     lastSavedAt={lastSavedAt}
-                    onRichContentSave={(html) =>
-                      contentHooks
+                    onRichContentSave={(html) => {
+                      const unitId = selectedUnit.id
+                      return contentHooks
                         .handleRichContentSave(html, selectedUnit, selectedCourse)
                         // Only stamp the time when the save really landed.
-                        .then((saved) => { if (saved) setLastSavedAt(new Date()) })
-                    }
+                        .then((saved) => { if (saved) setLastSaved({ unitId, at: new Date() }) })
+                    }}
                     onContentDelete={handleContentDelete}
                     onMigrateLegacy={() => contentHooks.handleMigrateLegacy(selectedUnit, selectedCourse)}
                     onSimulatorToggle={() => contentHooks.handleSimulatorToggle(selectedUnit, selectedCourse)}

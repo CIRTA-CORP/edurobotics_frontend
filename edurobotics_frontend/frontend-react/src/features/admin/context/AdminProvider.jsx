@@ -376,6 +376,9 @@ export function AdminProvider({ children }) {
     selectedCourse,
     isCoursesLoading,
     isSelectedCourseLoading,
+    // Para que quien cambia algo del curso fuera de los hooks (p. ej. QuizEditor)
+    // pueda refrescar el detalle y sus contadores sin recargar la página.
+    refreshSelectedCourse,
 
     // Custom hooks
     courseHooks,

@@ -73,10 +73,10 @@ export function CoursesTab() {
     }
   }
 
+  // La confirmación vive en `handleCourseDelete`: pedirla también aquí la
+  // mostraba dos veces seguidas.
   const handleDelete = () => {
-    if (window.confirm(`¿Eliminar el curso "${selectedCourse.title}"? Esta acción no se puede deshacer.`)) {
-      courseHooks.handleCourseDelete(selectedCourse)
-    }
+    courseHooks.handleCourseDelete(selectedCourse)
   }
 
   const tabButton = (id, label) => (
