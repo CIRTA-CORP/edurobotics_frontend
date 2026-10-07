@@ -215,8 +215,10 @@ function CoursePage() {
   )
 
   // ── Main layout ──
+  // Exactly the viewport tall: the reading pane (<main>) is what scrolls, not the
+  // window. The reading bar, «Volver arriba» and the section rail read its scroll.
   return (
-    <div className="min-h-screen bg-white flex flex-col">
+    <div className="h-dvh bg-white flex flex-col">
       {/* Top bar */}
       <CourseTopBar
         course={course}
@@ -228,7 +230,7 @@ function CoursePage() {
       />
 
       {/* Body: sidebar + content */}
-      <div className="flex flex-1 overflow-hidden relative">
+      <div className="flex flex-1 min-h-0 overflow-hidden relative">
         {/* Reading progress bar */}
         <div className="absolute top-0 left-0 right-0 z-50 h-0.5 bg-gray-100">
           <div
