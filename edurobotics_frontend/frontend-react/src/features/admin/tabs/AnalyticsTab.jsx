@@ -7,24 +7,24 @@
  *   → 4. quiz performance + most-failed questions → 5. inactivity + feedback.
  *
  * Honesty rules (from learning-analytics): aggregates under 3 students read
- * "datos insuficientes"; per-question metrics disclose their data start date;
- * green/amber only as state and always labelled.
+ * "datos insuficientes", decided per section (one thin section used to hide every
+ * number of the course); per-question metrics disclose their data start date;
+ * green/amber only as state and always labelled. Everything counts students only
+ * (change admin-analytics-v2).
  *
  * Admin sees the platform-wide chart (sessions per day) and the course feedback;
  * a teacher sees the same screen scoped to their own courses without those two.
  */
 import { useState } from 'react'
-import { useQuery } from '@tanstack/react-query'
-import { AlertTriangle, BarChart3, Clock, Info } from 'lucide-react'
+import { keepPreviousData, useQuery } from '@tanstack/react-query'
+import { AlertTriangle, BarChart3, Clock, Info, Loader2 } from 'lucide-react'
 import { useAdmin } from '@/features/admin/context/AdminContext'
-import { getCourseFeedbackSummary } from '@/features/courses/services/courses'
 import {
-  getCourseProgressAnalytics,
-  getCoursePerformanceAnalytics,
-  getCourseContentAnalytics,
-  getDailySessions,
-  getInteractionAnalytics,
-} from '@/features/admin/services/analytics'
+  courseOverviewQuery,
+  dailySessionsQuery,
+  interactionQuery,
+  updatedAgo,
+} from '@/features/admin/services/panelQueries'
 
 const fmtPct = (value) => (value == null ? '—' : `${Math.round(value)}%`)
 
@@ -35,6 +35,13 @@ const fmtHours = (seconds) => {
 }
 
 const fmtMin = (minutes) => (minutes == null ? '—' : `${Math.round(minutes)} min`)
+
+// `AAAA-MM-DD` como fecha LOCAL. `new Date("2026-10-05")` la interpreta como medianoche
+// UTC, que en Chile es el día anterior: cada barra salía rotulada con el día de antes.
+const parseLocalDate = (ymd) => {
+  const [y, m, d] = String(ymd).split('-').map(Number)
+  return new Date(y, m - 1, d)
+}
 
 const fmtDate = (iso) => {
   if (!iso) return null
@@ -67,11 +74,12 @@ function Card({ children, className = '' }) {
   return <div className={`rounded-[14px] border border-[#e9e9ee] bg-white p-[22px] ${className}`}>{children}</div>
 }
 
-function InsufficientBanner() {
+/** Aviso de una sola sección: las demás siguen mostrando sus números. */
+function InsufficientNote() {
   return (
-    <div className="flex items-start gap-2 rounded-[10px] border border-amber-200 bg-amber-50 px-3.5 py-2.5 text-[12px] text-amber-700">
+    <div className="mt-3 flex items-start gap-2 rounded-[10px] border border-amber-200 bg-amber-50 px-3 py-2 text-[12px] text-amber-700">
       <Info className="mt-0.5 h-3.5 w-3.5 flex-shrink-0" />
-      <span>Datos insuficientes: menos de 3 alumnos con señal, así que no mostramos promedios.</span>
+      <span>Datos insuficientes: menos de 3 alumnos, así que no mostramos promedios.</span>
     </div>
   )
 }
@@ -110,71 +118,48 @@ export function AnalyticsTab() {
 
   const courseId = localCourseId ?? selectedCourseId ?? courses?.[0]?.id ?? null
 
-  const progressQ = useQuery({
-    queryKey: ['analytics-progress', courseId],
-    queryFn: () => getCourseProgressAnalytics(courseId),
-    enabled: !!courseId,
-    staleTime: 30_000,
-  })
-  const performanceQ = useQuery({
-    queryKey: ['analytics-performance', courseId],
-    queryFn: () => getCoursePerformanceAnalytics(courseId),
-    enabled: !!courseId,
-    staleTime: 30_000,
-  })
-  const contentQ = useQuery({
-    queryKey: ['analytics-content', courseId],
-    queryFn: () => getCourseContentAnalytics(courseId),
-    enabled: !!courseId,
-    staleTime: 30_000,
-  })
-  const sessionsQ = useQuery({
-    queryKey: ['analytics-sessions-daily', periodDays],
-    queryFn: () => getDailySessions(periodDays),
-    enabled: !isTeacher,
-    staleTime: 30_000,
-  })
+  // Todo lo del curso en UNA petición (antes eran cuatro, y entre todas sumaban 52 consultas
+  // a la base). Al cambiar de curso se mantiene lo anterior hasta que llega lo nuevo, en vez
+  // de vaciar la pantalla.
+  const overviewQ = useQuery({ ...courseOverviewQuery(courseId), placeholderData: keepPreviousData })
+  const sessionsQ = useQuery({ ...dailySessionsQuery(periodDays), enabled: !isTeacher, placeholderData: keepPreviousData })
   // Días activos, tiempo entre sesiones y avance por login: existían en la
   // pantalla anterior y la consolidación los había dejado fuera.
-  const interactionQ = useQuery({
-    queryKey: ['analytics-interaction'],
-    queryFn: getInteractionAnalytics,
-    enabled: !isTeacher,
-    staleTime: 30_000,
-  })
-  const feedbackQ = useQuery({
-    queryKey: ['course-feedback-summary', courseId],
-    queryFn: () => getCourseFeedbackSummary(courseId),
-    enabled: !isTeacher && !!courseId,
-    staleTime: 30_000,
-  })
+  const interactionQ = useQuery({ ...interactionQuery(), enabled: !isTeacher })
 
-  const progress = progressQ.data?.success ? progressQ.data : null
-  const performance = performanceQ.data?.success ? performanceQ.data : null
-  const content = contentQ.data?.success ? contentQ.data : null
+  const overview = overviewQ.data?.success ? overviewQ.data : null
+  const progress = overview?.progress ?? null
+  const performance = overview?.performance ?? null
+  const content = overview?.content ?? null
+  // El resumen de opiniones respondía sin `success` y la tarjeta decía siempre «Aún no hay
+  // respuestas»; ahora viene dentro del overview (solo para administradores).
+  const feedback = overview?.feedback ?? null
   const sessions = sessionsQ.data?.success ? sessionsQ.data : null
-  const feedback = feedbackQ.data?.success ? feedbackQ.data : null
   const interaction = interactionQ.data?.success ? interactionQ.data : null
+  const refreshing = overviewQ.isFetching && !overviewQ.isLoading
+  const switchingCourse = overviewQ.isPlaceholderData
 
-  const insufficient =
-    (progress?.insufficient_data ?? false) ||
-    (performance?.insufficient_data ?? false) ||
-    (content?.insufficient_data ?? false)
+  // Cada sección decide por sí misma, contando alumnos (no intentos ni filas).
+  const progInsuf = progress?.insufficient_data ?? false
+  const perfInsuf = performance?.insufficient_data ?? false
+  const contInsuf = content?.insufficient_data ?? false
+  const interInsuf = interaction?.insufficient_data ?? false
 
   // ── 1. Figure cards (course-scoped, honest about missing data) ──
   const courseTime = progress?.time_metrics?.course || {}
   const totalActiveSeconds = (content?.by_active_time || []).reduce((acc, c) => acc + (c.active_seconds || 0), 0)
   const totalCompleted = (content?.by_active_time || []).reduce((acc, c) => acc + (c.completed || 0), 0)
   const totalOpened = (content?.by_active_time || []).reduce((acc, c) => acc + (c.opened || 0), 0)
-  const avgQuizScore = performance?.quizzes?.length
-    ? performance.quizzes.reduce((acc, q) => acc + (q.avg_score || 0), 0) / performance.quizzes.length
-    : null
+  // Aprobación por alumno: pares alumno–evaluación aprobados sobre rendidos. Antes la
+  // tarjeta decía «Aprobación media» y mostraba el puntaje promedio.
+  const passRate = performance?.pass_rate ?? null
 
-  const withValue = (v) => (insufficient ? '…' : v ?? '—')
+  const withValue = (v, insuf) => (insuf ? '…' : v ?? '—')
 
   // ── 2. Sessions per day chart (platform-wide, admin only) ──
   const series = sessions?.series || []
   const maxCount = Math.max(1, ...series.map((s) => s.count))
+  const seriesTotal = series.reduce((acc, s) => acc + s.count, 0)
   const DAY_LETTERS = ['L', 'M', 'X', 'J', 'V', 'S', 'D']
 
   // ── 3. Dedication: time per module with min–max range ──
@@ -201,6 +186,22 @@ export function AnalyticsTab() {
           <h1 className="mt-2 text-[28px] font-bold leading-[1.16] tracking-[-0.014em] text-[#16151b]">
             Analítica
           </h1>
+          <p className="mt-2 flex items-center gap-1.5 text-[12px] text-[#a9a8b4]" aria-live="polite">
+            {overviewQ.isLoading ? (
+              <>
+                <Loader2 className="h-3 w-3 animate-spin" /> Calculando…
+              </>
+            ) : switchingCourse ? (
+              <>
+                <Loader2 className="h-3 w-3 animate-spin" /> Cargando el curso…
+              </>
+            ) : overview?.computed_at ? (
+              <>
+                Actualizado {updatedAgo(overview.computed_at)}
+                {refreshing && <Loader2 className="h-3 w-3 animate-spin" aria-label="Actualizando" />}
+              </>
+            ) : null}
+          </p>
         </div>
         <div className="flex items-center gap-2.5">
           <div className="relative">
@@ -242,31 +243,29 @@ export function AnalyticsTab() {
         </div>
       </div>
 
-      {insufficient && <InsufficientBanner />}
-
       {/* 1 ── Figure cards */}
-      <div className="grid grid-cols-2 gap-4 xl:grid-cols-4">
+      <div className={`grid grid-cols-2 gap-4 transition-opacity xl:grid-cols-4 ${switchingCourse ? 'opacity-60' : ''}`}>
         <StatCard
           label="Alumnos activos"
-          value={withValue(courseTime.learners ?? 0)}
-          unit={!insufficient && progress?.enrolled ? `de ${progress.enrolled}` : undefined}
-          sub={insufficient ? undefined : 'con actividad en el curso'}
+          value={withValue(courseTime.learners ?? 0, progInsuf)}
+          unit={!progInsuf && progress?.enrolled ? `de ${progress.enrolled}` : undefined}
+          sub={progInsuf ? 'datos insuficientes' : 'matriculados con actividad en el curso'}
         />
         <StatCard
           label="Tiempo activo"
-          value={withValue(fmtHours(totalActiveSeconds))}
-          sub={insufficient ? undefined : 'suma del tiempo real en el curso'}
+          value={withValue(fmtHours(totalActiveSeconds), contInsuf)}
+          sub={contInsuf ? 'datos insuficientes' : 'suma del tiempo real de los alumnos'}
         />
         <StatCard
           label="Contenidos completados"
-          value={withValue(totalCompleted)}
-          sub={insufficient || totalOpened === 0 ? undefined : `${Math.round((totalCompleted / totalOpened) * 100)} % de los que se abrieron`}
+          value={withValue(totalCompleted, contInsuf)}
+          sub={contInsuf ? 'datos insuficientes' : totalOpened === 0 ? undefined : `${Math.round((totalCompleted / totalOpened) * 100)} % de los que se abrieron`}
         />
         <StatCard
-          label="Aprobación media"
-          value={withValue(avgQuizScore != null ? Math.round(avgQuizScore) : '—')}
-          unit={!insufficient && avgQuizScore != null ? '%' : undefined}
-          sub={insufficient ? undefined : `${quizzes.length} evaluación${quizzes.length === 1 ? '' : 'es'}`}
+          label="Aprobación"
+          value={withValue(passRate != null ? Math.round(passRate) : '—', perfInsuf)}
+          unit={!perfInsuf && passRate != null ? '%' : undefined}
+          sub={perfInsuf ? 'datos insuficientes' : `de ${performance?.students_attempted ?? 0} alumnos que rindieron · ${quizzes.length} evaluación${quizzes.length === 1 ? '' : 'es'}`}
         />
       </div>
 
@@ -276,23 +275,27 @@ export function AnalyticsTab() {
           <div className="flex items-baseline justify-between gap-5">
             <div>
               <SectionLabel>Interacción</SectionLabel>
-              <CardTitle>Sesiones por día</CardTitle>
+              <CardTitle>Ingresos de alumnos por día</CardTitle>
             </div>
-            <span className="text-[12.5px] text-[#8b8a95]">Toda la plataforma · últimos {periodDays} días</span>
+            <span className="text-[12.5px] text-[#8b8a95]">
+              Toda la plataforma · últimos {periodDays} días · {seriesTotal} ingreso{seriesTotal === 1 ? '' : 's'}
+            </span>
           </div>
           <div className="mt-5 grid grid-cols-1 gap-4 border-b border-[#f2f1f6] pb-5 sm:grid-cols-3">
             {[
               // El backend devuelve {avg, median} en los tres: se toma el promedio.
               {
                 label: 'Días activos / semana',
-                value: interaction?.insufficient_data
+                value: interInsuf
                   ? '…'
                   : (interaction?.active_days_per_week?.avg ?? '—'),
-                sub: 'promedio, últimos 28 días',
+                sub: interInsuf
+                  ? 'datos insuficientes'
+                  : `promedio de ${interaction?.students_in_window ?? 0} alumnos que entraron en 28 días`,
               },
               {
                 label: 'Tiempo entre sesiones',
-                value: interaction?.insufficient_data
+                value: interInsuf
                   ? '…'
                   : fmtHours(
                       interaction?.time_between_sessions_hours?.avg != null
@@ -303,7 +306,7 @@ export function AnalyticsTab() {
               },
               {
                 label: 'Avance por login',
-                value: interaction?.insufficient_data
+                value: interInsuf
                   ? '…'
                   : (interaction?.progress_per_login?.avg ?? '—'),
                 sub: 'contenidos completados entre logins',
@@ -321,10 +324,10 @@ export function AnalyticsTab() {
 
           <div className="mt-5 flex h-[140px] items-end gap-1.5">
             {series.map((s) => {
-              const d = new Date(s.date)
+              const d = parseLocalDate(s.date)
               const label = periodDays <= 7 ? DAY_LETTERS[d.getDay() === 0 ? 6 : d.getDay() - 1] : `${d.getDate()}`
               return (
-                <div key={s.date} className="flex flex-1 flex-col items-center gap-1.5" title={`${s.date} · ${s.count} sesiones`}>
+                <div key={s.date} className="flex flex-1 flex-col items-center gap-1.5" title={`${d.toLocaleDateString('es-CL')} · ${s.count} ingreso${s.count === 1 ? '' : 's'}`}>
                   <span className="font-mono text-[9.5px] text-[#c4c3cd]">{s.count > 0 ? s.count : ''}</span>
                   <div className="flex w-full flex-1 items-end">
                     <div
@@ -346,15 +349,16 @@ export function AnalyticsTab() {
           <SectionLabel>Dedicación</SectionLabel>
           <CardTitle>Tiempo por módulo</CardTitle>
           <p className="mt-2 text-[12.5px] text-[#8b8a95]">Mediana del tiempo activo; a la derecha el rango mín – máx.</p>
+          {progInsuf && <InsufficientNote />}
           <div className="mt-4 flex flex-col gap-3.5">
             {modules.length === 0 && <p className="text-[13px] text-[#a9a8b4]">Sin actividad por módulo todavía.</p>}
             {modules.map((m, i) => (
               <BarRow
                 key={m.id}
                 label={`${i + 1} · ${m.title}`}
-                widthPct={insufficient ? 0 : ((m.median_minutes || 0) / maxModuleMedian) * 100}
-                value={insufficient ? '…' : fmtMin(m.median_minutes)}
-                sub={insufficient || m.min_minutes == null ? undefined : `${Math.round(m.min_minutes)} – ${Math.round(m.max_minutes)} min`}
+                widthPct={progInsuf ? 0 : ((m.median_minutes || 0) / maxModuleMedian) * 100}
+                value={progInsuf ? '…' : fmtMin(m.median_minutes)}
+                sub={progInsuf || m.min_minutes == null ? undefined : `${Math.round(m.min_minutes)} – ${Math.round(m.max_minutes)} min`}
               />
             ))}
           </div>
@@ -364,15 +368,16 @@ export function AnalyticsTab() {
           <SectionLabel>Contenidos</SectionLabel>
           <CardTitle>Quién abre y quién termina</CardTitle>
           <p className="mt-2 text-[12.5px] text-[#8b8a95]">Proporción de quienes lo abrieron y llegaron a completarlo.</p>
+          {contInsuf && <InsufficientNote />}
           <div className="mt-4 flex flex-col gap-3.5">
             {topContents.length === 0 && <p className="text-[13px] text-[#a9a8b4]">Aún no hay actividad sobre los contenidos.</p>}
             {topContents.map((c) => (
               <BarRow
                 key={c.content_id}
                 label={c.title}
-                widthPct={insufficient ? 0 : c.completion_ratio || 0}
-                value={insufficient ? '…' : fmtPct(c.completion_ratio)}
-                sub={insufficient ? undefined : `${c.completed} de ${c.opened}`}
+                widthPct={contInsuf ? 0 : c.completion_ratio || 0}
+                value={contInsuf ? '…' : fmtPct(c.completion_ratio)}
+                sub={contInsuf ? undefined : `${c.completed} de ${c.opened}`}
               />
             ))}
           </div>
@@ -384,6 +389,7 @@ export function AnalyticsTab() {
         <Card>
           <SectionLabel>Evaluaciones</SectionLabel>
           <CardTitle>Rendimiento</CardTitle>
+          {perfInsuf && quizzes.length > 0 && <InsufficientNote />}
           {quizzes.length === 0 ? (
             <p className="mt-3 text-[13px] text-[#a9a8b4]">Este curso aún no tiene evaluaciones.</p>
           ) : (
@@ -391,8 +397,8 @@ export function AnalyticsTab() {
               <thead>
                 <tr>
                   <th className="pb-2.5 pr-3 text-left font-mono text-[9.5px] font-semibold uppercase tracking-[0.12em] text-[#a9a8b4]">Evaluación</th>
-                  <th className="pb-2.5 pr-3 text-right font-mono text-[9.5px] font-semibold uppercase tracking-[0.12em] text-[#a9a8b4]">Intentos</th>
-                  <th className="pb-2.5 pr-3 text-right font-mono text-[9.5px] font-semibold uppercase tracking-[0.12em] text-[#a9a8b4]">Promedio</th>
+                  <th className="pb-2.5 pr-3 text-right font-mono text-[9.5px] font-semibold uppercase tracking-[0.12em] text-[#a9a8b4]">Alumnos</th>
+                  <th className="pb-2.5 pr-3 text-right font-mono text-[9.5px] font-semibold uppercase tracking-[0.12em] text-[#a9a8b4]">Puntaje</th>
                   <th className="pb-2.5 pr-3 text-right font-mono text-[9.5px] font-semibold uppercase tracking-[0.12em] text-[#a9a8b4]">Aprobación</th>
                   <th className="pb-2.5 text-right font-mono text-[9.5px] font-semibold uppercase tracking-[0.12em] text-[#a9a8b4]">Hasta aprobar</th>
                 </tr>
@@ -403,11 +409,13 @@ export function AnalyticsTab() {
                   return (
                     <tr key={q.quiz_id} className="border-t border-[#f2f1f6]">
                       <td className="py-3 pr-3 text-[13.5px] font-semibold text-[#16151b]">{q.title}</td>
-                      <td className="py-3 pr-3 text-right font-mono text-[13.5px]">{insufficient ? '…' : q.attempts}</td>
-                      <td className="py-3 pr-3 text-right font-mono text-[13.5px]">{insufficient ? '…' : fmtPct(q.avg_score)}</td>
+                      <td className="py-3 pr-3 text-right font-mono text-[13.5px]" title={`${q.attempts} intento${q.attempts === 1 ? '' : 's'} en total`}>
+                        {perfInsuf ? '…' : (q.students_attempted ?? q.attempts)}
+                      </td>
+                      <td className="py-3 pr-3 text-right font-mono text-[13.5px]" title="Puntaje promedio de todos los intentos">{perfInsuf ? '…' : fmtPct(q.avg_score)}</td>
                       <td className="py-3 pr-3 text-right">
                         <span className="inline-flex items-center gap-1.5">
-                          <span className="font-mono text-[13.5px] font-semibold">{insufficient ? '…' : fmtPct(q.pass_rate)}</span>
+                          <span className="font-mono text-[13.5px] font-semibold" title="Alumnos que la aprobaron, sobre los que la rindieron">{perfInsuf ? '…' : fmtPct(q.pass_rate)}</span>
                           <span
                             className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${
                               healthy ? 'bg-[#ecfdf5] text-[#047857]' : 'bg-[#fffbeb] text-[#b45309]'
@@ -417,7 +425,7 @@ export function AnalyticsTab() {
                           </span>
                         </span>
                       </td>
-                      <td className="py-3 text-right font-mono text-[13.5px]">{insufficient ? '…' : q.attempts_until_pass ?? '—'}</td>
+                      <td className="py-3 text-right font-mono text-[13.5px]">{perfInsuf ? '…' : q.attempts_until_pass ?? '—'}</td>
                     </tr>
                   )
                 })}
@@ -439,8 +447,8 @@ export function AnalyticsTab() {
               <BarRow
                 key={q.question_id}
                 label={q.question_text}
-                widthPct={insufficient ? 0 : q.error_rate || 0}
-                value={insufficient ? '…' : `${Math.round(q.error_rate)}%`}
+                widthPct={perfInsuf ? 0 : q.error_rate || 0}
+                value={perfInsuf ? '…' : `${Math.round(q.error_rate)}%`}
               />
             ))}
           </div>

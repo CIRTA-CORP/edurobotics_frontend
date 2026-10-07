@@ -6,7 +6,7 @@
  * contador.
  */
 import { useAdmin } from '@/features/admin/context/AdminContext'
-import { BarChart3, BookOpen, DatabaseBackup, GraduationCap, Globe, Users } from 'lucide-react'
+import { BarChart3, BookOpen, DatabaseBackup, GraduationCap, Globe, History, Users } from 'lucide-react'
 
 const LEVEL_DOT = {
   beginner: 'bg-emerald-500',
@@ -64,6 +64,9 @@ export function AdminSidebarNav() {
           </NavButton>
           <NavButton active={activeTab === 'usuarios'} onClick={() => setActiveTab('usuarios')} icon={Users}>
             Usuarios
+          </NavButton>
+          <NavButton active={activeTab === 'equipo'} onClick={() => setActiveTab('equipo')} icon={History}>
+            Actividad del equipo
           </NavButton>
         </>
       )}

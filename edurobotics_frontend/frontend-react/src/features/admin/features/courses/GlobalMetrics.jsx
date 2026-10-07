@@ -1,7 +1,7 @@
 // Dashboard "Métricas Globales": platform-wide cumulative cards (registered
 // students, published courses, completions, pass rate, avg difficulty).
 import { useQuery } from '@tanstack/react-query'
-import { getAdminMetrics } from '@/features/courses/services/courses'
+import { adminMetricsQuery } from '@/features/admin/services/panelQueries'
 
 function MetricCard({ label, value, sub }) {
     return (
@@ -16,11 +16,7 @@ function MetricCard({ label, value, sub }) {
 }
 
 export function GlobalMetrics() {
-    const { data, isLoading: loading } = useQuery({
-        queryKey: ['admin-metrics'],
-        queryFn: getAdminMetrics,
-        staleTime: 30_000,
-    })
+    const { data, isLoading: loading } = useQuery(adminMetricsQuery())
 
     const metrics = data?.metrics || null
 
@@ -50,17 +46,18 @@ export function GlobalMetrics() {
         {
             label: 'Contenidos completados',
             value: metrics.progress.total_completions,
-            sub: 'suma de todas las unidades terminadas',
+            sub: 'por alumnos, sumando todos los cursos',
         },
         {
             label: 'Aprobación de evaluaciones',
             value: `${metrics.quizzes.pass_rate}%`,
-            sub: `${metrics.quizzes.passed} de ${metrics.quizzes.total_attempts} intentos`,
+            // Por alumno: aprobar al tercer intento cuenta como una aprobada, no una de tres.
+            sub: `${metrics.quizzes.passed} de ${metrics.quizzes.attempted ?? metrics.quizzes.total_attempts} rendidas, una por alumno`,
         },
         {
             label: 'Feedback · utilidad',
             value: `${metrics.feedback.avg_usefulness}/5`,
-            sub: `dificultad ${metrics.feedback.avg_difficulty}/5 · ${metrics.feedback.total} respuestas`,
+            sub: `dificultad ${metrics.feedback.avg_difficulty}/5 · ${metrics.feedback.total} respuestas de alumnos`,
         },
     ]
 

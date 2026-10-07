@@ -5,7 +5,7 @@
  */
 import { useQuery } from '@tanstack/react-query'
 import { EyeOff } from 'lucide-react'
-import { getCoursesBasicMetrics } from '@/features/courses/services/courses'
+import { coursesMetricsQuery } from '@/features/admin/services/panelQueries'
 
 /** "4.2/5" or "—" when there's no data. */
 function Rating({ value }) {
@@ -19,11 +19,7 @@ function Rating({ value }) {
 }
 
 export function CoursesMetricsOverview() {
-  const { data, isLoading } = useQuery({
-    queryKey: ['admin-courses-metrics'],
-    queryFn: getCoursesBasicMetrics,
-    staleTime: 30_000,
-  })
+  const { data, isLoading } = useQuery(coursesMetricsQuery())
 
   const courses = data?.courses || []
 
@@ -80,7 +76,7 @@ export function CoursesMetricsOverview() {
         )}
       </div>
       <p className="text-[11.5px] leading-relaxed text-[#8b8a95]">
-        "Inscritos" = alumnos que abrieron el curso. "Completaron" = terminaron todo el contenido y aprobaron los quizzes, sobre los que tuvieron actividad. Utilidad y dificultad son el promedio del feedback.
+        "Inscritos" = alumnos matriculados. "Completaron" = terminaron todo el contenido y aprobaron las evaluaciones, sobre los que tuvieron actividad. Utilidad y dificultad son el promedio de lo que respondieron los alumnos. Administradores y profesores no se cuentan.
       </p>
     </div>
   )

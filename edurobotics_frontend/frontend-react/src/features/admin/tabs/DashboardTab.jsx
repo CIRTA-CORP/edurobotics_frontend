@@ -3,6 +3,7 @@
 // screen (Analítica) owns the question-ordered view; this tab keeps the raw
 // platform totals with the panel's design language.
 import { SessionActivity } from '@/features/admin/features/courses/SessionActivity'
+import { UsageByRole } from '@/features/admin/features/courses/UsageByRole'
 import { GlobalMetrics } from '@/features/admin/features/courses/GlobalMetrics'
 import { CoursesMetricsOverview } from '@/features/admin/features/courses/CoursesMetricsOverview'
 
@@ -21,6 +22,7 @@ export function DashboardTab() {
         </p>
       </div>
       <SessionActivity />
+      <UsageByRole />
       <GlobalMetrics />
       <CoursesMetricsOverview />
     </div>
