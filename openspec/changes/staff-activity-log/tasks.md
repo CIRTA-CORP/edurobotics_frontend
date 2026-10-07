@@ -30,5 +30,6 @@
 
 ## 4. Cierre
 
-- [ ] 4.1 Build, ESLint y tests sin hallazgos nuevos
+- [x] 4.1 Build, ESLint y tests sin hallazgos nuevos: build en verde; ESLint marca 47, todos
+      en archivos que esta rama no toca; 186 tests y Ruff limpio en el backend
 - [ ] 4.2 Volcar el delta en `openspec/specs/` y archivar
