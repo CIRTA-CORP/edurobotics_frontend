@@ -9,7 +9,7 @@
  * reutilizan tal cual: cambian de contenedor, no de lógica.
  */
 
-import { useRef, useState } from 'react'
+import { useLayoutEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Check, Eye, FileText } from 'lucide-react'
 import { ContentForm } from '@/features/admin/features/content/ContentForm'
@@ -37,11 +37,42 @@ function EmptyEditor({ hasModules }) {
   )
 }
 
+/**
+ * Ajustes de la unidad. El formulario es compartido (`unitHooks.unitForm`) y solo
+ * `handleUnitSelect` lo llenaba: al entrar a un curso o a un módulo se elige la
+ * primera unidad sin pasar por ahí, y el formulario conservaba otra unidad —
+ * «Guardar cambios» escribía esos datos sobre la unidad abierta. Se monta con
+ * `key` por unidad y siembra el formulario con la unidad que se está viendo.
+ */
+function UnitSettings({ unit, unitHooks, unitDrawerOpen, onSubmit }) {
+  const { setUnitForm } = unitHooks
+  // Mientras el cajón de crear/editar unidad está abierto, el formulario es suyo;
+  // al cerrarse se vuelve a sembrar con la unidad abierta.
+  useLayoutEffect(() => {
+    if (unitDrawerOpen) return
+    setUnitForm({
+      title: unit.title || '',
+      description: unit.description || '',
+      order_index: unit.order_index ?? 1,
+    })
+  }, [unit.id, unit.title, unit.description, unit.order_index, unitDrawerOpen, setUnitForm])
+
+  return (
+    <UnitForm
+      mode="edit"
+      isSubmitting={unitHooks.isSubmitting}
+      unitForm={unitHooks.unitForm}
+      setUnitForm={setUnitForm}
+      onSubmit={onSubmit}
+    />
+  )
+}
+
 export function WorkshopTab() {
   const {
     selectedCourse, selectedModule, selectedUnit,
     expandedSections, toggleSection, handleContentDelete, contentHooks,
-    unitHooks,
+    unitHooks, isUnitModalOpen, isUnitEditModalOpen,
   } = useAdmin()
 
   const [editorTab, setEditorTab] = useState('contenido')
@@ -154,11 +185,11 @@ export function WorkshopTab() {
                     <p className="mb-4 text-[13px] text-[#8b8a95]">
                       Título, descripción y orden de esta unidad dentro del módulo.
                     </p>
-                    <UnitForm
-                      mode="edit"
-                      isSubmitting={unitHooks.isSubmitting}
-                      unitForm={unitHooks.unitForm}
-                      setUnitForm={unitHooks.setUnitForm}
+                    <UnitSettings
+                      key={selectedUnit.id}
+                      unit={selectedUnit}
+                      unitHooks={unitHooks}
+                      unitDrawerOpen={isUnitModalOpen || isUnitEditModalOpen}
                       onSubmit={(e) => unitHooks.handleUnitUpdate(e, selectedUnit.id, selectedCourse)}
                     />
                   </div>

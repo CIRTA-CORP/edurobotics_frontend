@@ -16,13 +16,14 @@ import { mergeLandingContent } from '@/features/landing/landingContent'
 import { Check, ChevronDown, ExternalLink, ImageIcon, Loader2, Plus, Trash2, Upload, X } from 'lucide-react'
 
 
-function Toggle({ value, onChange }) {
+function Toggle({ value, onChange, label }) {
   return (
     <button
       type="button"
       onClick={() => onChange(!value)}
       role="switch"
       aria-checked={value}
+      aria-label={label}
       className={`relative inline-flex h-[23px] w-10 items-center rounded-full p-[3px] transition-colors ${value ? 'bg-[#10b981]' : 'bg-[#dcdbe4]'}`}
     >
       <span className={`inline-block h-[17px] w-[17px] transform rounded-full bg-white shadow-sm transition-transform ${value ? 'translate-x-[17px]' : 'translate-x-0'}`} />
@@ -56,6 +57,7 @@ function BlockCard({ title, subtitle, visible, onVisibleChange, children, defaul
         <button
           type="button"
           onClick={() => setOpen((o) => !o)}
+          aria-expanded={open}
           className="flex min-w-0 flex-1 items-center gap-4 text-left"
         >
           <div className="min-w-0 flex-1">
@@ -63,11 +65,14 @@ function BlockCard({ title, subtitle, visible, onVisibleChange, children, defaul
             <div className="mt-1 text-[12.5px] text-[#a9a8b4]">{subtitle}</div>
           </div>
         </button>
-        <Toggle value={visible} onChange={onVisibleChange} />
+        {onVisibleChange && (
+          <Toggle value={visible} onChange={onVisibleChange} label={`Mostrar «${title}» en la página de inicio`} />
+        )}
         <button
           type="button"
           onClick={() => setOpen((o) => !o)}
           aria-label={open ? 'Cerrar bloque' : 'Abrir bloque'}
+          aria-expanded={open}
           className="flex-shrink-0 text-[#c4c3cd] transition-transform hover:text-[#16151b]"
         >
           <ChevronDown className={`h-4 w-4 transition-transform ${open ? '' : '-rotate-90'}`} />
@@ -213,6 +218,7 @@ export function LandingTab() {
                   <button
                     type="button"
                     onClick={() => update('hero', 'imageUrl', '')}
+                    aria-label="Quitar la foto del robot"
                     className="absolute right-2 top-2 grid h-6 w-6 place-items-center rounded-full bg-black/55 text-white hover:bg-black/80"
                     title="Quitar imagen"
                   >
@@ -227,10 +233,10 @@ export function LandingTab() {
                   </span>
                 ) : (
                   <>
-                    <label className="inline-flex h-[38px] cursor-pointer items-center gap-2 rounded-[10px] border border-[#e3e2ea] px-3.5 text-[12.5px] font-semibold text-[#55545f] transition-colors hover:border-[#c4c3cd] hover:text-[#16151b]">
+                    <label className="inline-flex h-[38px] cursor-pointer items-center gap-2 rounded-[10px] border border-[#e3e2ea] px-3.5 text-[12.5px] font-semibold text-[#55545f] transition-colors hover:border-[#c4c3cd] hover:text-[#16151b] has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-[#4b46d6]">
                       {form.hero.imageUrl ? <ImageIcon className="h-4 w-4" /> : <Upload className="h-4 w-4" strokeWidth={1.8} />}
                       {form.hero.imageUrl ? 'Reemplazar imagen' : 'Subir imagen'}
-                      <input type="file" accept="image/*" className="hidden" onChange={handleHeroImage} disabled={uploading} />
+                      <input type="file" accept="image/*" className="sr-only" onChange={handleHeroImage} disabled={uploading} />
                     </label>
                     <p className="mt-2 font-mono text-[10.5px] text-[#a9a8b4]">PNG, JPG, WEBP · máx 5 MB</p>
                   </>
@@ -371,7 +377,6 @@ export function LandingTab() {
           title="Páginas legales"
           subtitle="Términos, Privacidad y Cookies"
           visible
-          onVisibleChange={() => {}}
         >
           <p className="rounded-[10px] border border-amber-200 bg-amber-50 px-3.5 py-2.5 text-[12px] text-amber-700">
             Completa los datos marcados como <strong>por completar</strong> (razón social, RUT, dirección, representante legal).
