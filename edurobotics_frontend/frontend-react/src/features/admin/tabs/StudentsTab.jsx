@@ -192,7 +192,13 @@ export function StudentsTab() {
                           {initials(s.name || s.username)}
                         </div>
                         <div className="min-w-0">
-                          <p className="truncate font-medium text-gray-800">{s.name || s.username}</p>
+                          <button
+                            type="button"
+                            onClick={(e) => { e.stopPropagation(); setSelected(s.id) }}
+                            className="block max-w-full truncate text-left font-medium text-gray-800 hover:underline"
+                          >
+                            {s.name || s.username}
+                          </button>
                           <p className="truncate text-xs text-gray-400">@{s.username}</p>
                         </div>
                       </div>

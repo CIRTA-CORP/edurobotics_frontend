@@ -50,6 +50,7 @@ function NavLink({ label, isActive, onClick }) {
   return (
     <button
       onClick={onClick}
+      aria-current={isActive ? 'page' : undefined}
       className={`
         relative px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200
         ${isActive
@@ -71,6 +72,7 @@ function MobileNavLink({ label, isActive, onClick }) {
   return (
     <button
       onClick={onClick}
+      aria-current={isActive ? 'page' : undefined}
       className={`
         w-full flex items-center px-4 py-3 text-sm font-medium transition-colors
         ${isActive
@@ -173,6 +175,8 @@ export function StudentHeader({ user, hideLogout, onLogout, adminView, setAdminV
             {/* Mobile menu toggle */}
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              aria-label={mobileMenuOpen ? 'Cerrar menú' : 'Abrir menú'}
+              aria-expanded={mobileMenuOpen}
               className="sm:hidden p-2 rounded-lg text-gray-500 hover:bg-gray-100 transition-colors"
             >
               {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}

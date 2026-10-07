@@ -15,7 +15,7 @@ import { updateProfile, changePassword } from '@/features/profile/services/profi
 import { clearStoredUser, deleteMyAccount, exportMyData } from '@/features/auth/services/auth'
 
 const FIELD_CLASSES =
-  "w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#4b46d6]/30 disabled:bg-gray-50"
+  "w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:border-[#4b46d6] focus:ring-2 focus:ring-[#4b46d6]/30 disabled:bg-gray-50"
 
 function Field({ label, ...props }) {
   // Los campos de contraseña usan PasswordInput para que también tengan el

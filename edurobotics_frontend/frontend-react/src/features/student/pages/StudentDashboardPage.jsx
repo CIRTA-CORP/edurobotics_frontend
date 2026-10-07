@@ -181,6 +181,7 @@ function StudentDashboardPage({ userOverride = null, hideLogout = false, hideHea
           {!loading && lockedCount > 0 && (
             <button
               onClick={() => setShowOnlyAvailable(v => !v)}
+              aria-pressed={showOnlyAvailable}
               className={`inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-sm font-medium transition-colors ${
                 showOnlyAvailable
                   ? 'bg-[#16151b] text-white'
