@@ -7,8 +7,11 @@
  * course are mirrored to the URL (?tab=&course=) so the panel is deep-linkable
  * and survives a refresh. Tabs read this via `useAdmin()` instead of threading
  * props, which keeps each tab thin.
+ *
+ * El contexto y el hook `useAdmin()` viven en AdminContext.js: así este archivo
+ * solo exporta componentes y Fast Refresh funciona.
  */
-import { createContext, useContext, useState, useCallback, useEffect } from 'react'
+import { useState, useCallback, useEffect } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
@@ -18,8 +21,7 @@ import { useCourses } from '@/features/admin/features/courses/useCourses'
 import { useModules } from '@/features/admin/features/modules/useModules'
 import { useUnits } from '@/features/admin/features/units/useUnits'
 import { useContent } from '@/features/admin/features/content/useContent'
-
-const AdminContext = createContext(null)
+import { AdminContext } from './AdminContext'
 
 export function AdminProvider({ children }) {
   const queryClient = useQueryClient()
@@ -151,11 +153,18 @@ export function AdminProvider({ children }) {
 
   const selectedCourse = selectedCourseData || null
 
-  // Synchronize selectedModule and selectedUnit when selectedCourse updates
-  useEffect(() => {
-    if (selectedCourse) {
-      if (!selectedModule) return
+  // Synchronize selectedModule and selectedUnit when selectedCourse updates.
+  // Se ajusta durante el render (comparando con los valores anteriores) en vez de en
+  // un efecto: así los hijos nunca ven un render con la selección desfasada.
+  const [prevSelection, setPrevSelection] = useState({ selectedCourse, selectedModule, selectedUnit })
+  if (
+    prevSelection.selectedCourse !== selectedCourse ||
+    prevSelection.selectedModule !== selectedModule ||
+    prevSelection.selectedUnit !== selectedUnit
+  ) {
+    setPrevSelection({ selectedCourse, selectedModule, selectedUnit })
 
+    if (selectedCourse && selectedModule) {
       const updatedModule = selectedCourse.modules?.find(m => m.id === selectedModule.id)
 
       if (updatedModule) {
@@ -178,7 +187,7 @@ export function AdminProvider({ children }) {
         setSelectedUnit(null)
       }
     }
-  }, [selectedCourse, selectedModule, selectedUnit])
+  }
 
   // Handlers
   const handleLogout = () => {
@@ -367,6 +376,9 @@ export function AdminProvider({ children }) {
     selectedCourse,
     isCoursesLoading,
     isSelectedCourseLoading,
+    // Para que quien cambia algo del curso fuera de los hooks (p. ej. QuizEditor)
+    // pueda refrescar el detalle y sus contadores sin recargar la página.
+    refreshSelectedCourse,
 
     // Custom hooks
     courseHooks,
@@ -394,12 +406,4 @@ export function AdminProvider({ children }) {
       {children}
     </AdminContext.Provider>
   )
-}
-
-export function useAdmin() {
-  const context = useContext(AdminContext)
-  if (!context) {
-    throw new Error('useAdmin must be used within AdminProvider')
-  }
-  return context
 }

@@ -2,7 +2,7 @@
 // vista. Cabecera con las acciones del curso, cuerpo en dos columnas —campos a
 // la izquierda, prerequisitos y zona sensible a la derecha— y las métricas y el
 // feedback en sus propias pestañas.
-import { useState } from 'react'
+import { useLayoutEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 import { Check, Download, Eye, Printer, Trash2 } from 'lucide-react'
@@ -25,11 +25,30 @@ function HeaderAction({ onClick, children, disabled }) {
 }
 
 export function CoursesTab() {
-  const { selectedCourse, courses, courseHooks, isTeacher } = useAdmin()
+  const { selectedCourse, courses, courseHooks, isTeacher, isCourseModalOpen } = useAdmin()
 
   const navigate = useNavigate()
   const [downloading, setDownloading] = useState(false)
   const [tab, setTab] = useState('detalle')
+
+  // El formulario del curso es compartido y solo `handleCourseSelect` lo llenaba.
+  // Si el curso cambiaba por otro camino (selector de Analítica, `?course=` en la
+  // URL, recarga) o «Crear curso» lo vaciaba, Detalle mostraba otros datos —o
+  // ninguno— y «Guardar cambios» los escribía sobre este curso. Se siembra aquí
+  // con el curso que se está viendo; mientras el cajón de crear está abierto, el
+  // formulario es suyo, y al cerrarse se vuelve a sembrar.
+  const { setCourseForm, setPrereqIds } = courseHooks
+  useLayoutEffect(() => {
+    if (!selectedCourse || isCourseModalOpen) return
+    setCourseForm({
+      title: selectedCourse.title || '',
+      description: selectedCourse.description || '',
+      image_url: selectedCourse.image_url || '',
+      level: selectedCourse.level || 'beginner',
+      is_published: selectedCourse.is_published !== false,
+    })
+    setPrereqIds(selectedCourse.prerequisites?.length ? selectedCourse.prerequisites : [])
+  }, [selectedCourse, isCourseModalOpen, setCourseForm, setPrereqIds])
 
   if (isTeacher) return null
 
@@ -54,10 +73,10 @@ export function CoursesTab() {
     }
   }
 
+  // La confirmación vive en `handleCourseDelete`: pedirla también aquí la
+  // mostraba dos veces seguidas.
   const handleDelete = () => {
-    if (window.confirm(`¿Eliminar el curso "${selectedCourse.title}"? Esta acción no se puede deshacer.`)) {
-      courseHooks.handleCourseDelete(selectedCourse)
-    }
+    courseHooks.handleCourseDelete(selectedCourse)
   }
 
   const tabButton = (id, label) => (

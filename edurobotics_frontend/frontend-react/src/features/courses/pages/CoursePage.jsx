@@ -84,8 +84,9 @@ function CoursePage() {
   const numericCourseId = Number.parseInt(courseId, 10)
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
-  const [user, setUser] = useState(() => getStoredUser())
+  const [user] = useState(() => getStoredUser())
   const [selectedUnitId, setSelectedUnitId] = useState(null)
+  const [prevSelectedUnitId, setPrevSelectedUnitId] = useState(null)
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false) // desktop "modo foco"
   const mainRef = useRef(null)
@@ -125,13 +126,15 @@ function CoursePage() {
 
   // Open the unit named in the URL when there is one (that's how "continue
   // where you left off" lands on the right unit); otherwise start at the first.
-  useEffect(() => {
-    if (!course || selectedUnitId) return
+  // Se ajusta durante el render (en vez de en un efecto) para no pintar un
+  // fotograma sin unidad seleccionada.
+  if (course && !selectedUnitId) {
     const units = course.modules?.flatMap(m => m.units || []) || []
     const requested = Number.parseInt(searchParams.get('unit'), 10)
     const target = units.find(u => u.id === requested) || units[0]
-    if (target) setSelectedUnitId(target.id)
-  }, [course, selectedUnitId, searchParams])
+    // La comparación evita un bucle de renders si el id fuese falsy (p. ej. 0)
+    if (target && target.id !== selectedUnitId) setSelectedUnitId(target.id)
+  }
 
   // Enroll the student when they open the course (idempotent, fire-and-forget).
   useEffect(() => {
@@ -156,8 +159,11 @@ function CoursePage() {
     return () => el.removeEventListener('scroll', onScroll)
   }, [course])
 
-  // Reset progress bar on unit change
-  useEffect(() => { setReadProgress(0) }, [selectedUnitId])
+  // Reset progress bar on unit change (ajuste durante el render comparando con la unidad anterior)
+  if (selectedUnitId !== prevSelectedUnitId) {
+    setPrevSelectedUnitId(selectedUnitId)
+    setReadProgress(0)
+  }
 
   // ── Loading (skeleton) ──
   if (courseLoading) return <CoursePageSkeleton />
@@ -209,8 +215,10 @@ function CoursePage() {
   )
 
   // ── Main layout ──
+  // Exactly the viewport tall: the reading pane (<main>) is what scrolls, not the
+  // window. The reading bar, «Volver arriba» and the section rail read its scroll.
   return (
-    <div className="min-h-screen bg-white flex flex-col">
+    <div className="h-dvh bg-white flex flex-col">
       {/* Top bar */}
       <CourseTopBar
         course={course}
@@ -222,7 +230,7 @@ function CoursePage() {
       />
 
       {/* Body: sidebar + content */}
-      <div className="flex flex-1 overflow-hidden relative">
+      <div className="flex flex-1 min-h-0 overflow-hidden relative">
         {/* Reading progress bar */}
         <div className="absolute top-0 left-0 right-0 z-50 h-0.5 bg-gray-100">
           <div

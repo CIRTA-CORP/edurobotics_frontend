@@ -121,12 +121,13 @@ export function CourseForm({
                     onClick={() => setCourseForm({ ...courseForm, image_url: '' })}
                     className="absolute right-2 top-2 inline-flex h-7 w-7 items-center justify-center rounded-full bg-black/60 text-white transition-colors hover:bg-black/80"
                     title="Quitar imagen"
+                    aria-label="Quitar la imagen de portada"
                   >
                     <X className="h-4 w-4" />
                   </button>
                 </div>
               ) : (
-                <label className="flex h-36 cursor-pointer flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed border-gray-200 bg-gray-50/50 text-gray-400 transition-colors hover:border-blue-300 hover:bg-blue-50/40 hover:text-blue-500">
+                <label className="flex h-36 cursor-pointer flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed border-gray-200 bg-gray-50/50 text-gray-400 transition-colors hover:border-blue-300 hover:bg-blue-50/40 hover:text-blue-500 has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-[#4b46d6]">
                   {uploadingImage ? (
                     <>
                       <Loader2 className="h-6 w-6 animate-spin" />
@@ -145,7 +146,7 @@ export function CourseForm({
                   <input
                     type="file"
                     accept="image/png,image/jpeg,image/webp,image/gif"
-                    className="hidden"
+                    className="sr-only"
                     onChange={handleImageUpload}
                     disabled={uploadingImage}
                   />

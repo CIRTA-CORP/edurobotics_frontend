@@ -18,6 +18,8 @@
       falta ninguna función que use a diario. Lo que falte se agrega al mapa ANTES de tocar código.
 - [ ] 0.2 Capturas del estado actual de: pestaña Módulos, pestaña Contenido con el editor,
       pestaña Evaluaciones, Usuarios, Analítica y Landing.
+      **Nota (2026-10-07):** no se tomaron antes de las rebanadas; el panel anterior **ya no
+      existe** en la app. No se van a fabricar.
 - [x] 0.3 Exportar los seis artboards a `canvas/` dentro del change (fuente de la sección 8).
 
 ## 1. Armazón (7 funciones) — HECHO
@@ -75,8 +77,22 @@
 - [x] 2c.4 Conservar el guardado automático con su indicador «Sincronizando…».
 
 ### 2d. Cierre de la rebanada
-- [ ] 2d.1 **Repaso función por función** de las 34 funciones de Módulos, Unidades, Contenido y
+- [x] 2d.1 **Repaso función por función** de las 34 funciones de Módulos, Unidades, Contenido y
       Evaluaciones contra el mapa. Cualquiera que no tenga sitio: parar y preguntar.
+      **Hecho por código (2026-10-07).** 34/34 revisadas. **Sin sitio — pregunta para Mario:**
+      «Abrir el quiz del módulo» (el mapa lo pone en una pestaña Evaluación del módulo): no
+      existe; `QuizEditor` acepta `moduleId` pero el taller solo le pasa `unitId`, y ninguna
+      pantalla del alumno muestra `module.quizzes`. ¿Se quita del mapa o se construye?
+      **Cambiaron de sitio respecto del mapa:** editar y eliminar módulo/unidad viven en el
+      menú «…» del árbol (cajón), no en una pestaña Ajustes del módulo; clic en un módulo abre
+      su primera unidad. **Arreglado:** Ajustes de la unidad podía mostrar y GUARDAR los datos
+      de otra unidad (el formulario compartido solo se llenaba en `handleUnitSelect`) →
+      `UnitSettings` en `WorkshopTab` lo siembra con la unidad abierta; «Crear unidad»/«Crear
+      módulo» abrían el cajón con los datos de lo último editado → se vacían. **Sin arreglar
+      (archivos en edición por otra sesión):** el contador de Evaluación no se actualiza al
+      crear un quiz hasta recargar (`QuizEditor` no invalida el detalle del curso);
+      «Último guardado» no se reinicia al cambiar de unidad; con el editor plegado, «Guardar»
+      no hace nada.
 - [ ] 2d.2 Prueba manual completa: crear módulo → crear unidad → escribir contenido → guardar →
       crear evaluación → añadir preguntas → verlo como alumno.
 
@@ -133,7 +149,26 @@
       48 errores). Verificado archivo por archivo en las rebanadas 2, 5 y 6: sin issues nuevos.
 - [ ] 7.2 Capturas antes/después de la pantalla tocada.
 - [ ] 7.3 Recorrido de teclado de la pantalla (no regresar la capability `accessibility`).
-- [ ] 7.4 Repaso contra el mapa de cobertura de las funciones de esa rebanada.
+      **Revisión por código hecha (2026-10-07), falta el recorrido real con Tab.** Arreglado:
+      fila de alumno en Progreso (`<tr onClick>`, sin nada enfocable) → el nombre es botón;
+      subidas de imagen de Landing y Especializaciones (input `hidden`, fuera del orden de
+      tabulación) → `sr-only` con anillo en la etiqueta; menú «…» del árbol sin
+      `aria-expanded` ni Escape → ambos, y devuelve el foco. **Pendiente (archivos en edición
+      por otra sesión):** portada del curso en `CourseForm` (mismo input `hidden`); el
+      deslizador de puntaje mínimo de `QuizEditor` solo guarda con ratón (`onMouseUp`), con
+      flechas no persiste; opciones de `QuestionBlock` sin indicador de foco; botones de
+      icono sin nombre en `QuizEditor`/`QuestionBlock`; paneles móviles del panel siguen en
+      el orden de tabulación cerrados (`AdminDashboardPage`).
+- [x] 7.4 Repaso contra el mapa de cobertura de las funciones de esa rebanada.
+      **Hecho por código para las 72 funciones (2026-10-07).** Además de lo anotado en 2d.1:
+      «Detalle del curso» se le mostraba al profesor (pantalla en blanco) → oculto. Detalle
+      podía mostrar el formulario de OTRO curso —o vacío— y guardarlo sobre el abierto (el
+      formulario compartido solo se llenaba en `handleCourseSelect`, y el selector de
+      Analítica, `?course=` en la URL, la recarga y «Crear curso» no pasan por ahí) →
+      `CoursesTab` lo siembra con el curso abierto. El interruptor de «Páginas legales» no
+      hacía nada → quitado (las páginas legales no se apagan). **Sin arreglar (archivos en
+      edición por otra sesión):** eliminar curso pide confirmar dos veces (`CoursesTab` y
+      `useCourses`). Especializaciones sigue bajo «Contenido» en el rail (ya anotado en 6.5).
 
 ## 8. Especificaciones del canvas — guía de implementación (fuente: `canvas/*.dc.html`)
 

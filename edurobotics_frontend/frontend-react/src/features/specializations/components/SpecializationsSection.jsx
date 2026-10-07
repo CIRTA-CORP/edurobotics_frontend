@@ -20,8 +20,7 @@ function SpecializationCard({ spec, progress, onClick }) {
   const done = total > 0 && completed >= total
   return (
     <article
-      className="group relative flex cursor-pointer overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-xl"
-      onClick={() => onClick(spec.id)}
+      className="group relative flex cursor-pointer overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-xl has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-[#4b46d6]"
     >
       {/* Cover */}
       <div className="relative w-32 flex-shrink-0 sm:w-40">
@@ -81,12 +80,20 @@ function SpecializationCard({ spec, progress, onClick }) {
             <BookOpen className="h-3.5 w-3.5" />
             {count} {count === 1 ? 'curso' : 'cursos'}
           </span>
-          <span className="flex items-center gap-1 text-xs font-semibold text-[#4b46d6] opacity-0 transition-opacity group-hover:opacity-100">
+          <span className="flex items-center gap-1 text-xs font-semibold text-[#4b46d6] opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100">
             Ver ruta
             <ArrowRight className="h-3.5 w-3.5" />
           </span>
         </div>
       </div>
+
+      {/* The card's real control, covering it: click anywhere, or Tab to it. */}
+      <button
+        type="button"
+        onClick={() => onClick(spec.id)}
+        aria-label={`Especialización ${spec.title}. Ver ruta${total > 0 ? `, ${completed} de ${total} cursos completados` : ''}`}
+        className="absolute inset-0 z-10 cursor-pointer"
+      />
     </article>
   )
 }

@@ -111,7 +111,6 @@ export function Ide() {
             style={{ width: `${leftPanelMaxWidth}%` }}
           >
             <LeftPanel
-              setAlertType={setAlertType}
               handleHide={() => setHideLeftPanel(true)}
               onJointAngles={(angles, t) => setJointFrame({ angles, t })}
               onQueueChange={setQueue}

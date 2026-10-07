@@ -119,8 +119,7 @@ function ToolbarDivider() {
 
 // ── Toolbar ──
 function EditorToolbar({ editor, onImageUpload, onFileUpload, uploading }) {
-  if (!editor) return null
-
+  // Los hooks van antes del return temprano: React exige el mismo orden en cada render
   const handleHeading = useCallback((level) => {
     const isActive = editor.isActive('heading', { level })
     if (isActive) {
@@ -156,6 +155,8 @@ function EditorToolbar({ editor, onImageUpload, onFileUpload, uploading }) {
 
     editor.chain().focus().extendMarkRange('link').setLink({ href: url }).run()
   }, [editor])
+
+  if (!editor) return null
 
   return (
     <div className="flex flex-wrap items-center gap-0.5 px-3 py-2 border-b border-gray-200 bg-gray-50/80">

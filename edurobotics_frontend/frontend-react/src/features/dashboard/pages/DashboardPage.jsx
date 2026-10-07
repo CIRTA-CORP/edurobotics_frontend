@@ -5,17 +5,13 @@ import { Navigate, useNavigate } from 'react-router-dom'
 import { getStoredUser } from '@/features/auth/services/auth'
 
 function DashboardPage() {
-  const [user, setUser] = useState(null)
+  // Lectura síncrona del token: se hace al montar, sin esperar a un efecto
+  const [user] = useState(getStoredUser)
   const navigate = useNavigate()
 
   useEffect(() => {
-    const storedUser = getStoredUser()
-    if (!storedUser) {
-      navigate('/login')
-      return
-    }
-    setUser(storedUser)
-  }, [navigate])
+    if (!user) navigate('/login')
+  }, [user, navigate])
 
   if (!user) return <div className="loading">Cargando...</div>
 

@@ -70,8 +70,7 @@ export function CourseGrid({ courses, onCourseClick, specMap = {}, orderMap = {}
         return (
           <article
             key={course.id}
-            className={`group relative cursor-pointer overflow-hidden rounded-2xl border shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-xl ${locked ? 'border-gray-200 opacity-90' : completed ? 'border-emerald-200' : 'border-gray-200'}`}
-            onClick={() => onCourseClick(course.id)}
+            className={`group relative cursor-pointer overflow-hidden rounded-2xl border shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-xl has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-[#4b46d6] ${locked ? 'border-gray-200 opacity-90' : completed ? 'border-emerald-200' : 'border-gray-200'}`}
             onMouseEnter={() => handlePrefetch(course.id)}
             onFocus={() => handlePrefetch(course.id)}
           >
@@ -146,8 +145,8 @@ export function CourseGrid({ courses, onCourseClick, specMap = {}, orderMap = {}
                   </div>
                 )}
 
-                {/* Reveal on hover: state + % + CTA */}
-                <div className="max-h-0 overflow-hidden opacity-0 transition-all duration-300 ease-out group-hover:mt-3 group-hover:max-h-40 group-hover:opacity-100">
+                {/* Reveal on hover (or keyboard focus): state + % + CTA */}
+                <div className="max-h-0 overflow-hidden opacity-0 transition-all duration-300 ease-out group-hover:mt-3 group-hover:max-h-40 group-hover:opacity-100 group-focus-within:mt-3 group-focus-within:max-h-40 group-focus-within:opacity-100">
                   {percentage !== null ? (
                     <div className="mb-3 flex items-center justify-between text-xs text-white/85">
                       <span className="flex items-center gap-1.5 font-medium">
@@ -171,6 +170,17 @@ export function CourseGrid({ courses, onCourseClick, specMap = {}, orderMap = {}
                 </div>
               </div>
             </div>
+
+            {/* The card's real control: covers the whole card so a click
+                anywhere still opens it, and Tab reaches every course. */}
+            <button
+              type="button"
+              onClick={() => onCourseClick(course.id)}
+              aria-label={locked
+                ? `${course.title}. Bloqueado: ${course.lockedReason || 'completa los prerrequisitos'}`
+                : `${course.title}. ${ctaLabel}${percentage !== null ? `, ${percentage}%` : ''}`}
+              className="absolute inset-0 z-10 cursor-pointer"
+            />
           </article>
         )
       })}

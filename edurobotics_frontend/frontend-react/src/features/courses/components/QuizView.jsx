@@ -1,6 +1,6 @@
 // QuizView: the student's quiz-taking flow — renders questions, collects
 // answers, submits the attempt and shows the pass/fail result with feedback.
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { Button } from '@/shared/components/button';
 import {
@@ -58,7 +58,7 @@ export function QuizView({ quizId, userId, onComplete }) {
                 user_id: userId,
                 answers: answers
             });
-        } catch (err) {
+        } catch {
             alert('Error al enviar la evaluación.');
         }
     };

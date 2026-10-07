@@ -7,7 +7,7 @@
  * green when complete) so an admin sees the same structure the student does.
  */
 
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import {
   ChevronDown, ClipboardCheck, Cpu, FileDown, FileText, Link2,
   MoreHorizontal, PlayCircle, Plus, Settings, Trash2,
@@ -25,14 +25,33 @@ function unitIcon(unit) {
   return FileText
 }
 
-/** Row actions that used to live as icons in the old list rows. */
+/**
+ * Row actions that used to live as icons in the old list rows. A disclosure:
+ * the two actions follow the trigger in the tab order; Escape closes it and
+ * returns focus to the trigger, and tabbing out of it closes it too.
+ */
 function RowMenu({ onEdit, onDelete, label }) {
   const [open, setOpen] = useState(false)
+  const triggerRef = useRef(null)
   return (
-    <span className="relative flex-shrink-0">
+    <span
+      className="relative flex-shrink-0"
+      onKeyDown={(e) => {
+        if (e.key === 'Escape' && open) {
+          e.stopPropagation()
+          setOpen(false)
+          triggerRef.current?.focus()
+        }
+      }}
+      onBlur={(e) => {
+        if (open && !e.currentTarget.contains(e.relatedTarget)) setOpen(false)
+      }}
+    >
       <button
+        ref={triggerRef}
         onClick={(e) => { e.stopPropagation(); setOpen(o => !o) }}
         aria-label={`Acciones de ${label}`}
+        aria-expanded={open}
         className="grid h-6 w-6 place-items-center rounded-md text-[#b3b2be] transition-colors hover:bg-[#efeef3] hover:text-[#16151b] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4b46d6]"
       >
         <MoreHorizontal className="h-3.5 w-3.5" />
@@ -67,7 +86,7 @@ export function CourseTreeNodes() {
     handleModuleEdit, handleModuleDelete,
     handleUnitEdit, handleUnitDelete,
     setIsModuleModalOpen, setIsUnitModalOpen,
-    isSelectedCourseLoading,
+    isSelectedCourseLoading, moduleHooks, unitHooks,
   } = useAdmin()
 
   // Modules the admin folded by hand; the selected one is open by default.
@@ -175,7 +194,11 @@ export function CourseTreeNodes() {
 
                     <li>
                       <button
-                        onClick={() => { handleModuleSelect(module); setIsUnitModalOpen(true) }}
+                        onClick={() => {
+                          handleModuleSelect(module)
+                          unitHooks.setUnitForm({ title: '', description: '', order_index: 1 })
+                          setIsUnitModalOpen(true)
+                        }}
                         className="flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-[13px] text-[#8b8a95] transition-colors hover:bg-[#f4f3f8] hover:text-[#16151b] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4b46d6]"
                       >
                         <Plus className="h-3.5 w-3.5" />
@@ -191,7 +214,10 @@ export function CourseTreeNodes() {
       </nav>
 
       <button
-        onClick={() => setIsModuleModalOpen(true)}
+        onClick={() => {
+          moduleHooks.setModuleForm({ title: '', description: '', order_index: 1 })
+          setIsModuleModalOpen(true)
+        }}
         className="mb-1 ml-2 flex items-center gap-2 rounded-lg px-2 py-1.5 text-[13px] text-[#8b8a95] transition-colors hover:bg-[#f4f3f8] hover:text-[#16151b] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4b46d6]"
       >
         <Plus className="h-3.5 w-3.5" />

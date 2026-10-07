@@ -14,7 +14,8 @@ import { clearStoredUser, getStoredUser } from '@/features/auth/services/auth'
 import { AdminHeader } from '@/features/admin/components/AdminHeader'
 import { LogoutModal } from '@/shared/components/LogoutModal'
 import { ErrorBoundary } from '@/shared/components/ErrorBoundary'
-import { AdminProvider, useAdmin } from '@/features/admin/context/AdminContext'
+import { AdminProvider } from '@/features/admin/context/AdminProvider'
+import { useAdmin } from '@/features/admin/context/AdminContext'
 import { AdminSidebarNav } from '@/features/admin/components/AdminSidebarNav'
 import { CourseCreateDrawer } from '@/features/admin/components/CourseCreateDrawer'
 import { WorkshopDrawers } from '@/features/admin/components/WorkshopDrawers'
@@ -133,6 +134,7 @@ function AdminDashboardLayout() {
         <div className="flex items-center gap-2 border-b border-[#ececf1] bg-white px-3 py-2 lg:hidden">
           <button
             onClick={() => setMobilePanel(mobilePanel === 'rail' ? null : 'rail')}
+            aria-expanded={mobilePanel === 'rail'}
             className="inline-flex h-9 items-center gap-2 rounded-lg border border-[#e9e9ee] px-3 text-[13px] font-semibold text-[#55545f]"
           >
             <PanelsTopLeft className="h-4 w-4" /> Secciones
@@ -140,6 +142,7 @@ function AdminDashboardLayout() {
           {hasCourseColumn && (
             <button
               onClick={() => setMobilePanel(mobilePanel === 'courses' ? null : 'courses')}
+              aria-expanded={mobilePanel === 'courses'}
               className="inline-flex h-9 items-center gap-2 rounded-lg border border-[#e9e9ee] px-3 text-[13px] font-semibold text-[#55545f]"
             >
               <BookOpen className="h-4 w-4" /> Cursos
@@ -157,11 +160,14 @@ function AdminDashboardLayout() {
 
         <div className="flex min-h-[calc(100vh-3.5rem)] flex-col lg:flex-row">
           {/* Cualquier clic dentro cierra el panel: elegir algo es navegar, y
-              en móvil la capa tiene que quitarse de en medio sola. */}
+              en móvil la capa tiene que quitarse de en medio sola. Cerrado en
+              móvil queda `invisible`, así sus enlaces salen del orden de
+              tabulación; `visibility` va en la transición para que el panel se
+              oculte al terminar de deslizarse. Desde lg no aplica. */}
           <div
             onClick={() => setMobilePanel(null)}
-            className={`z-50 max-lg:fixed max-lg:inset-y-0 max-lg:left-0 max-lg:w-[280px] max-lg:overflow-y-auto max-lg:bg-[#fafafa] max-lg:shadow-2xl max-lg:transition-transform ${
-              mobilePanel === 'rail' ? 'max-lg:translate-x-0' : 'max-lg:-translate-x-full'
+            className={`z-50 max-lg:fixed max-lg:inset-y-0 max-lg:left-0 max-lg:w-[280px] max-lg:overflow-y-auto max-lg:bg-[#fafafa] max-lg:shadow-2xl max-lg:transition-[translate,visibility] ${
+              mobilePanel === 'rail' ? 'max-lg:translate-x-0' : 'max-lg:-translate-x-full max-lg:invisible'
             }`}
           >
             <AdminSidebarNav />
@@ -172,8 +178,8 @@ function AdminDashboardLayout() {
           {hasCourseColumn && (
             <div
               onClick={() => setMobilePanel(null)}
-              className={`z-50 max-lg:fixed max-lg:inset-y-0 max-lg:left-0 max-lg:w-[300px] max-lg:overflow-y-auto max-lg:shadow-2xl max-lg:transition-transform ${
-                mobilePanel === 'courses' ? 'max-lg:translate-x-0' : 'max-lg:-translate-x-full'
+              className={`z-50 max-lg:fixed max-lg:inset-y-0 max-lg:left-0 max-lg:w-[300px] max-lg:overflow-y-auto max-lg:shadow-2xl max-lg:transition-[translate,visibility] ${
+                mobilePanel === 'courses' ? 'max-lg:translate-x-0' : 'max-lg:-translate-x-full max-lg:invisible'
               }`}
             >
               <CourseColumn />

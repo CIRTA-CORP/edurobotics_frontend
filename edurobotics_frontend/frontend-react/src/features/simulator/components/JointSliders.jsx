@@ -15,7 +15,7 @@ const DEFAULT_ANGLES = Object.fromEntries(JOINTS.map(j => [j.name, 0]));
 const toDeg = r => Math.round(r * (180 / Math.PI));
 
 /** Código `robot.move_joints({…})` con los ángulos actuales. */
-export function buildMoveJointsCode(angles) {
+function buildMoveJointsCode(angles) {
   const lines = JOINTS.map(j =>
     `    "${j.name}": ${(angles[j.name] ?? 0).toFixed(3)},`
   ).join("\n");

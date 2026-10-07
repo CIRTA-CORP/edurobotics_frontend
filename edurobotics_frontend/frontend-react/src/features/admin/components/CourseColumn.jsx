@@ -120,6 +120,7 @@ export function CourseColumn() {
                 {/* Detalle del curso + árbol del curso abierto (canvas Admin.dc.html) */}
                 {isSel && (
                   <div className="mb-1.5 flex items-center gap-2 px-1 pt-0.5">
+                    {!isTeacher && (
                     <button
                       onClick={() => setActiveTab('cursos')}
                       className="inline-flex h-[30px] items-center gap-2 rounded-lg px-2.5 text-[12px] font-semibold text-[#7b7a86] transition-colors hover:bg-[#f4f3f8] hover:text-[#16151b] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4b46d6]"
@@ -127,6 +128,7 @@ export function CourseColumn() {
                       <Settings className="h-3.5 w-3.5" strokeWidth={1.8} />
                       Detalle del curso
                     </button>
+                    )}
                     <span className="ml-auto font-mono text-[10px] text-[#c4c3cd]">CR-{course.id}</span>
                   </div>
                 )}

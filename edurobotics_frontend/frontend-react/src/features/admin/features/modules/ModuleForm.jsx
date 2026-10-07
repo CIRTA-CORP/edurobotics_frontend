@@ -14,8 +14,6 @@ export function ModuleForm({
   moduleForm,
   setModuleForm,
   onSubmit,
-  expanded,
-  onToggle,
   mode = 'create',
   isSubmitting = false
 }) {

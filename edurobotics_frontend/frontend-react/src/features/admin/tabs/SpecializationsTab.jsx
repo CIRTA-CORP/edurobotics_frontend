@@ -240,13 +240,14 @@ export function SpecializationsTab() {
                     <button
                       type="button"
                       onClick={() => setForm({ ...form, image_url: '' })}
+                      aria-label="Quitar la imagen de portada"
                       className="absolute right-2 top-2 inline-flex h-7 w-7 items-center justify-center rounded-full bg-black/60 text-white hover:bg-black/80"
                     >
                       <X className="h-4 w-4" />
                     </button>
                   </div>
                 ) : (
-                  <label className="flex h-28 cursor-pointer flex-col items-center justify-center gap-1.5 rounded-lg border-2 border-dashed border-gray-200 bg-gray-50/50 text-gray-400 transition-colors hover:border-[#4b46d6]/40 hover:bg-[#4b46d6]/[0.05] hover:text-[#4b46d6]">
+                  <label className="flex h-28 cursor-pointer flex-col items-center justify-center gap-1.5 rounded-lg border-2 border-dashed border-gray-200 bg-gray-50/50 text-gray-400 transition-colors hover:border-[#4b46d6]/40 hover:bg-[#4b46d6]/[0.05] hover:text-[#4b46d6] has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-[#4b46d6]">
                     {uploading ? (
                       <Loader2 className="h-5 w-5 animate-spin" />
                     ) : (
@@ -255,7 +256,7 @@ export function SpecializationsTab() {
                         <span className="text-xs font-medium">Subir imagen</span>
                       </>
                     )}
-                    <input type="file" accept="image/*" className="hidden" onChange={handleImage} disabled={uploading} />
+                    <input type="file" accept="image/*" className="sr-only" onChange={handleImage} disabled={uploading} />
                   </label>
                 )}
               </div>

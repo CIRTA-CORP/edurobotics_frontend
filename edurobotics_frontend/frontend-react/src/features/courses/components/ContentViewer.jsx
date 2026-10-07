@@ -40,6 +40,12 @@ const buildUrl = (value) => {
  * Renders a single content block seamlessly within the lesson flow
  */
 function ContentBlock({ content }) {
+  // Estable entre renders (ver `richHtml` en ContentViewer).
+  const textHtml = useMemo(
+    () => ({ __html: sanitizeHtml(content.content_value) }),
+    [content.content_value]
+  )
+
   if (content.content_type === 'video' && isVideoUrl(content.content_value)) {
     return (
       <div className="aspect-video bg-black rounded-xl overflow-hidden border border-gray-200">
@@ -61,7 +67,7 @@ function ContentBlock({ content }) {
       return (
         <div
           className="rich-content prose prose-sm md:prose-base max-w-none w-full overflow-hidden text-gray-700 leading-relaxed break-words"
-          dangerouslySetInnerHTML={{ __html: sanitizeHtml(content.content_value) }}
+          dangerouslySetInnerHTML={textHtml}
         />
       )
     }
@@ -205,7 +211,8 @@ function extractHeadings(html) {
   doc.querySelectorAll('h1, h2, h3').forEach((el, i) => {
     const text = el.textContent.trim()
     if (text) {
-      const id = `heading-${i}`
+      // injectHeadingIds keeps an id the heading already has, so read it the same way.
+      const id = el.getAttribute('id') || `heading-${i}`
       headings.push({
         id,
         text,
@@ -217,37 +224,142 @@ function extractHeadings(html) {
 }
 
 /**
- * Table of Contents — rendered inside the content card
+ * Jump to a section of the lesson. Honours prefers-reduced-motion (no smooth
+ * scroll) and moves focus to the heading, so the next Tab continues reading
+ * from there instead of jumping back to the index.
+ */
+function goToHeading(id) {
+  const el = document.getElementById(id)
+  if (!el) return
+  const reduceMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
+  el.scrollIntoView({ behavior: reduceMotion ? 'auto' : 'smooth', block: 'start' })
+  if (!el.hasAttribute('tabindex')) el.setAttribute('tabindex', '-1')
+  el.focus({ preventScroll: true })
+}
+
+/** Indentation for a heading relative to the shallowest one in the lesson. */
+function headingIndent(level, minLevel) {
+  const depth = level - minLevel
+  return depth <= 0 ? 'pl-3' : depth === 1 ? 'pl-6' : 'pl-9'
+}
+
+/**
+ * The section the reader is in: the last heading whose top has passed a line
+ * near the top of the scrolling pane. Read from the rendered nodes — the HTML
+ * itself is never rewritten for this.
+ */
+function useActiveHeading(scrollRef, ids) {
+  const [activeId, setActiveId] = useState(null)
+  const idsKey = ids.join('\n')
+
+  useEffect(() => {
+    const root = scrollRef?.current
+    const list = idsKey ? idsKey.split('\n') : []
+    if (!root || list.length < 2) return
+    let frame = 0
+    const update = () => {
+      frame = 0
+      const line = root.getBoundingClientRect().top + 96
+      let current = list[0]
+      for (const id of list) {
+        const el = document.getElementById(id)
+        if (el && el.getBoundingClientRect().top <= line) current = id
+      }
+      // A short last section can never reach the line: at the very bottom of a
+      // pane that actually scrolls, it is the one being read.
+      const scrolls = root.scrollHeight > root.clientHeight
+      if (scrolls && root.scrollTop > 0 && root.scrollTop + root.clientHeight >= root.scrollHeight - 2) {
+        current = list[list.length - 1]
+      }
+      setActiveId(current)
+    }
+    const onScroll = () => {
+      if (!frame) frame = requestAnimationFrame(update)
+    }
+    frame = requestAnimationFrame(update)
+    root.addEventListener('scroll', onScroll, { passive: true })
+    window.addEventListener('resize', onScroll)
+    return () => {
+      root.removeEventListener('scroll', onScroll)
+      window.removeEventListener('resize', onScroll)
+      if (frame) cancelAnimationFrame(frame)
+    }
+  }, [scrollRef, idsKey])
+
+  return activeId
+}
+
+/**
+ * Inline section index — the fallback when the reading pane is too narrow for
+ * the lateral rail (phones, tablets, or the index open on a mid-size screen).
+ * Hidden by the same container query that shows the rail.
  */
 function TableOfContents({ headings }) {
   if (headings.length < 2) return null
-
-  const scrollToHeading = (id) => {
-    const el = document.getElementById(id)
-    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' })
-  }
+  const minLevel = Math.min(...headings.map(h => h.level))
 
   return (
-    <nav className="mb-8 px-5 py-4 bg-gray-50/80 rounded-xl border border-gray-100">
+    <nav
+      aria-label="Secciones de la unidad"
+      className="mb-8 px-5 py-4 bg-gray-50/80 rounded-xl border border-gray-100 @min-[960px]:hidden"
+    >
       <div className="flex items-center gap-2 mb-3">
-        <ListTree className="w-4 h-4 text-[#4b46d6]" />
+        <ListTree className="w-4 h-4 text-[#4b46d6]" aria-hidden="true" />
         <span className="text-xs font-bold text-gray-600 uppercase tracking-wide">Contenido</span>
       </div>
       <ul className="space-y-1">
         {headings.map((h) => (
           <li key={h.id}>
             <button
-              onClick={() => scrollToHeading(h.id)}
+              type="button"
+              onClick={() => goToHeading(h.id)}
               className={`text-left w-full text-sm hover:text-[#4b46d6] transition-colors truncate ${
-                h.level === 1 ? 'font-semibold text-gray-800' :
-                h.level === 2 ? 'pl-4 text-gray-600' :
-                'pl-8 text-gray-500 text-xs'
-              }`}
+                headingIndent(h.level, minLevel)
+              } ${h.level === minLevel ? 'font-semibold text-gray-800' : 'text-gray-600'}`}
             >
               {h.text}
             </button>
           </li>
         ))}
+      </ul>
+    </nav>
+  )
+}
+
+/**
+ * Lateral section rail — sticky beside the reading column when the pane is
+ * wide enough (canvas «Main»). Marks the section in view.
+ */
+function SectionRail({ headings, activeId }) {
+  const minLevel = Math.min(...headings.map(h => h.level))
+
+  return (
+    <nav aria-label="Secciones de la unidad" className="text-[13px]">
+      <div className="mb-3 pl-3 font-mono text-[10px] font-semibold uppercase tracking-[0.14em] text-gray-500">
+        Contenido
+      </div>
+      <ul className="border-l border-gray-200">
+        {headings.map((h) => {
+          const isActive = h.id === activeId
+          return (
+            <li key={h.id}>
+              <button
+                type="button"
+                onClick={() => goToHeading(h.id)}
+                aria-current={isActive ? 'location' : undefined}
+                className={`-ml-px block w-full border-l-2 py-1.5 pr-2 text-left leading-snug transition-colors ${
+                  headingIndent(h.level, minLevel)
+                } ${
+                  isActive
+                    ? 'border-[#4b46d6] font-medium text-[#4b46d6]'
+                    : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-900'
+                }`}
+              >
+                {h.text}
+              </button>
+            </li>
+          )
+        })}
       </ul>
     </nav>
   )
@@ -333,6 +445,10 @@ export function ContentViewer({
     () => injectSimulatorButtons(sanitizeHtml(injectHeadingIds(richContent?.content_value))),
     [richContent?.content_value]
   )
+  // El mismo objeto mientras el HTML no cambie: React 19 compara `dangerouslySetInnerHTML`
+  // por identidad, y con un objeto nuevo en cada render reinsertaba la lección entera en
+  // cada cuadro de scroll (perdía el foco del índice y la selección del alumno).
+  const richHtml = useMemo(() => ({ __html: processedHtml }), [processedHtml])
 
   // Un solo manejador para todos los botones del contenido, porque el HTML se pinta con
   // dangerouslySetInnerHTML y sus botones no pueden llevar el suyo.
@@ -355,6 +471,13 @@ export function ContentViewer({
   // Whether the rich editor actually has written content (an empty TipTap doc
   // serializes to '<p></p>'). Used to avoid rendering a blank white card.
   const hasRichBody = !!processedHtml && processedHtml !== '<p></p>'
+
+  // Section rail: only with a written lesson and at least two headings.
+  const showSectionRail = hasRichBody && headings.length >= 2
+  const activeHeadingId = useActiveHeading(
+    scrollRef,
+    showSectionRail ? headings.map(h => h.id) : [],
+  )
 
   // Find current module for breadcrumbs
   const currentModule = useMemo(() => {
@@ -537,7 +660,14 @@ export function ContentViewer({
 
   return (
     <>
-      <div className={`max-w-[704px] mx-auto space-y-5 transition-all duration-300 ${visible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'}`}>
+      {/* The reading column stays 704 px. When the pane (not the window: the
+          index may be open or hidden) has room, the section rail takes a
+          sticky column to its right; otherwise the inline index stands in. */}
+      <div className="@container">
+      <div className={showSectionRail
+        ? '@min-[960px]:grid @min-[960px]:grid-cols-[minmax(0,704px)_13rem] @min-[960px]:justify-center @min-[960px]:gap-x-12'
+        : undefined}>
+      <div className={`max-w-[704px] mx-auto w-full space-y-5 transition-all duration-300 ${visible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'}`}>
         {/* ── Breadcrumbs + status ── */}
         <div className="flex items-center justify-between px-1">
           <nav className="flex items-center gap-1.5 text-[11px] uppercase tracking-wide font-mono text-gray-400 min-w-0">
@@ -582,15 +712,15 @@ export function ContentViewer({
         {/* ── Lesson content — de-boxed, flows on the page (no card) ── */}
         {(hasRichBody || legacyContents.length > 0) && (
           <div className="px-1 space-y-7">
-            {/* Table of Contents */}
-            {hasRichBody && <TableOfContents headings={headings} />}
+            {/* Inline section index — only when the rail has no room */}
+            {showSectionRail && <TableOfContents headings={headings} />}
 
             {/* Rich text content (new TipTap format) — single unified document */}
             {hasRichBody && (
               <div
                 className="rich-content max-w-none w-full overflow-hidden break-words"
                 onClick={handleRichContentClick}
-                dangerouslySetInnerHTML={{ __html: processedHtml }}
+                dangerouslySetInnerHTML={richHtml}
               />
             )}
             {/* Legacy content blocks (old multi-block format) */}
@@ -735,6 +865,16 @@ export function ContentViewer({
             </div>
           </div>
         )}
+      </div>
+
+      {showSectionRail && (
+        <aside className="hidden @min-[960px]:block">
+          <div className="sticky top-6 max-h-[calc(100dvh-8rem)] overflow-y-auto pb-2">
+            <SectionRail headings={headings} activeId={activeHeadingId} />
+          </div>
+        </aside>
+      )}
+      </div>
       </div>
 
       <ScrollToTop scrollRef={scrollRef} />

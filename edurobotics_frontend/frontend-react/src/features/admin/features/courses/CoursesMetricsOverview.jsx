@@ -1,10 +1,11 @@
 /**
  * CoursesMetricsOverview — basic per-course metrics for the admin dashboard
  * (issue #35): feedback (usefulness), difficulty and how many students completed
- * each course, all in one comparative table.
+ * each course, all in one comparative table. Each row links to that course's Analítica
+ * (change admin-analytics-v2, 3.6): the dashboard summarises, the analytics explains.
  */
 import { useQuery } from '@tanstack/react-query'
-import { EyeOff } from 'lucide-react'
+import { ArrowRight, EyeOff } from 'lucide-react'
 import { coursesMetricsQuery } from '@/features/admin/services/panelQueries'
 
 /** "4.2/5" or "—" when there's no data. */
@@ -18,7 +19,7 @@ function Rating({ value }) {
   )
 }
 
-export function CoursesMetricsOverview() {
+export function CoursesMetricsOverview({ onOpenAnalytics }) {
   const { data, isLoading } = useQuery(coursesMetricsQuery())
 
   const courses = data?.courses || []
@@ -45,6 +46,11 @@ export function CoursesMetricsOverview() {
                   <th className="px-[14px] pb-2.5 pt-3 text-center font-mono text-[9.5px] font-semibold uppercase tracking-[0.12em] text-[#a9a8b4]">Utilidad</th>
                   <th className="px-[14px] pb-2.5 pt-3 text-center font-mono text-[9.5px] font-semibold uppercase tracking-[0.12em] text-[#a9a8b4]">Dificultad</th>
                   <th className="px-[14px] pb-2.5 pt-3 text-center font-mono text-[9.5px] font-semibold uppercase tracking-[0.12em] text-[#a9a8b4]">Respuestas</th>
+                  {onOpenAnalytics && (
+                    <th className="px-[14px] pb-2.5 pt-3">
+                      <span className="sr-only">Analítica</span>
+                    </th>
+                  )}
                 </tr>
               </thead>
               <tbody>
@@ -68,6 +74,18 @@ export function CoursesMetricsOverview() {
                     <td className="px-[14px] py-[13px] text-center"><Rating value={c.avg_usefulness} /></td>
                     <td className="px-[14px] py-[13px] text-center"><Rating value={c.avg_difficulty} /></td>
                     <td className="px-[14px] py-[13px] text-center font-mono text-[13.5px] text-[#55545f]">{c.feedback_count}</td>
+                    {onOpenAnalytics && (
+                      <td className="px-[14px] py-[13px] text-right">
+                        <button
+                          type="button"
+                          onClick={() => onOpenAnalytics(c.id)}
+                          aria-label={`Ver la analítica de ${c.title}`}
+                          className="inline-flex h-8 items-center gap-1.5 whitespace-nowrap rounded-[10px] border border-[#e3e2ea] px-3 text-[12px] font-semibold text-[#55545f] transition-colors hover:border-[#c4c3cd] hover:text-[#16151b] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4b46d6]"
+                        >
+                          Analítica <ArrowRight className="h-3.5 w-3.5" strokeWidth={1.8} aria-hidden="true" />
+                        </button>
+                      </td>
+                    )}
                   </tr>
                 ))}
               </tbody>
