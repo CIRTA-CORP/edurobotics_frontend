@@ -3,28 +3,37 @@
  *
  * One screen, ordered by question, combining what used to live in Dashboard, the
  * Cursos metrics/feedback tabs and the old three-section analytics:
- *   1. figure cards → 2. sessions per day → 3. dedication + who opens/finishes
- *   → 4. quiz performance + most-failed questions → 5. inactivity + feedback.
+ *   1. figure cards → 2. where they drop out (funnel) + progress distribution
+ *   → 3. student logins per week → 4. dedication + who opens/finishes
+ *   → 5. quiz performance + most-failed questions → 6. score distribution
+ *   → 7. inactivity + feedback.
  *
  * Honesty rules (from learning-analytics): aggregates under 3 students read
  * "datos insuficientes", decided per section (one thin section used to hide every
  * number of the course); per-question metrics disclose their data start date;
  * green/amber only as state and always labelled. Everything counts students only
- * (change admin-analytics-v2).
+ * (change admin-analytics-v2). Charts (phase 3) are titled with the question they
+ * answer and carry their numbers outside the image (ChartNumbers).
  *
- * Admin sees the platform-wide chart (sessions per day) and the course feedback;
+ * Admin sees the platform-wide chart (logins per week) and the course feedback;
  * a teacher sees the same screen scoped to their own courses without those two.
  */
 import { useState } from 'react'
 import { keepPreviousData, useQuery } from '@tanstack/react-query'
-import { AlertTriangle, BarChart3, Clock, Info, Loader2 } from 'lucide-react'
+import { Clock, Info, Loader2 } from 'lucide-react'
 import { useAdmin } from '@/features/admin/context/AdminContext'
 import {
+  LOGIN_DAYS,
   courseOverviewQuery,
   dailySessionsQuery,
   interactionQuery,
   updatedAgo,
 } from '@/features/admin/services/panelQueries'
+import { MIN_FUNNEL_STEPS } from '@/features/admin/components/charts/chartTheme'
+import { ContentFunnelChart } from '@/features/admin/components/charts/ContentFunnelChart'
+import { ProgressDistributionChart } from '@/features/admin/components/charts/ProgressDistributionChart'
+import { QuizScoresChart } from '@/features/admin/components/charts/QuizScoresChart'
+import { WeeklyLoginsChart } from '@/features/admin/components/charts/WeeklyLoginsChart'
 
 const fmtPct = (value) => (value == null ? '—' : `${Math.round(value)}%`)
 
@@ -35,13 +44,6 @@ const fmtHours = (seconds) => {
 }
 
 const fmtMin = (minutes) => (minutes == null ? '—' : `${Math.round(minutes)} min`)
-
-// `AAAA-MM-DD` como fecha LOCAL. `new Date("2026-10-05")` la interpreta como medianoche
-// UTC, que en Chile es el día anterior: cada barra salía rotulada con el día de antes.
-const parseLocalDate = (ymd) => {
-  const [y, m, d] = String(ymd).split('-').map(Number)
-  return new Date(y, m - 1, d)
-}
 
 const fmtDate = (iso) => {
   if (!iso) return null
@@ -75,13 +77,17 @@ function Card({ children, className = '' }) {
 }
 
 /** Aviso de una sola sección: las demás siguen mostrando sus números. */
-function InsufficientNote() {
+function InsufficientNote({ children = 'Datos insuficientes: menos de 3 alumnos, así que no mostramos promedios.' }) {
   return (
     <div className="mt-3 flex items-start gap-2 rounded-[10px] border border-amber-200 bg-amber-50 px-3 py-2 text-[12px] text-amber-700">
       <Info className="mt-0.5 h-3.5 w-3.5 flex-shrink-0" />
-      <span>Datos insuficientes: menos de 3 alumnos, así que no mostramos promedios.</span>
+      <span>{children}</span>
     </div>
   )
+}
+
+function EmptyNote({ children }) {
+  return <p className="mt-3 text-[13px] text-[#a9a8b4]">{children}</p>
 }
 
 /** Horizontal bar row: label + bar + mono value (+ optional sub value). */
@@ -114,7 +120,6 @@ function StatCard({ label, value, unit, sub }) {
 export function AnalyticsTab() {
   const { courses, selectedCourseId, setSelectedCourseId, isTeacher } = useAdmin()
   const [localCourseId, setLocalCourseId] = useState(selectedCourseId)
-  const [periodDays, setPeriodDays] = useState(14)
 
   const courseId = localCourseId ?? selectedCourseId ?? courses?.[0]?.id ?? null
 
@@ -122,7 +127,9 @@ export function AnalyticsTab() {
   // a la base). Al cambiar de curso se mantiene lo anterior hasta que llega lo nuevo, en vez
   // de vaciar la pantalla.
   const overviewQ = useQuery({ ...courseOverviewQuery(courseId), placeholderData: keepPreviousData })
-  const sessionsQ = useQuery({ ...dailySessionsQuery(periodDays), enabled: !isTeacher, placeholderData: keepPreviousData })
+  // Ingresos por semana: la serie diaria de 12 semanas, agrupada en el navegador. Con menos
+  // de un ingreso de alumno por día, la serie por día era casi toda ceros.
+  const sessionsQ = useQuery({ ...dailySessionsQuery(LOGIN_DAYS), enabled: !isTeacher })
   // Días activos, tiempo entre sesiones y avance por login: existían en la
   // pantalla anterior y la consolidación los había dejado fuera.
   const interactionQ = useQuery({ ...interactionQuery(), enabled: !isTeacher })
@@ -156,22 +163,26 @@ export function AnalyticsTab() {
 
   const withValue = (v, insuf) => (insuf ? '…' : v ?? '—')
 
-  // ── 2. Sessions per day chart (platform-wide, admin only) ──
-  const series = sessions?.series || []
-  const maxCount = Math.max(1, ...series.map((s) => s.count))
-  const seriesTotal = series.reduce((acc, s) => acc + s.count, 0)
-  const DAY_LETTERS = ['L', 'M', 'X', 'J', 'V', 'S', 'D']
+  // ── 2. Funnel + progress distribution (charts) ──
+  const funnelSteps = progress?.funnel?.steps || []
+  // `undefined` = el backend todavía no envía la distribución; `null` = curso sin contenidos.
+  const progressBins = progress?.progress_distribution
 
-  // ── 3. Dedication: time per module with min–max range ──
+  // ── 3. Logins per week (platform-wide, admin only) ──
+  // `insufficient_data` cuenta alumnos distintos en las 12 semanas; si el backend aún no lo
+  // envía, se usa el de interacción (alumnos con algún ingreso).
+  const loginsInsuf = sessions?.insufficient_data ?? interInsuf
+
+  // ── 4. Dedication: time per module with min–max range ──
   const modules = progress?.time_metrics?.modules || []
   const maxModuleMedian = Math.max(1, ...modules.map((m) => m.median_minutes || 0))
   const topContents = (content?.by_openers || []).slice(0, 5)
 
-  // ── 4. Performance ──
+  // ── 5–6. Performance + score distribution ──
   const quizzes = performance?.quizzes || []
   const failedQuestions = performance?.top_failed_questions || []
 
-  // ── 5. Inactivity + feedback ──
+  // ── 7. Inactivity + feedback ──
   const atRisk = progress?.at_risk || []
   const feedbackCount = feedback?.total
   const usefulness = feedback?.avg_usefulness
@@ -223,23 +234,6 @@ export function AnalyticsTab() {
               ))}
             </select>
           </div>
-          {!isTeacher && (
-            <div className="flex items-center gap-[3px] rounded-[10px] bg-[#f4f3f8] p-[3px]">
-              {[7, 14, 90].map((d) => (
-                <button
-                  key={d}
-                  onClick={() => setPeriodDays(d)}
-                  className={`h-8 rounded-lg px-3 text-[12.5px] font-semibold transition-colors ${
-                    periodDays === d
-                      ? 'bg-white text-[#16151b] shadow-[0_1px_3px_rgba(22,21,27,0.09)]'
-                      : 'text-[#8b8a95] hover:text-[#16151b]'
-                  }`}
-                >
-                  {d} días
-                </button>
-              ))}
-            </div>
-          )}
         </div>
       </div>
 
@@ -269,17 +263,55 @@ export function AnalyticsTab() {
         />
       </div>
 
-      {/* 2 ── Sesiones por día (toda la plataforma · admin) */}
+      {/* 2 ── ¿Dónde abandonan? + ¿Cuánto avanzan? (gráficos del curso) */}
+      <div className={`grid grid-cols-1 items-start gap-5 motion-safe:transition-opacity xl:grid-cols-2 ${switchingCourse ? 'opacity-60' : ''}`}>
+        <Card>
+          <SectionLabel>Recorrido</SectionLabel>
+          <CardTitle>¿Dónde dejan de avanzar?</CardTitle>
+          {overviewQ.isLoading ? (
+            <EmptyNote>Calculando…</EmptyNote>
+          ) : progInsuf ? (
+            <InsufficientNote>Datos insuficientes: menos de 3 alumnos matriculados, así que no mostramos el embudo.</InsufficientNote>
+          ) : funnelSteps.length < MIN_FUNNEL_STEPS ? (
+            <EmptyNote>
+              El curso tiene {funnelSteps.length === 1 ? 'un contenido' : `${funnelSteps.length} contenidos`}: hacen falta al
+              menos {MIN_FUNNEL_STEPS} para ver dónde se detienen.
+            </EmptyNote>
+          ) : (
+            <ContentFunnelChart
+              steps={funnelSteps}
+              dropIndex={progress?.funnel?.biggest_drop_index ?? null}
+              enrolled={progress?.enrolled ?? 0}
+            />
+          )}
+        </Card>
+
+        <Card>
+          <SectionLabel>Avance</SectionLabel>
+          <CardTitle>¿Cuántos van al día y cuántos están detenidos?</CardTitle>
+          {overviewQ.isLoading ? (
+            <EmptyNote>Calculando…</EmptyNote>
+          ) : progInsuf ? (
+            <InsufficientNote>Datos insuficientes: menos de 3 alumnos matriculados, así que no mostramos la distribución.</InsufficientNote>
+          ) : progressBins === undefined ? (
+            <InsufficientNote>Datos insuficientes: el servidor todavía no envía el avance por alumno.</InsufficientNote>
+          ) : progressBins === null ? (
+            <EmptyNote>El curso aún no tiene contenidos.</EmptyNote>
+          ) : (
+            <ProgressDistributionChart bins={progressBins} enrolled={progress?.enrolled ?? 0} />
+          )}
+        </Card>
+      </div>
+
+      {/* 3 ── Ingresos por semana (toda la plataforma · admin) */}
       {!isTeacher && (
         <Card>
-          <div className="flex items-baseline justify-between gap-5">
+          <div className="flex flex-wrap items-baseline justify-between gap-x-5 gap-y-1">
             <div>
               <SectionLabel>Interacción</SectionLabel>
-              <CardTitle>Ingresos de alumnos por día</CardTitle>
+              <CardTitle>¿Se usa la plataforma?</CardTitle>
             </div>
-            <span className="text-[12.5px] text-[#8b8a95]">
-              Toda la plataforma · últimos {periodDays} días · {seriesTotal} ingreso{seriesTotal === 1 ? '' : 's'}
-            </span>
+            <span className="text-[12.5px] text-[#8b8a95]">Toda la plataforma · ingresos de alumnos por semana</span>
           </div>
           <div className="mt-5 grid grid-cols-1 gap-4 border-b border-[#f2f1f6] pb-5 sm:grid-cols-3">
             {[
@@ -322,28 +354,23 @@ export function AnalyticsTab() {
             ))}
           </div>
 
-          <div className="mt-5 flex h-[140px] items-end gap-1.5">
-            {series.map((s) => {
-              const d = parseLocalDate(s.date)
-              const label = periodDays <= 7 ? DAY_LETTERS[d.getDay() === 0 ? 6 : d.getDay() - 1] : `${d.getDate()}`
-              return (
-                <div key={s.date} className="flex flex-1 flex-col items-center gap-1.5" title={`${d.toLocaleDateString('es-CL')} · ${s.count} ingreso${s.count === 1 ? '' : 's'}`}>
-                  <span className="font-mono text-[9.5px] text-[#c4c3cd]">{s.count > 0 ? s.count : ''}</span>
-                  <div className="flex w-full flex-1 items-end">
-                    <div
-                      className="w-full rounded-[4px] bg-[#7d79e3]"
-                      style={{ height: `${Math.max(2, (s.count / maxCount) * 100)}%` }}
-                    />
-                  </div>
-                  <span className="font-mono text-[10px] text-[#b3b2be]">{label}</span>
-                </div>
-              )
-            })}
+          <div className="mt-5">
+            {sessionsQ.isLoading ? (
+              <EmptyNote>Calculando…</EmptyNote>
+            ) : !sessions ? (
+              <EmptyNote>No se pudieron cargar los ingresos.</EmptyNote>
+            ) : loginsInsuf ? (
+              <InsufficientNote>
+                Datos insuficientes: menos de 3 alumnos iniciaron sesión en estas semanas, así que no mostramos la serie.
+              </InsufficientNote>
+            ) : (
+              <WeeklyLoginsChart series={sessions.series || []} students={sessions.students} />
+            )}
           </div>
         </Card>
       )}
 
-      {/* 3 ── Dedicación + Contenidos */}
+      {/* 4 ── Dedicación + Contenidos */}
       <div className="grid grid-cols-1 items-start gap-5 xl:grid-cols-2">
         <Card>
           <SectionLabel>Dedicación</SectionLabel>
@@ -384,7 +411,7 @@ export function AnalyticsTab() {
         </Card>
       </div>
 
-      {/* 4 ── Rendimiento + Preguntas más falladas */}
+      {/* 5 ── Rendimiento + Preguntas más falladas */}
       <div className="grid grid-cols-1 items-start gap-5 xl:grid-cols-2">
         <Card>
           <SectionLabel>Evaluaciones</SectionLabel>
@@ -455,7 +482,16 @@ export function AnalyticsTab() {
         </Card>
       </div>
 
-      {/* 5 ── Sin actividad reciente + Feedback */}
+      {/* 6 ── ¿La evaluación está bien calibrada? */}
+      {quizzes.length > 0 && (
+        <Card>
+          <SectionLabel>Evaluaciones</SectionLabel>
+          <CardTitle>¿Las evaluaciones están bien calibradas?</CardTitle>
+          <QuizScoresChart quizzes={quizzes} />
+        </Card>
+      )}
+
+      {/* 7 ── Sin actividad reciente + Feedback */}
       <div className="grid grid-cols-1 items-start gap-5 xl:grid-cols-2">
         <Card>
           <div className="flex items-center gap-2">

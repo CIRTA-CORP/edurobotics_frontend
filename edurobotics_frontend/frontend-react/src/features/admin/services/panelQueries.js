@@ -26,6 +26,10 @@ export const coursesMetricsQuery = () =>
 export const adminSessionsQuery = () =>
   queryOptions({ queryKey: ['admin-sessions'], queryFn: getAdminSessions, staleTime: STALE })
 
+// Ingresos por semana: 12 semanas de 7 días (el backend acepta hasta 90 días por día).
+export const LOGIN_WEEKS = 12
+export const LOGIN_DAYS = LOGIN_WEEKS * 7
+
 export const dailySessionsQuery = (days) =>
   queryOptions({ queryKey: ['analytics-sessions-daily', days], queryFn: () => getDailySessions(days), staleTime: STALE })
 
@@ -51,7 +55,7 @@ export function prefetchPanel(queryClient, { isTeacher, courseId }) {
     queryClient.prefetchQuery(adminSessionsQuery())
     queryClient.prefetchQuery(adminMetricsQuery())
     queryClient.prefetchQuery(coursesMetricsQuery())
-    queryClient.prefetchQuery(dailySessionsQuery(14))
+    queryClient.prefetchQuery(dailySessionsQuery(LOGIN_DAYS))
     queryClient.prefetchQuery(interactionQuery())
   }
   if (courseId) queryClient.prefetchQuery(courseOverviewQuery(courseId))
