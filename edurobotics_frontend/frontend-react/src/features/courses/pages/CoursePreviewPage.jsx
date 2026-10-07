@@ -116,10 +116,16 @@ function MiniNode({ course, isCurrent = false, roadmapData, navigate }) {
     const levelConf = LEVEL_CONFIG[course.level] || LEVEL_CONFIG.beginner
     const LevelIcon = levelConf.icon
     const StateIcon = style.icon
+    // Solo los nodos a los que se puede ir son botones; el actual y los bloqueados
+    // son tarjetas sin interacción, para que no sumen paradas vacías al tabular.
+    const Node = isClickable ? 'button' : 'div'
+    const nodeProps = isClickable
+        ? { type: 'button', onClick: () => navigate(`/courses/${course.id}`) }
+        : {}
 
     return (
-        <button
-            onClick={() => isClickable && navigate(`/courses/${course.id}`)}
+        <Node
+            {...nodeProps}
             className={`
                 relative rounded-xl p-3 ring-2 transition-all text-left
                 ${style.ring} ${style.bg}
@@ -143,7 +149,7 @@ function MiniNode({ course, isCurrent = false, roadmapData, navigate }) {
             <h4 className={`text-xs font-semibold leading-snug truncate ${style.text}`}>
                 {course.title}
             </h4>
-        </button>
+        </Node>
     )
 }
 
