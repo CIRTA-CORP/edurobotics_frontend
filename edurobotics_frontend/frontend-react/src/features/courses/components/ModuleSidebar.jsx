@@ -5,6 +5,11 @@
  * its units with a progress rule, finished ones collapse with a green node, and
  * the ones still ahead stay dimmed. Units carry an icon for their material type
  * and their estimated duration when the content declares one.
+ *
+ * Read-only mode (`readOnly`) is the same index for the course preview: there is
+ * no unit being studied, units are plain rows instead of links, and nothing ahead
+ * is dimmed because nothing is "current" yet. Modules still fold. Study mode
+ * keeps its behaviour untouched when the prop is absent.
  */
 
 import { useState } from 'react'
@@ -26,6 +31,19 @@ function unitIcon(unit) {
   return BookOpen
 }
 
+/** "Video · Documento · Evaluación" for a unit, or '' when it holds nothing. */
+function unitKindLabel(unit) {
+  const types = new Set((unit.contents || []).map(c => c.content_type))
+  const labels = []
+  if (types.has('video')) labels.push('Video')
+  if (types.has('file')) labels.push('Documento')
+  if (types.has('resource')) labels.push('Recurso')
+  if (types.has('simulator')) labels.push('Simulador')
+  if (types.has('rich_text') || types.has('text')) labels.push('Lectura')
+  if (unit.quizzes?.length > 0) labels.push('Evaluación')
+  return labels.join(' · ')
+}
+
 /** Minutes declared by the unit's contents, or null when none declare any. */
 function unitMinutes(unit) {
   const total = (unit.contents || [])
@@ -33,8 +51,20 @@ function unitMinutes(unit) {
   return total > 0 ? total : null
 }
 
-export function ModuleSidebar({ modules, selectedUnitId, onUnitClick, getModuleProgress, getUnitProgress, progressData }) {
-  const currentModule = modules.find(m => m.units?.some(u => u.id === selectedUnitId))
+export function ModuleSidebar({
+  modules,
+  selectedUnitId,
+  onUnitClick,
+  getModuleProgress,
+  getUnitProgress,
+  progressData,
+  readOnly = false,
+  defaultExpandedModuleId = null,
+  className = 'px-3',
+}) {
+  const currentModule = readOnly
+    ? null
+    : modules.find(m => m.units?.some(u => u.id === selectedUnitId))
 
   // The module being studied is open by default; state only records the modules
   // the reader opened or closed by hand, so following the course never fights
@@ -69,13 +99,17 @@ export function ModuleSidebar({ modules, selectedUnitId, onUnitClick, getModuleP
   }
 
   return (
-    <nav className="px-3" aria-label="Índice del curso">
+    <nav className={className} aria-label={readOnly ? 'Programa del curso' : 'Índice del curso'}>
       {modules.map((module, moduleIndex) => {
         const progress = computeModuleProgress(module)
         const isCompleted = progress && progress.total > 0 && progress.percentage === 100
         const isCurrent = currentModule?.id === module.id
-        const isExpanded = overrides[module.id] ?? isCurrent
-        const isAhead = !isCurrent && !isCompleted
+        const isExpanded = overrides[module.id] ?? (isCurrent || (readOnly && module.id === defaultExpandedModuleId))
+        // In the preview nothing is "current", so nothing is dimmed as being ahead.
+        const isAhead = !readOnly && !isCurrent && !isCompleted
+        const moduleMinutes = readOnly
+          ? (module.units || []).reduce((sum, u) => sum + (unitMinutes(u) || 0), 0)
+          : 0
         const hasLine = moduleIndex < modules.length - 1
 
         return (
@@ -110,6 +144,11 @@ export function ModuleSidebar({ modules, selectedUnitId, onUnitClick, getModuleP
                 }`}>
                   {module.title}
                 </span>
+                {moduleMinutes > 0 && (
+                  <span className="font-mono text-[10.5px] text-gray-500 tabular-nums flex-shrink-0">
+                    {moduleMinutes} min
+                  </span>
+                )}
                 {isCompleted ? (
                   <span className="font-mono text-[9.5px] font-semibold tracking-wider text-emerald-600 flex-shrink-0">
                     LISTO
@@ -146,6 +185,53 @@ export function ModuleSidebar({ modules, selectedUnitId, onUnitClick, getModuleP
                     const Icon = unitIcon(unit)
                     const minutes = unitMinutes(unit)
 
+                    const marker = (
+                      <span
+                        className={`w-[18px] h-[18px] rounded-full grid place-items-center flex-shrink-0 border ${
+                          isUnitCompleted
+                            ? 'bg-emerald-500 border-emerald-500 text-white'
+                            : isSelected
+                              ? 'border-[#4b46d6]/40 text-[#4b46d6]'
+                              : 'border-gray-200 text-gray-400'
+                        }`}
+                        aria-hidden="true"
+                      >
+                        {isUnitCompleted
+                          ? <Check className="w-2.5 h-2.5" strokeWidth={3} />
+                          : <Icon className="w-2.5 h-2.5" />}
+                      </span>
+                    )
+                    const duration = minutes && (
+                      <span className="font-mono text-[10px] text-gray-400 tabular-nums flex-shrink-0">
+                        {minutes} min
+                      </span>
+                    )
+
+                    // Preview: a plain row — there is nowhere to go before entering
+                    // the course. The material type is spelled out because the
+                    // icon alone is decorative for screen readers.
+                    if (readOnly) {
+                      const kind = unitKindLabel(unit)
+                      return (
+                        <li
+                          key={unit.id}
+                          className={`flex items-center gap-2.5 px-2.5 py-2 text-[13.5px] ${
+                            isUnitCompleted ? 'text-gray-700' : 'text-gray-600'
+                          }`}
+                        >
+                          {marker}
+                          <span className="flex-1 min-w-0 truncate">
+                            {unit.title}
+                            {isUnitCompleted && <span className="sr-only"> (completada)</span>}
+                          </span>
+                          {kind && (
+                            <span className="hidden sm:inline text-[12px] text-gray-500 flex-shrink-0">{kind}</span>
+                          )}
+                          {duration}
+                        </li>
+                      )
+                    }
+
                     return (
                       <li key={unit.id}>
                         <button
@@ -159,26 +245,9 @@ export function ModuleSidebar({ modules, selectedUnitId, onUnitClick, getModuleP
                                 : 'text-gray-500 hover:bg-gray-100/70'
                           }`}
                         >
-                          <span
-                            className={`w-[18px] h-[18px] rounded-full grid place-items-center flex-shrink-0 border ${
-                              isUnitCompleted
-                                ? 'bg-emerald-500 border-emerald-500 text-white'
-                                : isSelected
-                                  ? 'border-[#4b46d6]/40 text-[#4b46d6]'
-                                  : 'border-gray-200 text-gray-400'
-                            }`}
-                            aria-hidden="true"
-                          >
-                            {isUnitCompleted
-                              ? <Check className="w-2.5 h-2.5" strokeWidth={3} />
-                              : <Icon className="w-2.5 h-2.5" />}
-                          </span>
+                          {marker}
                           <span className="flex-1 truncate">{unit.title}</span>
-                          {minutes && (
-                            <span className="font-mono text-[10px] text-gray-400 tabular-nums flex-shrink-0">
-                              {minutes} min
-                            </span>
-                          )}
+                          {duration}
                         </button>
                       </li>
                     )
