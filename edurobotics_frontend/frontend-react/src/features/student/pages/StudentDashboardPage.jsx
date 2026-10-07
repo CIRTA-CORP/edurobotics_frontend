@@ -104,6 +104,8 @@ function StudentDashboardPage({ userOverride = null, hideLogout = false, hideHea
     const units = active.flatMap(c => (c.modules || []).flatMap(m => m.units || []))
     return {
       activeCourses: active.length,
+      // Sin esto, quien terminó todo lo que empezó leía «Aún no has empezado ningún curso».
+      completedCourses: (roadmapResp?.roadmap || []).filter(c => c.state === 'completed').length,
       total: units.length,
       done: units.filter(u => u.state === 'completed').length,
     }
@@ -152,6 +154,7 @@ function StudentDashboardPage({ userOverride = null, hideLogout = false, hideHea
             unitsDone={unitsSummary.done}
             unitsTotal={unitsSummary.total}
             activeCourses={unitsSummary.activeCourses}
+            completedCourses={unitsSummary.completedCourses}
             roadmap={roadmapResp?.roadmap || []}
           />
         </>

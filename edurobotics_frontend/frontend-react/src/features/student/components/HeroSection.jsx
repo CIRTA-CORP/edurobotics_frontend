@@ -21,11 +21,16 @@ function greeting() {
 }
 
 /** "Llevas 3 de 18 unidades en 2 cursos activos." — only what we can count. */
-function summaryLine({ unitsDone, unitsTotal, activeCourses }) {
-  if (!unitsTotal) return 'Aún no has empezado ningún curso.'
+function summaryLine({ unitsDone, unitsTotal, activeCourses, completedCourses }) {
+  const finished = completedCourses
+    ? `${completedCourses === 1 ? 'Terminaste 1 curso' : `Terminaste ${completedCourses} cursos`}`
+    : ''
+  if (!unitsTotal) return finished ? `${finished}.` : 'Aún no has empezado ningún curso.'
   const units = `Llevas ${unitsDone} de ${unitsTotal} ${unitsTotal === 1 ? 'unidad' : 'unidades'}`
-  if (!activeCourses) return `${units}.`
-  return `${units} en ${activeCourses} ${activeCourses === 1 ? 'curso activo' : 'cursos activos'}.`
+  const active = activeCourses
+    ? ` en ${activeCourses} ${activeCourses === 1 ? 'curso activo' : 'cursos activos'}`
+    : ''
+  return finished ? `${units}${active}. ${finished}.` : `${units}${active}.`
 }
 
 function ResumeCard({ last, percentage, onOpen }) {
@@ -73,7 +78,7 @@ function ResumeCard({ last, percentage, onOpen }) {
   )
 }
 
-export function HeroSection({ user, unitsDone = 0, unitsTotal = 0, activeCourses = 0, roadmap = [] }) {
+export function HeroSection({ user, unitsDone = 0, unitsTotal = 0, activeCourses = 0, completedCourses = 0, roadmap = [] }) {
   const navigate = useNavigate()
 
   const { data: lastResp } = useQuery({
@@ -104,7 +109,7 @@ export function HeroSection({ user, unitsDone = 0, unitsTotal = 0, activeCourses
               {user.first_name} {user.last_name}
             </h2>
             <p className="mt-2 text-white/55">
-              {summaryLine({ unitsDone, unitsTotal, activeCourses })}
+              {summaryLine({ unitsDone, unitsTotal, activeCourses, completedCourses })}
             </p>
           </div>
 
