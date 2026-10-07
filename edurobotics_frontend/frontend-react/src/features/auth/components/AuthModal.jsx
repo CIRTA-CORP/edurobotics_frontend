@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { Modal } from '@/shared/components/Modal'
 import { LoginForm } from '@/features/auth/components/LoginForm'
 import { RegisterForm } from '@/features/auth/components/RegisterForm'
@@ -18,10 +18,16 @@ import { RegisterForm } from '@/features/auth/components/RegisterForm'
 export function AuthModal({ isOpen, onClose, initialView = 'login' }) {
   const [view, setView] = useState(initialView)
 
-  // Sincronizar la vista cada vez que se abre el modal
-  useEffect(() => {
+  // Sincronizar la vista cada vez que se abre el modal (o cambia la vista inicial
+  // estando abierto). Se ajusta durante el render comparando con los valores
+  // anteriores, en vez de en un efecto.
+  const [prevOpen, setPrevOpen] = useState(isOpen)
+  const [prevInitialView, setPrevInitialView] = useState(initialView)
+  if (isOpen !== prevOpen || initialView !== prevInitialView) {
+    setPrevOpen(isOpen)
+    setPrevInitialView(initialView)
     if (isOpen) setView(initialView)
-  }, [isOpen, initialView])
+  }
 
   const isLogin = view === 'login'
 

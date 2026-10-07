@@ -9,6 +9,10 @@ import { useCallback } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { markContentComplete, updateLastAccessed, getUserProgress } from '@/features/progress/services/progress'
 
+// Fallbacks estables: evitan que las dependencias de los useCallback cambien en cada render
+const EMPTY_PROGRESS = {}
+const EMPTY_PASSED_QUIZ_IDS = []
+
 export function useProgress(userId, courseId = null) {
   const queryClient = useQueryClient()
 
@@ -20,8 +24,8 @@ export function useProgress(userId, courseId = null) {
   })
 
   const progressResult = progressQuery.data?.success ? progressQuery.data : null
-  const progress = progressResult?.progress || {}
-  const passedQuizIds = progressResult?.passed_quiz_ids || []
+  const progress = progressResult?.progress || EMPTY_PROGRESS
+  const passedQuizIds = progressResult?.passed_quiz_ids || EMPTY_PASSED_QUIZ_IDS
 
   const refreshProgress = useCallback(() => {
     if (!userId) return
@@ -85,7 +89,7 @@ export function useProgress(userId, courseId = null) {
           }
         }
       }
-    } catch (e) {
+    } catch {
       return false
     }
     return false

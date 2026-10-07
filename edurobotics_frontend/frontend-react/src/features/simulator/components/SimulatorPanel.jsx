@@ -244,22 +244,26 @@ export default function SimulatorPanel({ jointAngles, frameTime, queue, onCopyTo
             {/* Controles del visor — top-right */}
             <div className="absolute right-3.5 top-3.5 z-20 flex items-center gap-2">
               <div className="flex items-center gap-[2px] rounded-[10px] border border-[#2c2c34] bg-[#101014]/80 p-[3px] backdrop-blur-md">
-                {CAMERA_VIEWS.map(({ id, label, Icon }) => (
-                  <button
-                    key={id}
-                    onClick={() => setCameraView(id)}
-                    title={`Cámara: ${label}`}
-                    aria-label={`Cámara: ${label}`}
-                    aria-pressed={cameraView === id}
-                    className={`grid h-[30px] w-8 place-items-center rounded-[7px] transition-colors ${
-                      cameraView === id
-                        ? "bg-[#7d79e3]/[0.14] text-[#a5a1ee]"
-                        : "text-[#6e6d78] hover:text-[#f4f4f6]"
-                    }`}
-                  >
-                    <Icon className="h-4 w-4" strokeWidth={1.8} />
-                  </button>
-                ))}
+                {CAMERA_VIEWS.map((view) => {
+                  // Desestructurado en una const: ESLint no cuenta el uso en JSX de un parámetro
+                  const { id, label, Icon } = view;
+                  return (
+                    <button
+                      key={id}
+                      onClick={() => setCameraView(id)}
+                      title={`Cámara: ${label}`}
+                      aria-label={`Cámara: ${label}`}
+                      aria-pressed={cameraView === id}
+                      className={`grid h-[30px] w-8 place-items-center rounded-[7px] transition-colors ${
+                        cameraView === id
+                          ? "bg-[#7d79e3]/[0.14] text-[#a5a1ee]"
+                          : "text-[#6e6d78] hover:text-[#f4f4f6]"
+                      }`}
+                    >
+                      <Icon className="h-4 w-4" strokeWidth={1.8} />
+                    </button>
+                  );
+                })}
               </div>
 
               <button

@@ -133,7 +133,7 @@ robot.move_joints({
 print("Listo")
 `;
 
-export default function LeftPanel({ setAlertType, handleHide, onJointAngles, onQueueChange, editorApiRef }) {
+export default function LeftPanel({ handleHide, onJointAngles, onQueueChange, editorApiRef }) {
   const runningEnviroment = "python_env";
 
   // Código de la clase, si se llegó desde un bloque «Código para el simulador»
@@ -203,6 +203,8 @@ export default function LeftPanel({ setAlertType, handleHide, onJointAngles, onQ
     return stored === BLOCKLY ? EDITOR : stored;
   });
 
+  // Declarado antes de los callbacks que lo usan (clearDecorations, highlightErrorLine…)
+  const editorRef       = useRef();
   const monacoRef       = useRef(null);
   const decorationsRef  = useRef([]);
   const startTimeRef    = useRef(null);
@@ -255,8 +257,6 @@ export default function LeftPanel({ setAlertType, handleHide, onJointAngles, onQ
   useEffect(() => { panelSelectedRef.current = panelSelected; }, [panelSelected]);
 
   // HANDLING EDITOR
-  const editorRef = useRef();
-
   const handleEditorDidMount = useCallback((editor, monaco) => {
     editorRef.current  = editor;
     monacoRef.current  = monaco;

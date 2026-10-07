@@ -69,7 +69,7 @@ export function QuizEditor({ unitId, moduleId }) {
             setIsEditingTitle(false);
             toast.success('Título actualizado');
             await queryClient.invalidateQueries({ queryKey: quizListQueryKey });
-        } catch (err) {
+        } catch {
             toast.error('Error al actualizar el título');
         } finally {
             setSaving(false);
@@ -89,7 +89,7 @@ export function QuizEditor({ unitId, moduleId }) {
             setNewTitle('');
             setShowCreateForm(false);
             await queryClient.invalidateQueries({ queryKey: quizListQueryKey });
-        } catch (err) {
+        } catch {
             toast.error('Error al crear evaluación');
         } finally {
             setSaving(false);
@@ -106,7 +106,7 @@ export function QuizEditor({ unitId, moduleId }) {
             toast.success('Evaluación eliminada');
             setConfirmDelete(null);
             await queryClient.invalidateQueries({ queryKey: quizListQueryKey });
-        } catch (err) {
+        } catch {
             toast.error('Error al eliminar');
         }
     };
@@ -120,7 +120,7 @@ export function QuizEditor({ unitId, moduleId }) {
             });
             setSelectedQuiz(data);
             setQuestions(data.questions || []);
-        } catch (err) {
+        } catch {
             toast.error('No se pudieron cargar los detalles');
         } finally {
             setLoading(false);
@@ -186,7 +186,7 @@ export function QuizEditor({ unitId, moduleId }) {
                     ? { ...q, id: res.question_id, answers: createdAnswers }
                     : q
             )));
-        } catch (err) {
+        } catch {
             // Rollback: remove optimistic question
             setQuestions(prev => prev.filter(q => q.id !== tempId));
             toast.error('Error al añadir pregunta');
@@ -199,7 +199,7 @@ export function QuizEditor({ unitId, moduleId }) {
         try {
             await quizService.updateQuestion(questionId, { question_text: text });
             toast.success('Pregunta guardada');
-        } catch (err) {
+        } catch {
             toast.error('Error al guardar');
         }
     };
@@ -214,7 +214,7 @@ export function QuizEditor({ unitId, moduleId }) {
         try {
             setSaving(true);
             await quizService.deleteQuestion(questionId);
-        } catch (err) {
+        } catch {
             // Rollback
             setQuestions(backup);
             toast.error('Error al eliminar');
@@ -263,7 +263,7 @@ export function QuizEditor({ unitId, moduleId }) {
                 }));
                 toast.success('Opción agregada');
             }
-        } catch (err) {
+        } catch {
             // Rollback: remove the optimistic answer
             setQuestions(prev => prev.map(q => {
                 if (q.id !== questionId) return q;
@@ -300,7 +300,7 @@ export function QuizEditor({ unitId, moduleId }) {
                 answer_text: trimmedText,
                 explanation: explanation || null,
             });
-        } catch (err) {
+        } catch {
             // Recover server state if update fails.
             const data = await queryClient.fetchQuery({
                 queryKey: ['admin-quiz-detail', selectedQuiz.id],
@@ -324,7 +324,7 @@ export function QuizEditor({ unitId, moduleId }) {
         try {
             setSaving(true);
             await quizService.updateAnswer(answerId, { is_correct: true });
-        } catch (err) {
+        } catch {
             // Refetch to restore correct state
             const data = await queryClient.fetchQuery({
                 queryKey: ['admin-quiz-detail', selectedQuiz.id],
@@ -348,7 +348,7 @@ export function QuizEditor({ unitId, moduleId }) {
             setSaving(true);
             await quizService.deleteAnswer(answerId);
             setConfirmDelete(null);
-        } catch (err) {
+        } catch {
             setQuestions(backup);
             toast.error('Error al eliminar opción');
         } finally {

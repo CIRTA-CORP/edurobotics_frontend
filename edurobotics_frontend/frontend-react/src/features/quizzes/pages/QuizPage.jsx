@@ -12,7 +12,7 @@ export default function QuizPage() {
     const { courseId, quizId } = useParams()
     const numericCourseId = Number.parseInt(courseId, 10)
     const navigate = useNavigate()
-    const [user, setUser] = useState(() => getStoredUser())
+    const [user] = useState(() => getStoredUser())
 
     useEffect(() => {
         if (!user) {

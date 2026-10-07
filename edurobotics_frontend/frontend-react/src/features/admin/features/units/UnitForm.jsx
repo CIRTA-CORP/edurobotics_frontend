@@ -13,8 +13,6 @@ export function UnitForm({
   unitForm,
   setUnitForm,
   onSubmit,
-  expanded,
-  onToggle,
   mode = 'create',
   isSubmitting = false
 }) {

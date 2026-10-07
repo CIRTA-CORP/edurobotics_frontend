@@ -7,12 +7,29 @@
  * Expand to edit question and answers.
  */
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { Button } from '@/shared/components/button'
 import {
     Trash2, X, Check, ChevronDown, ChevronUp,
     MessageSquare, Plus, GripVertical
 } from 'lucide-react'
+
+// Conserva el texto ya editado de cada respuesta y toma el del servidor para las nuevas
+function mergeAnswerTexts(prev, answers) {
+    const next = {}
+    answers.forEach(a => {
+        next[a.id] = prev[a.id] ?? a.answer_text
+    })
+    return next
+}
+
+function mergeExplanationTexts(prev, answers) {
+    const next = {}
+    answers.forEach(a => {
+        next[a.id] = prev[a.id] ?? (a.explanation || '')
+    })
+    return next
+}
 
 export function QuestionBlock({
     q, idx, onSaveQuestion, onDeleteQuestion,
@@ -23,36 +40,27 @@ export function QuestionBlock({
 }) {
     const [questionText, setQuestionText] = useState(q.question_text)
     const [showExplanations, setShowExplanations] = useState({})
-    const [answerTexts, setAnswerTexts] = useState({})
-    const [explanationTexts, setExplanationTexts] = useState({})
+    const [answerTexts, setAnswerTexts] = useState(() => mergeAnswerTexts({}, q.answers))
+    const [explanationTexts, setExplanationTexts] = useState(() => mergeExplanationTexts({}, q.answers))
     const [dirtyAnswers, setDirtyAnswers] = useState({})
-    const [savingAnswerId, setSavingAnswerId] = useState(null)
     const [dirty, setDirty] = useState(false)
     const [expanded, setExpanded] = useState(defaultExpanded)
 
-    // Sync local answer state but preserve in-progress edits.
-    useEffect(() => {
-        setAnswerTexts(prev => {
-            const next = {}
-            q.answers.forEach(a => {
-                next[a.id] = prev[a.id] ?? a.answer_text
-            })
-            return next
-        })
+    // Sincroniza el estado local de las respuestas sin perder las ediciones en curso.
+    // Se ajusta durante el render (comparando con las respuestas anteriores) en vez de en un efecto.
+    const [prevAnswers, setPrevAnswers] = useState(q.answers)
+    if (q.answers !== prevAnswers) {
+        setPrevAnswers(q.answers)
+        setAnswerTexts(prev => mergeAnswerTexts(prev, q.answers))
+        setExplanationTexts(prev => mergeExplanationTexts(prev, q.answers))
+    }
 
-        setExplanationTexts(prev => {
-            const next = {}
-            q.answers.forEach(a => {
-                next[a.id] = prev[a.id] ?? (a.explanation || '')
-            })
-            return next
-        })
-    }, [q.answers])
-
-    // Sync question text if parent updates it
-    useEffect(() => {
+    // Sincroniza el texto de la pregunta si el padre lo actualiza
+    const [prevQuestionText, setPrevQuestionText] = useState(q.question_text)
+    if (q.question_text !== prevQuestionText) {
+        setPrevQuestionText(q.question_text)
         setQuestionText(q.question_text)
-    }, [q.question_text])
+    }
 
     const toggleExplanation = (answerId) => {
         setShowExplanations(prev => ({ ...prev, [answerId]: !prev[answerId] }))
@@ -156,12 +164,10 @@ export function QuestionBlock({
                                         }}
                                         onBlur={() => {
                                             if (dirtyAnswers[a.id] && answerTexts[a.id]?.trim()) {
-                                                setSavingAnswerId(a.id)
                                                 onSaveAnswer(a.id, answerTexts[a.id], explanationTexts[a.id])
                                                     .then(() => {
                                                         setDirtyAnswers(prev => ({ ...prev, [a.id]: false }))
                                                     })
-                                                    .finally(() => setSavingAnswerId(null))
                                             }
                                         }}
                                         placeholder="Respuesta..."
@@ -200,12 +206,10 @@ export function QuestionBlock({
                                             }}
                                             onBlur={() => {
                                                 if (dirtyAnswers[a.id]) {
-                                                    setSavingAnswerId(a.id)
                                                     onSaveAnswer(a.id, answerTexts[a.id], explanationTexts[a.id])
                                                         .then(() => {
                                                             setDirtyAnswers(prev => ({ ...prev, [a.id]: false }))
                                                         })
-                                                        .finally(() => setSavingAnswerId(null))
                                                 }
                                             }}
                                             placeholder="¿Por qué esta respuesta es incorrecta? (opcional)"

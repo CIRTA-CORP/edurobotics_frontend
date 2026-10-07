@@ -10,7 +10,7 @@
  * an option to migrate them into the new rich editor.
  */
 
-import { useState, useMemo, useEffect } from 'react'
+import { useState, useMemo } from 'react'
 import { Card, CardContent } from '@/shared/components/card'
 import {
   ChevronDown, ChevronUp, Package, Trash2, Wand2, AlertTriangle,
@@ -71,9 +71,16 @@ export function ContentForm({
   const hasLegacyContent = legacyContents.length > 0
 
   const [simulatorDesc, setSimulatorDesc] = useState(simulatorContent?.content_value || '')
-  useEffect(() => {
+  // Si cambia el bloque de simulador (o su texto guardado), se reinicia la descripción local.
+  // Se ajusta durante el render comparando con los valores anteriores, en vez de en un efecto.
+  const [prevSimulator, setPrevSimulator] = useState({
+    id: simulatorContent?.id,
+    value: simulatorContent?.content_value,
+  })
+  if (prevSimulator.id !== simulatorContent?.id || prevSimulator.value !== simulatorContent?.content_value) {
+    setPrevSimulator({ id: simulatorContent?.id, value: simulatorContent?.content_value })
     setSimulatorDesc(simulatorContent?.content_value || '')
-  }, [simulatorContent?.id, simulatorContent?.content_value])
+  }
 
   const descChanged = (simulatorContent?.content_value || '') !== simulatorDesc
 
@@ -123,7 +130,7 @@ export function ContentForm({
 
           {/* Simulator block — banda de marca (canvas 2b.4). La trama de puntos va en
               una capa aparte con su propia máscara; el contenido queda encima sin máscara. */}
-          <div className="relative overflow-hidden rounded-2xl bg-[#0a0a0c] text-white">
+          <div className="on-brand-band relative overflow-hidden rounded-2xl bg-[#0a0a0c] text-white">
             <div
               aria-hidden="true"
               className="pointer-events-none absolute inset-0"
@@ -181,7 +188,7 @@ export function ContentForm({
                       onChange={(e) => setSimulatorDesc(e.target.value)}
                       placeholder="Ej: Practica los movimientos del robot UR5e antes de continuar."
                       rows={2}
-                      className="min-h-[44px] flex-1 rounded-[10px] border border-white/15 bg-white/[0.06] px-3 py-2.5 text-[13px] text-white/85 placeholder:text-white/30 focus:outline-none focus:ring-2 focus:ring-white/30 resize-none"
+                      className="min-h-[44px] flex-1 rounded-[10px] border border-white/15 bg-white/[0.06] px-3 py-2.5 text-[13px] text-white/85 placeholder:text-white/30 focus:outline-none focus:ring-2 focus:ring-white/70 resize-none"
                     />
                     {descChanged && (
                       <button

@@ -47,4 +47,5 @@ const Button = React.forwardRef(({ className, variant, size, ...props }, ref) =>
 })
 Button.displayName = "Button"
 
-export { Button, buttonVariants }
+// buttonVariants no se exporta: nadie la importa y exportarla rompe Fast Refresh
+export { Button }
