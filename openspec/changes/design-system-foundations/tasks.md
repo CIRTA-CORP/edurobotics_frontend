@@ -51,7 +51,18 @@
 - [ ] 5.2 **Revisar el panel admin y el simulador**, que no están en el canvas pero heredan
       `button` y `card`: comprobar que no quedaron ilegibles ni descoloridos.
 - [ ] 5.3 Capturas antes/después de: dashboard, una lección, el panel admin y el simulador.
-- [ ] 5.4 Contraste AA del focus ring en fondo claro y sobre la banda oscura.
+      **Nota (2026-10-07):** el "antes" ya no existe (tokens desplegados sin capturas previas);
+      solo puede hacerse el "después".
+- [x] 5.4 Contraste AA del focus ring en fondo claro y sobre la banda oscura.
+      **Calculado (2026-10-07), WCAG 1.4.11 pide ≥ 3:1:** acento `#4b46d6` sobre `#ffffff`
+      **6,67:1**, sobre `#fafafa` 6,39, sobre `#f4f3f8` 6,05 — pasa. Sobre la banda `#0a0a0c`
+      el acento da **2,96:1 — no pasa**; por eso `.on-brand-band` lo vuelve blanco:
+      **19,78:1**. El hueco: la clase dependía de cada página, y `SpecializationDetailPage`
+      (botón «Volver a cursos») y `RoadmapPage` no la ponían. Arreglo: `HeroBand` la lleva
+      siempre. También faltaba en la tarjeta oscura del simulador del editor admin
+      (`ContentForm`, botones a 2,96:1) y su textarea tenía anillo `white/30` (2,62:1) → ahora
+      `on-brand-band` y `white/70` (9,75:1). El simulador usa `#a5a1ee` sobre su fondo:
+      7,4–8,4:1.
 
 ## Diferido (anotado)
 - Modo claro/oscuro (`theme-switching`): este change lo habilita al dejar los tokens

@@ -54,12 +54,19 @@ backend `feature/7-backend-restructure`, frontend `feature/6-simulator-editor-re
 ## 5. Restauración
 
 - [x] 5.1 `docs/restaurar-respaldo.md` — escrito como **borrador sin ensayar**
-- [ ] 5.2 Ensayo: restaurar un respaldo real en un Postgres 17 local y comprobar que la
-      aplicación arranca contra él — bloqueado por Docker
+- [x] 5.2 Ensayo: restaurar un respaldo real en un Postgres 17 local y comprobar que la
+      aplicación arranca contra él — 2026-10-07 con `edurobotics-20261007-194057-manual`
+      en Postgres 17.2 (MSYS2, Docker no arranca): 22 tablas, conteos iguales a producción,
+      `alembic upgrade head` de c9d0e1f2a3b4 a d0e1f2a3b4c5, API en 200 contra esa base,
+      secuencias bien. Destapó dos ajustes, ya en la guía: quitar `CREATE SCHEMA public;` y
+      `psql` 17.6+ por las órdenes `
+estrict`. La copia local se borró al terminar
 
 ## 6. Verificación
 
 - [x] 6.1 Build y ESLint sin hallazgos nuevos (frontend); tests y migraciones (backend)
-- [ ] 6.2 Primer respaldo automático visto en la lista — el manual ya funcionó en
-      producción; falta lanzar el workflow (Actions → Run workflow) para probar el token
-- [ ] 6.3 **A mano:** la directora descarga un respaldo desde la plataforma
+- [x] 6.2 Primer respaldo automático visto en la lista — el workflow semanal corrió bien el
+      2026-10-04 (GitHub Actions, «Respaldo semanal de la base de datos»)
+- [x] 6.3 **A mano:** la directora descarga un respaldo desde la plataforma — lo hizo Mario
+      como administrador el 2026-10-07 (Sitio → Respaldos); el archivo se comprobó entero y
+      es el que se usó en el ensayo 5.2. La directora usa el mismo botón

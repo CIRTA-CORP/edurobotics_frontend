@@ -14,6 +14,9 @@
       unidad, pero el canvas **sí** los conserva en el índice → la tarea 2.2 los repone.
 - [ ] 0.2 Capturas del estado ACTUAL de las tres unidades de referencia (solo texto; video +
       PDF + simulador; con evaluación), escritorio y 390 px — son la mitad "antes".
+      **Nota (2026-10-07):** el rediseño ya está desplegado y no se tomaron capturas antes de
+      empezar: el estado previo **ya no existe** en la app. No se van a fabricar; la mitad
+      "antes" queda sin evidencia (lo más cercano es el código en `c4e1da3`, previo al rediseño).
 
 ## 1. Shell y layout
 
@@ -53,6 +56,16 @@
       **Pendiente a propósito:** es un cambio de layout de la columna de lectura y en esta
       sesión no había navegador para verificarlo visualmente; hacerlo a ciegas arriesgaba
       romper la pantalla más usada. Hacer con la app a la vista.
+      **Implementado en código (2026-10-07), falta verlo en el navegador** — por eso sigue sin
+      marcar. `ContentViewer.jsx`: `SectionRail` (riel lateral pegajoso, resalta la sección
+      activa con `aria-current="location"`), `useActiveHeading` (lee los nodos ya pintados al
+      hacer scroll en el panel; no toca `sanitizeHtml`), `goToHeading` (scroll instantáneo con
+      `prefers-reduced-motion`, y mueve el foco al encabezado). El riel aparece por
+      **container query** cuando el panel de lectura mide ≥ 960 px (704 de columna + 48 + 208
+      de riel): a 1440 con el índice abierto sí cabe; a 1280 con índice, no, y queda el bloque
+      en línea `TableOfContents`, que es también el respaldo a 390 px. Sigue oculto con menos
+      de dos encabezados. Se construye desde h1–h3 (igual que antes), no solo h2.
+      Build y lint verdes.
 
 ## 4. Acción primaria y registro de avance
 
@@ -62,8 +75,15 @@
 - [x] 4.2 **Eliminar el enlace secundario «Siguiente»** del pie; conservar «Anterior».
       Saltar a otra unidad se hace desde el índice.
 - [x] 4.3 Automarcar la unidad al aprobar su quiz o al ejecutar el simulador.
-- [ ] 4.4 Confirmar que `markComplete` y los heartbeats siguen registrando igual
+- [x] 4.4 Confirmar que `markComplete` y los heartbeats siguen registrando igual
       (`completed_at`, `active_seconds`) — sin cambios de backend.
+      **Verificado por código y tests (2026-10-07):** `progress.js` y `useProgress.js` sin
+      cambios commiteados desde `c4e1da3` (previo al rediseño); `CoursePage` sigue pasando
+      `progressHook.markComplete`/`updateAccess`; en `ContentViewer` el heartbeat es el mismo
+      (15 s, solo con la pestaña visible, sobre `contents[0]`) y `markComplete` se llama por
+      contenido pendiente desde el botón primario, el autocompletado del quiz y el botón del
+      simulador. Backend: `test_progress.py`, `test_active_time.py`, `test_completion.py` →
+      21 passed. La comprobación en vivo (que la fila cambie) es la 6.3.
 
 ## 5. Accesibilidad (no regresar la F6)
 
