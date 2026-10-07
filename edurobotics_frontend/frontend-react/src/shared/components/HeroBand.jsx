@@ -9,8 +9,11 @@ export function HeroBand({ children, className = '' }) {
   // Where the energy concentrates (center, lower third).
   const focus = '62% 82% at 50% 84%'
 
+  // `on-brand-band` turns the keyboard focus ring white inside the band (see
+  // index.css): the accent ring is 2.96:1 on #0a0a0c, under the 3:1 that WCAG
+  // asks of a focus indicator; white is 19.8:1. Always on, so no page can forget it.
   return (
-    <div className={`relative overflow-hidden bg-[#0a0a0c] text-white ${className}`}>
+    <div className={`on-brand-band relative overflow-hidden bg-[#0a0a0c] text-white ${className}`}>
       {/* dot grid, masked so the dots fade at the edges and intensify toward the center */}
       <div
         className="pointer-events-none absolute inset-0"
